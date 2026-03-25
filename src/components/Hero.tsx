@@ -1,11 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { SITE } from "@/lib/constants";
 
 export default function Hero() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-cream via-white to-beige/30">
+    <section className="relative overflow-hidden bg-gradient-to-b from-[#f2f0eb] to-[#b9b7b2]">
       <div className="mx-auto max-w-7xl px-6 lg:px-8 py-20 sm:py-28 lg:py-36">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left content */}
@@ -34,19 +35,14 @@ export default function Hero() {
               </svg>
             </a>
 
-            {/* Provider avatars */}
             <div className="flex items-center gap-3 mt-10">
-              <div className="flex -space-x-3">
-                {[0, 1, 2].map((i) => (
-                  <div
-                    key={i}
-                    className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-magenta/30 to-sky/30 shadow-sm"
-                  />
-                ))}
-              </div>
-              <p className="text-sm text-navy/70 font-medium">
-                Trusted by <span className="font-bold text-navy">5,000+</span> providers
-              </p>
+              <Image
+                src="/images/trusted-providers.webp"
+                alt="Trusted by 5,000+ providers"
+                width={240}
+                height={48}
+                className="h-12 w-auto"
+              />
             </div>
           </motion.div>
 
@@ -57,20 +53,14 @@ export default function Hero() {
             transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
             className="relative flex items-center justify-center"
           >
-            <div className="relative w-full max-w-md mx-auto aspect-[3/4] rounded-3xl bg-gradient-to-br from-beige to-beige-dark/60 overflow-hidden flex items-center justify-center shadow-xl">
-              {/* Decorative gradient orb */}
-              <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full bg-gradient-to-br from-magenta/20 to-transparent blur-3xl" />
-              {/* Vial placeholder */}
-              <div className="relative z-10 w-24 h-52 rounded-xl bg-gradient-to-b from-magenta via-magenta-dark to-navy-deep shadow-lg flex flex-col items-center">
-                <div className="w-10 h-6 rounded-t-lg bg-magenta-light mt-[-2px]" />
-                <div className="flex-1 w-full rounded-b-xl bg-white/10 backdrop-blur-sm mt-2 mx-2 flex items-center justify-center">
-                  <div className="text-center text-white/80">
-                    <p className="text-[8px] font-bold tracking-wider uppercase">Logos RX</p>
-                    <p className="text-[6px] mt-0.5 opacity-70">NAD+</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <Image
+              src="/images/hand-vial.webp"
+              alt="Hand holding a Logos RX NAD+ vial"
+              width={600}
+              height={800}
+              priority
+              className="w-full max-w-lg h-auto object-contain"
+            />
           </motion.div>
         </div>
       </div>
