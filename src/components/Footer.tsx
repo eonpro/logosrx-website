@@ -32,10 +32,6 @@ export default function Footer() {
               {SITE.name} is a multi-state licensed 503A compounding pharmacy with
               sterile and non-sterile compounding labs.
             </p>
-
-            <p className="text-xs text-white/30 leading-relaxed">
-              Licensed in: {STATES_SERVED.join(", ")} — with more states coming soon.
-            </p>
           </div>
 
           {/* Column 2 — Headquarters */}

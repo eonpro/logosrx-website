@@ -7,36 +7,25 @@ export default function DrivenByExcellence() {
     <section id="services" className="bg-white py-24 sm:py-32 overflow-hidden">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-          {/* Image */}
           <motion.div
             initial={{ opacity: 0, x: -40 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.6 }}
-            className="relative aspect-[4/3] rounded-3xl overflow-hidden bg-gradient-to-br from-navy-light to-navy-deep"
+            className="relative aspect-[4/3] rounded-3xl overflow-hidden bg-navy-deep"
           >
-            {/* Stylized lab environment */}
-            <div className="absolute inset-0 bg-gradient-to-br from-navy via-navy-light to-navy-deep">
-              {/* Abstract lab visuals */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="grid grid-cols-3 gap-4 p-8 opacity-30">
-                  {[...Array(9)].map((_, i) => (
-                    <div key={i} className="w-16 h-16 rounded-lg bg-white/10 backdrop-blur-sm" />
-                  ))}
-                </div>
-              </div>
-              <div className="absolute bottom-6 left-6 right-6 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-magenta/30" />
-                <div className="w-10 h-10 rounded-full bg-sky/30" />
-                <div className="w-10 h-10 rounded-full bg-magenta/20" />
-                <div className="flex-1 h-1 rounded-full bg-white/10" />
-              </div>
-              <div className="absolute top-6 right-6">
-                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" className="opacity-20">
-                  <path d="M20 2L36 34H4L20 2Z" fill="white" />
-                </svg>
-              </div>
-            </div>
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
+            >
+              <source
+                src="https://video.wixstatic.com/video/c49a9b_1b1b71b6d6854065b140aeeadc56db43/720p/mp4/file.mp4"
+                type="video/mp4"
+              />
+            </video>
           </motion.div>
 
           {/* Text */}

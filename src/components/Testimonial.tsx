@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { SITE } from "@/lib/constants";
 
@@ -24,20 +25,14 @@ export default function Testimonial() {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.6 }}
           >
-            {/* Geometric badge */}
-            <div className="mb-8 w-16 h-16 relative">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                  <path d="M24 4L42 38H6L24 4Z" fill="url(#testimonialGrad)" opacity="0.8" />
-                  <circle cx="24" cy="28" r="8" stroke="white" strokeWidth="1.5" fill="none" opacity="0.4" />
-                  <defs>
-                    <linearGradient id="testimonialGrad" x1="6" y1="38" x2="42" y2="4">
-                      <stop offset="0%" stopColor="#C9308E" />
-                      <stop offset="100%" stopColor="#E84393" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </div>
+            <div className="mb-8">
+              <Image
+                src="/images/logos-icon-testimonial.png"
+                alt="Logos RX"
+                width={96}
+                height={96}
+                className="w-24 h-24 object-contain"
+              />
             </div>
 
             <h2 className="text-3xl sm:text-4xl lg:text-5xl text-white leading-tight mb-8">
@@ -67,9 +62,14 @@ export default function Testimonial() {
             transition={{ duration: 0.6, delay: 0.15 }}
             className="relative"
           >
-            <div className="flex items-start gap-5">
-              {/* Avatar */}
-              <div className="flex-shrink-0 w-14 h-14 rounded-full bg-gradient-to-br from-magenta/40 to-sky/30 ring-2 ring-white/10" />
+            <div className="flex items-center gap-5">
+              <Image
+                src="/images/gavin-sigle.png"
+                alt="Gavin Sigle, MD"
+                width={56}
+                height={56}
+                className="shrink-0 w-14 h-14 rounded-full object-contain"
+              />
 
               <div>
                 <h3 className="text-lg font-semibold text-white">Gavin Sigle, MD</h3>
