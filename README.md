@@ -1,36 +1,93 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Logos RX — Compounding Excellence, Personalized
+
+Custom-built website for Logos RX, a multi-state licensed 503A compounding pharmacy. Built with Next.js 15, TypeScript, and Tailwind CSS.
+
+## Tech Stack
+
+- **Framework**: Next.js 15 (App Router)
+- **Language**: TypeScript (strict)
+- **Styling**: Tailwind CSS 4
+- **Animations**: Framer Motion
+- **Fonts**: DM Serif Display (headings) + Inter (body) via `next/font`
+- **Deployment**: Vercel
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/
+│   ├── layout.tsx              Root layout (fonts, metadata, header/footer)
+│   ├── page.tsx                Homepage
+│   ├── not-found.tsx           404 page
+│   ├── robots.ts               robots.txt generation
+│   ├── sitemap.ts              sitemap.xml generation
+│   ├── globals.css             Design tokens and global styles
+│   └── products/[slug]/
+│       └── page.tsx            Dynamic product pages (SSG)
+├── components/
+│   ├── Header.tsx              Fixed header with logo and hamburger
+│   ├── MobileMenu.tsx          Slide-out navigation drawer
+│   ├── Hero.tsx                Homepage hero section
+│   ├── BuildingTrust.tsx       Dark overlay mission section
+│   ├── FeaturedProducts.tsx    Product grid section
+│   ├── ProductCard.tsx         Reusable product card
+│   ├── DrivenByExcellence.tsx  Split layout quality section
+│   ├── Testimonial.tsx         Provider testimonial section
+│   ├── ScrollingMarquee.tsx    Infinite scroll text banner
+│   ├── PatientRefill.tsx       Patient refill CTA section
+│   ├── Footer.tsx              4-column footer
+│   ├── ProductDetail.tsx       Product page layout
+│   ├── CollapsibleSection.tsx  Animated accordion
+│   └── JsonLd.tsx              SEO structured data
+├── data/
+│   └── products.ts             Product catalog (hardcoded)
+└── lib/
+    └── constants.ts            Site config, contact info, nav links
+```
 
-## Learn More
+## Routes
 
-To learn more about Next.js, take a look at the following resources:
+| Route | Description |
+|-------|-------------|
+| `/` | Homepage with all sections |
+| `/products/glutathione` | Glutathione product page |
+| `/products/nad` | NAD+ product page |
+| `/products/sermorelin` | Sermorelin product page |
+| `/robots.txt` | SEO robots file |
+| `/sitemap.xml` | SEO sitemap |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Adding Real Assets
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Replace placeholder images in `public/images/`:
 
-## Deploy on Vercel
+- `logo.svg` / `logo-white.svg` — Brand logo
+- `products/glutathione.png` — Glutathione vial photo
+- `products/nad.png` — NAD+ vial photo
+- `products/sermorelin.png` — Sermorelin vial photo
+- `certifications/legitscript.png` — LegitScript badge
+- `certifications/nabp.png` — NABP seal
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deployment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is configured for Vercel. Connect the Git repository and deploy with zero configuration.
+
+```bash
+npm run build    # Verify production build locally
+```
+
+## Adding New Products
+
+Edit `src/data/products.ts` to add new compounds. Each product needs:
+- `name`, `slug`, `description`
+- `activeIngredient` with name and description
+- `details` array (How to Use, Size, Concentration, Schedule, BUD)
+- Product image in `public/images/products/`
