@@ -7,62 +7,62 @@ import { SITE } from "@/lib/constants";
 export default function Hero() {
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-[#f2f0eb] to-[#b9b7b2]">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8 py-20 sm:py-28 lg:py-36">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          {/* Left content */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: "easeOut" }}
+      {/* Desktop: side-by-side with hand pinned to bottom-right */}
+      <div className="relative mx-auto max-w-7xl px-6 lg:px-8 pt-28 sm:pt-36 lg:pt-40 lg:min-h-[85vh]">
+        {/* Text column */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          className="relative z-10 max-w-xl lg:max-w-[45%] pb-8 sm:pb-12 lg:pb-32"
+        >
+          <p className="text-xs sm:text-sm font-semibold tracking-[0.2em] uppercase text-magenta mb-3 sm:mb-4">
+            {SITE.name}
+          </p>
+
+          <h1 className="text-[2rem] sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.1] tracking-tight text-navy mb-6 sm:mb-8 font-bold">
+            Compounding Excellence, Personalized.
+          </h1>
+
+          <a
+            href={SITE.onboarding}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-3 rounded-full bg-magenta px-6 sm:px-8 py-3.5 sm:py-4 text-sm font-semibold uppercase tracking-wide text-white hover:bg-magenta-dark transition-all duration-300 active:scale-95 sm:hover:scale-[1.02]"
           >
-            <p className="text-sm font-semibold tracking-[0.2em] uppercase text-magenta mb-4">
-              {SITE.name}
-            </p>
+            New Provider
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M3 1.5L9 6L3 10.5V1.5Z" fill="currentColor" />
+            </svg>
+          </a>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.1] tracking-tight text-navy mb-8 font-bold">
-              Compounding Excellence, Personalized.
-            </h1>
-
-            <a
-              href={SITE.onboarding}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-3 rounded-full bg-magenta px-8 py-4 text-sm font-semibold uppercase tracking-wide text-white hover:bg-magenta-dark transition-all duration-300 hover:scale-[1.02]"
-            >
-              New Provider
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M3 1.5L9 6L3 10.5V1.5Z" fill="currentColor" />
-              </svg>
-            </a>
-
-            <div className="flex items-center gap-3 mt-10">
-              <Image
-                src="/images/trusted-providers.webp"
-                alt="Trusted by 5,000+ providers"
-                width={240}
-                height={48}
-                className="h-12 w-auto"
-              />
-            </div>
-          </motion.div>
-
-          {/* Right image */}
-          <motion.div
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
-            className="relative flex items-center justify-center"
-          >
+          <div className="mt-8 sm:mt-10">
             <Image
-              src="/images/hand-vial.webp"
-              alt="Hand holding a Logos RX NAD+ vial"
-              width={600}
-              height={800}
-              priority
-              className="w-full max-w-lg h-auto object-contain"
+              src="/images/trusted-providers.webp"
+              alt="Trusted by 5,000+ providers"
+              width={240}
+              height={48}
+              className="h-10 sm:h-12 w-auto"
             />
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
+
+        {/* Hand image — mobile: flush bottom, desktop: absolute bottom-right */}
+        <motion.div
+          initial={{ opacity: 0, x: 40 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+          className="lg:absolute lg:bottom-0 lg:right-0 lg:w-[55%] flex justify-center lg:justify-end items-end"
+        >
+          <Image
+            src="/images/hand-vial.webp"
+            alt="Hand holding a Logos RX NAD+ vial"
+            width={600}
+            height={800}
+            priority
+            className="w-[75%] sm:w-[60%] lg:w-[85%] xl:w-[75%] max-w-[600px] h-auto block"
+          />
+        </motion.div>
       </div>
     </section>
   );

@@ -5,7 +5,7 @@ import { SITE } from "@/lib/constants";
 
 export default function Testimonial() {
   return (
-    <section className="relative bg-navy-deep overflow-hidden">
+    <section className="relative bg-navy-deep overflow-hidden" data-header-theme="dark">
       {/* Subtle pattern */}
       <div
         className="absolute inset-0 opacity-[0.02]"

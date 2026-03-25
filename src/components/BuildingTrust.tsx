@@ -5,7 +5,7 @@ import { SITE } from "@/lib/constants";
 
 export default function BuildingTrust() {
   return (
-    <section id="about" className="relative overflow-hidden">
+    <section id="about" className="relative overflow-hidden" data-header-theme="dark">
       {/* Dark overlay background */}
       <div className="absolute inset-0 bg-navy-deep" />
       <div className="absolute inset-0 bg-gradient-to-br from-navy/90 via-navy-deep/95 to-navy" />

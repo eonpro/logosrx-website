@@ -50,7 +50,7 @@ function HeroSection() {
 
 function CultureSection() {
   return (
-    <section className="bg-navy-deep py-24 sm:py-32 overflow-hidden">
+    <section className="bg-navy-deep py-24 sm:py-32 overflow-hidden" data-header-theme="dark">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           <motion.div

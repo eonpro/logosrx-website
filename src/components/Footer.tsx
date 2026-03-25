@@ -4,7 +4,7 @@ import { CONTACT, HOURS, NAV_LINKS, LEGAL_LINKS, SITE, STATES_SERVED } from "@/l
 
 export default function Footer() {
   return (
-    <footer id="contact" className="bg-navy-deep text-white">
+    <footer id="contact" className="bg-navy-deep text-white" data-header-theme="dark">
       <div className="mx-auto max-w-7xl px-6 lg:px-8 py-16 sm:py-20">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
           {/* Column 1 — Branding */}

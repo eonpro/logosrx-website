@@ -2,25 +2,60 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import MobileMenu from "./MobileMenu";
 import { SITE } from "@/lib/constants";
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [onDark, setOnDark] = useState(false);
+
+  useEffect(() => {
+    const darkSections = document.querySelectorAll("[data-header-theme='dark']");
+    if (!darkSections.length) return;
+
+    const observer = new IntersectionObserver(
+      () => {
+        const headerBottom = 80;
+        const hit = Array.from(darkSections).some((sec) => {
+          const rect = sec.getBoundingClientRect();
+          return rect.top < headerBottom && rect.bottom > 0;
+        });
+        setOnDark(hit);
+      },
+      { threshold: [0, 0.01, 0.1, 0.5, 1] },
+    );
+
+    darkSections.forEach((sec) => observer.observe(sec));
+
+    const onScroll = () => {
+      const headerBottom = 80;
+      const hit = Array.from(darkSections).some((sec) => {
+        const rect = sec.getBoundingClientRect();
+        return rect.top < headerBottom && rect.bottom > 0;
+      });
+      setOnDark(hit);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-beige">
+      <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/0 border-b border-white/10 transition-colors duration-300">
         <div className="mx-auto max-w-7xl flex items-center justify-between px-6 py-4 lg:px-8">
           <Link href="/" className="flex items-center gap-2" aria-label={SITE.name}>
             <Image
-              src="/images/logo.svg"
+              src={onDark ? "/images/logo-white.svg" : "/images/logo.svg"}
               alt={SITE.name}
               width={180}
               height={57}
               priority
-              className="h-10 w-auto sm:h-12"
+              className="h-10 w-auto sm:h-12 transition-opacity duration-300"
             />
           </Link>
 
@@ -29,7 +64,9 @@ export default function Header() {
               href={SITE.onboarding}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:inline-flex items-center gap-2 text-sm font-semibold text-navy hover:text-magenta transition-colors"
+              className={`hidden sm:inline-flex items-center gap-2 text-sm font-semibold transition-colors duration-300 ${
+                onDark ? "text-white hover:text-white/70" : "text-navy hover:text-magenta"
+              }`}
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="opacity-60">
                 <path d="M3 2L11 7L3 12V2Z" fill="currentColor" />
@@ -42,9 +79,9 @@ export default function Header() {
               className="flex flex-col items-center justify-center gap-[5px] w-10 h-10 rounded-lg hover:bg-beige/60 transition-colors"
               aria-label="Open menu"
             >
-              <span className="block w-5 h-[2px] bg-navy rounded-full" />
-              <span className="block w-5 h-[2px] bg-navy rounded-full" />
-              <span className="block w-5 h-[2px] bg-navy rounded-full" />
+              <span className={`block w-5 h-[2px] rounded-full transition-colors duration-300 ${onDark ? "bg-white" : "bg-navy"}`} />
+              <span className={`block w-5 h-[2px] rounded-full transition-colors duration-300 ${onDark ? "bg-white" : "bg-navy"}`} />
+              <span className={`block w-5 h-[2px] rounded-full transition-colors duration-300 ${onDark ? "bg-white" : "bg-navy"}`} />
             </button>
           </div>
         </div>
