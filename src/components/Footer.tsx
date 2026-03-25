@@ -101,8 +101,8 @@ export default function Footer() {
       {/* Bottom bar */}
       <div className="border-t border-white/10">
         <div className="mx-auto max-w-7xl px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-white/40">
-            <span className="font-semibold text-sky/60 uppercase tracking-wider">Legal</span>
+          <div className="flex flex-nowrap items-center justify-center gap-x-4 gap-y-1 text-xs text-white/40 whitespace-nowrap">
+            <span className="font-semibold text-sky/60">Legal</span>
             {LEGAL_LINKS.map((link, i) => (
               <span key={link.href} className="flex items-center gap-4">
                 {i > 0 && <span>|</span>}

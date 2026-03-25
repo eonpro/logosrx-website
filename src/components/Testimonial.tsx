@@ -79,7 +79,7 @@ export default function Testimonial() {
               </div>
             </div>
 
-            <blockquote className="mt-8 text-2xl sm:text-3xl leading-relaxed text-white/90 italic">
+            <blockquote className="mt-8 text-lg sm:text-xl leading-relaxed text-white/90">
               &ldquo;Logos Rx makes my job easier every day. Their team actually cares
               about both the provider and the patient&mdash;that&rsquo;s rare to find.&rdquo;
             </blockquote>

@@ -48,14 +48,21 @@ export default function Header() {
     <>
       <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/0 border-b border-white/10 transition-colors duration-300">
         <div className="mx-auto max-w-7xl flex items-center justify-between px-6 py-4 lg:px-8">
-          <Link href="/" className="flex items-center gap-2" aria-label={SITE.name}>
+          <Link href="/" className="relative flex items-center gap-2" aria-label={SITE.name}>
             <Image
-              src={onDark ? "/images/logo-white.svg" : "/images/logo.svg"}
+              src="/images/logo.svg"
               alt={SITE.name}
               width={180}
               height={57}
               priority
-              className="h-10 w-auto sm:h-12 transition-opacity duration-300"
+              className={`h-10 w-auto sm:h-12 transition-opacity duration-300 ${onDark ? "opacity-0" : "opacity-100"}`}
+            />
+            <Image
+              src="/images/logo-white.svg"
+              alt={SITE.name}
+              width={180}
+              height={57}
+              className={`absolute inset-0 h-10 w-auto sm:h-12 transition-opacity duration-300 ${onDark ? "opacity-100" : "opacity-0"}`}
             />
           </Link>
 

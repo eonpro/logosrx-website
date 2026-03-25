@@ -39,11 +39,14 @@ export default function Hero() {
           <div className="mt-8 sm:mt-10">
             <Image
               src="/images/trusted-providers.webp"
-              alt="Trusted by 5,000+ providers"
-              width={240}
-              height={48}
-              className="h-10 sm:h-12 w-auto"
+              alt="Provider photos"
+              width={288}
+              height={58}
+              className="h-12 sm:h-[58px] w-auto"
             />
+            <p className="mt-2 text-sm text-navy/70 font-medium">
+              Trusted by <span className="font-bold text-navy">5,000+</span> providers
+            </p>
           </div>
         </motion.div>
 
