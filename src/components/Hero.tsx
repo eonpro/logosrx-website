@@ -7,14 +7,13 @@ import { SITE } from "@/lib/constants";
 export default function Hero() {
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-[#f2f0eb] to-[#b9b7b2]">
-      {/* Desktop: side-by-side with hand pinned to bottom-right */}
-      <div className="relative mx-auto max-w-7xl px-6 lg:px-8 pt-28 sm:pt-36 lg:pt-40 lg:min-h-[85vh]">
+      <div className="relative mx-auto max-w-7xl px-6 lg:px-8 pt-28 sm:pt-36 lg:pt-40 min-h-[85vh] sm:min-h-[80vh] lg:min-h-[85vh]">
         {/* Text column */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
-          className="relative z-10 max-w-xl lg:max-w-[45%] pb-8 sm:pb-12 lg:pb-32"
+          className="relative z-10 max-w-[60%] sm:max-w-md lg:max-w-[45%] pb-8 sm:pb-12 lg:pb-32"
         >
           <p className="text-xs sm:text-sm font-semibold tracking-[0.2em] uppercase text-magenta mb-3 sm:mb-4">
             {SITE.name}
@@ -50,12 +49,12 @@ export default function Hero() {
           </div>
         </motion.div>
 
-        {/* Hand image — mobile: flush bottom, desktop: absolute bottom-right */}
+        {/* Hand image — always pinned to bottom-right */}
         <motion.div
           initial={{ opacity: 0, x: 40 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
-          className="lg:absolute lg:bottom-0 lg:right-0 lg:w-[55%] flex justify-center lg:justify-end items-end"
+          className="absolute bottom-0 right-0 w-[55%] sm:w-[50%] lg:w-[55%] flex justify-end items-end"
         >
           <Image
             src="/images/hand-vial.webp"
@@ -63,7 +62,7 @@ export default function Hero() {
             width={600}
             height={800}
             priority
-            className="w-[75%] sm:w-[60%] lg:w-[85%] xl:w-[75%] max-w-[600px] h-auto block"
+            className="w-full lg:w-[85%] xl:w-[75%] max-w-[600px] h-auto block"
           />
         </motion.div>
       </div>
