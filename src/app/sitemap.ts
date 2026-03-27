@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { SITE } from "@/lib/constants";
 import { products } from "@/data/products";
+import { articles } from "@/data/articles";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const productPages = products.map((product) => ({
@@ -41,6 +42,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "yearly",
       priority: 0.3,
     },
+    {
+      url: `${SITE.url}/support`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.7,
+    },
+    ...articles.map((article) => ({
+      url: `${SITE.url}/support/${article.slug}`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    })),
     ...productPages,
   ];
 }
