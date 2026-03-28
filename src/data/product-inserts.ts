@@ -1,6 +1,12 @@
+export interface ProductInsertImage {
+  src: string;
+  alt: string;
+}
+
 export interface ProductInsertSection {
   title: string;
   content: string[];
+  image?: ProductInsertImage;
 }
 
 export interface ProductInsert {
@@ -50,6 +56,10 @@ export const productInserts: ProductInsert[] = [
           "Ventrogluteal (hip): Place the heel of your hand on the greater trochanter of the hip bone. Point your index finger toward the anterior iliac crest and spread your middle finger toward the iliac spine. Inject in the center of the V formed by your fingers.",
           "Rotate injection sites with each dose to prevent tissue irritation, scarring, or lipodystrophy.",
         ],
+        image: {
+          src: "/images/product-inserts/im-injection-sites.png",
+          alt: "Intramuscular injection site diagram showing deltoid, vastus lateralis, and ventrogluteal sites with 90-degree needle angle",
+        },
       },
       {
         title: "Administration",
@@ -61,6 +71,10 @@ export const productInserts: ProductInsert[] = [
           "Step 5: Wait 5–10 seconds after injecting before withdrawing the needle in one smooth motion at the same angle it was inserted.",
           "Step 6: Apply gentle pressure to the site with a cotton ball or bandage. Do not rub the injection site.",
         ],
+        image: {
+          src: "/images/product-inserts/im-injection-steps.png",
+          alt: "Step-by-step intramuscular injection technique showing hand washing, vial preparation, drawing medication, cleaning site, inserting needle at 90 degrees, and applying bandage",
+        },
       },
       {
         title: "Post-Injection Care",
@@ -124,6 +138,10 @@ export const productInserts: ProductInsert[] = [
           "Upper arm: Use the fatty area on the back of the arm between the shoulder and elbow. This site may require assistance from another person.",
           "Rotate injection sites systematically — for example, use different quadrants of the abdomen or alternate between left and right sides. Keep at least 1 inch between injection points to prevent tissue changes.",
         ],
+        image: {
+          src: "/images/product-inserts/subq-injection-sites.png",
+          alt: "Subcutaneous injection site diagram showing abdomen, front/outer thigh, and back of upper arm sites with 45-degree needle angle",
+        },
       },
       {
         title: "Administration",
@@ -135,6 +153,10 @@ export const productInserts: ProductInsert[] = [
           "Step 5: Wait 5 seconds after injecting, then withdraw the needle at the same angle it was inserted in one smooth motion.",
           "Step 6: Apply gentle pressure with a cotton ball or bandage. Do not rub the site, as this can affect absorption.",
         ],
+        image: {
+          src: "/images/product-inserts/subq-injection-steps.png",
+          alt: "Step-by-step subcutaneous injection technique showing gathering supplies, drawing medication, pinching skin, inserting needle at 45 degrees, injecting, and applying pressure",
+        },
       },
       {
         title: "Post-Injection Care",

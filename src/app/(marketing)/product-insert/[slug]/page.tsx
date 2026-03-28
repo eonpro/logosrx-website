@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { productInserts, getProductInsert } from "@/data/product-inserts";
@@ -81,6 +82,17 @@ export default async function ProductInsertPage({
                     {paragraph}
                   </p>
                 ))}
+                {section.image && (
+                  <div className="mt-6 rounded-2xl overflow-hidden border border-beige bg-cream/30 p-4">
+                    <Image
+                      src={section.image.src}
+                      alt={section.image.alt}
+                      width={800}
+                      height={450}
+                      className="w-full h-auto rounded-xl"
+                    />
+                  </div>
+                )}
               </div>
             </section>
           ))}

@@ -5,9 +5,9 @@ import { motion, useInView } from "framer-motion";
 
 const stats = [
   { value: 5000, suffix: "+", label: "Trusted Providers" },
-  { value: 25, suffix: "+", label: "States Licensed" },
-  { value: 15000, suffix: "+", label: "Prescriptions Filled" },
-  { value: 503, suffix: "A", label: "Certified Pharmacy" },
+  { text: "Multi", label: "State Licensed" },
+  { value: 500000, suffix: "+", label: "Prescriptions Filled" },
+  { text: "Licensed", label: "Pharmacy" },
 ];
 
 function AnimatedNumber({ target, suffix, inView }: { target: number; suffix: string; inView: boolean }) {
@@ -60,7 +60,11 @@ export default function StatsCounter() {
               className="text-center"
             >
               <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-navy mb-2">
-                <AnimatedNumber target={stat.value} suffix={stat.suffix} inView={inView} />
+                {"value" in stat && stat.value !== undefined ? (
+                  <AnimatedNumber target={stat.value} suffix={stat.suffix ?? ""} inView={inView} />
+                ) : (
+                  <span>{stat.text}</span>
+                )}
               </p>
               <p className="text-sm sm:text-base text-navy/50 font-medium">
                 {stat.label}
