@@ -116,9 +116,7 @@ export default function MobileMenu({ open, onClose }: MobileMenuProps) {
               </a>
 
               <a
-                href={SITE.onboarding}
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/admin/sign-in"
                 className="flex items-center justify-center gap-2 w-full py-3.5 rounded-full border-2 border-navy text-navy text-sm font-semibold hover:bg-navy hover:text-white transition-colors"
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="opacity-60">

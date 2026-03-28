@@ -68,9 +68,7 @@ export default function Header() {
 
           <div className="flex items-center gap-4">
             <a
-              href={SITE.onboarding}
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/admin/sign-in"
               className={`hidden sm:inline-flex items-center gap-2 text-sm font-semibold transition-colors duration-300 ${
                 onDark ? "text-white hover:text-white/70" : "text-navy hover:text-magenta"
               }`}
