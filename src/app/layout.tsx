@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import JsonLd from "@/components/JsonLd";
 import SmoothScroll from "@/components/SmoothScroll";
 import { SITE } from "@/lib/constants";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: {
@@ -50,6 +51,7 @@ export default function RootLayout({
         <Header />
         <main id="main-content" className="flex-1 pt-[72px]">{children}</main>
         <Footer />
+        <Analytics />
       </body>
     </html>
   );
