@@ -5,11 +5,24 @@ import { motion } from "framer-motion";
 
 export default function Newsletter() {
   const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) setSubmitted(true);
+    if (!email) return;
+
+    setStatus("loading");
+    try {
+      const res = await fetch("/api/email-signups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) throw new Error();
+      setStatus("success");
+    } catch {
+      setStatus("error");
+    }
   };
 
   return (
@@ -31,7 +44,7 @@ export default function Newsletter() {
             </p>
           </div>
 
-          {submitted ? (
+          {status === "success" ? (
             <div className="flex items-center gap-3 rounded-full bg-white/10 px-8 py-4">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="text-magenta-light">
                 <path d="M6 10l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -55,9 +68,10 @@ export default function Newsletter() {
               />
               <button
                 type="submit"
-                className="rounded-r-full bg-magenta px-6 py-3.5 text-sm font-semibold text-white hover:bg-magenta-dark transition-colors"
+                disabled={status === "loading"}
+                className="rounded-r-full bg-magenta px-6 py-3.5 text-sm font-semibold text-white hover:bg-magenta-dark transition-colors disabled:opacity-60"
               >
-                Subscribe
+                {status === "loading" ? "..." : status === "error" ? "Retry" : "Subscribe"}
               </button>
             </form>
           )}

@@ -1,0 +1,46 @@
+import { config } from "dotenv";
+config({ path: ".env.local" });
+
+import { awsCredentialsProvider } from "@vercel/functions/oidc";
+import { Signer } from "@aws-sdk/rds-signer";
+import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
+import * as schema from "./schema";
+
+async function setup() {
+  console.log("Connecting to Aurora PostgreSQL...");
+
+  const signer = new Signer({
+    hostname: process.env.PGHOST!,
+    port: Number(process.env.PGPORT),
+    username: process.env.PGUSER!,
+    region: process.env.AWS_REGION!,
+    credentials: awsCredentialsProvider({
+      roleArn: process.env.AWS_ROLE_ARN!,
+      clientConfig: { region: process.env.AWS_REGION! },
+    }),
+  });
+
+  const pool = new Pool({
+    host: process.env.PGHOST!,
+    user: process.env.PGUSER!,
+    database: process.env.PGDATABASE || "postgres",
+    password: () => signer.getAuthToken(),
+    port: Number(process.env.PGPORT),
+    ssl: { rejectUnauthorized: false },
+  });
+
+  const db = drizzle(pool, { schema });
+
+  console.log("Running migrations...");
+  await migrate(db, { migrationsFolder: "./drizzle" });
+  console.log("Migrations complete!");
+
+  await pool.end();
+}
+
+setup().catch((err) => {
+  console.error("Setup failed:", err);
+  process.exit(1);
+});

@@ -99,6 +99,7 @@ export default function SupportPage() {
             {[
               {
                 title: "Intramuscular Injections",
+                slug: "intramuscular-injections",
                 description: "Guide for IM injection technique, site selection, and safety protocols.",
                 icon: (
                   <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
@@ -109,6 +110,7 @@ export default function SupportPage() {
               },
               {
                 title: "Subcutaneous Injections",
+                slug: "subcutaneous-injections",
                 description: "Guide for SubQ injection technique, site rotation, and proper disposal.",
                 icon: (
                   <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
@@ -118,32 +120,36 @@ export default function SupportPage() {
                 ),
               },
             ].map((insert, i) => (
-              <motion.div
-                key={insert.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="group flex items-start gap-5 rounded-2xl bg-cream p-6 hover:shadow-md transition-shadow cursor-pointer"
+              <Link
+                key={insert.slug}
+                href={`/product-insert/${insert.slug}`}
               >
-                <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-magenta shrink-0 shadow-sm">
-                  {insert.icon}
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-navy group-hover:text-magenta transition-colors mb-1">
-                    {insert.title}
-                  </h3>
-                  <p className="text-sm text-navy/50 leading-relaxed">
-                    {insert.description}
-                  </p>
-                  <span className="inline-flex items-center gap-1.5 mt-3 text-xs font-semibold text-magenta uppercase tracking-wider">
-                    Download PDF
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                      <path d="M6 2v6M3 6l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </span>
-                </div>
-              </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: i * 0.1 }}
+                  className="group flex items-start gap-5 rounded-2xl bg-cream p-6 hover:shadow-md transition-shadow cursor-pointer"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-magenta shrink-0 shadow-sm">
+                    {insert.icon}
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-navy group-hover:text-magenta transition-colors mb-1">
+                      {insert.title}
+                    </h3>
+                    <p className="text-sm text-navy/50 leading-relaxed">
+                      {insert.description}
+                    </p>
+                    <span className="inline-flex items-center gap-1.5 mt-3 text-xs font-semibold text-magenta uppercase tracking-wider">
+                      View Guide
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                  </div>
+                </motion.div>
+              </Link>
             ))}
           </div>
         </div>

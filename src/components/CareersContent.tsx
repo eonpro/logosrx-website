@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { benefits, openPositions } from "@/data/careers";
 import { SITE } from "@/lib/constants";
@@ -153,6 +153,19 @@ interface ApplyModalProps {
 }
 
 function ApplyModal({ open, onClose, jobTitle }: ApplyModalProps) {
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    referralSource: "",
+    willingToRelocate: "",
+  });
+  const [resume, setResume] = useState<File | null>(null);
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState("");
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -161,6 +174,47 @@ function ApplyModal({ open, onClose, jobTitle }: ApplyModalProps) {
     }
     return () => { document.body.style.overflow = ""; };
   }, [open]);
+
+  useEffect(() => {
+    if (!open) {
+      setForm({ firstName: "", lastName: "", email: "", phone: "", referralSource: "", willingToRelocate: "" });
+      setResume(null);
+      setStatus("idle");
+      setErrorMsg("");
+    }
+  }, [open]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus("loading");
+    setErrorMsg("");
+
+    try {
+      const data = new FormData();
+      data.append("firstName", form.firstName);
+      data.append("lastName", form.lastName);
+      data.append("email", form.email);
+      data.append("phone", form.phone);
+      data.append("position", jobTitle || "General Application");
+      if (form.referralSource) data.append("referralSource", form.referralSource);
+      if (form.willingToRelocate) data.append("willingToRelocate", form.willingToRelocate);
+      if (resume) data.append("resume", resume);
+
+      const res = await fetch("/api/applications", { method: "POST", body: data });
+      if (!res.ok) {
+        const body = await res.json();
+        throw new Error(body.error || "Submission failed");
+      }
+      setStatus("success");
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Something went wrong.");
+      setStatus("error");
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -184,7 +238,6 @@ function ApplyModal({ open, onClose, jobTitle }: ApplyModalProps) {
               className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Close button */}
               <button
                 onClick={onClose}
                 className="absolute top-5 right-5 z-10 flex items-center justify-center w-8 h-8 rounded-full hover:bg-beige transition-colors"
@@ -196,91 +249,155 @@ function ApplyModal({ open, onClose, jobTitle }: ApplyModalProps) {
               </button>
 
               <div className="p-8 sm:p-10">
-                <h2 className="text-2xl sm:text-3xl font-bold text-navy mb-2">
-                  Apply now
-                </h2>
-                <p className="text-navy/50 text-sm mb-8">
-                  Tell us a little more about you.
-                </p>
-
-                <form className="grid grid-cols-1 sm:grid-cols-2 gap-4" onSubmit={(e) => e.preventDefault()}>
-                  <input
-                    type="text"
-                    placeholder="First name"
-                    className="w-full rounded-full border border-beige-dark bg-white px-5 py-3 text-sm text-navy placeholder:text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Last name"
-                    className="w-full rounded-full border border-beige-dark bg-white px-5 py-3 text-sm text-navy placeholder:text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors"
-                  />
-                  <input
-                    type="email"
-                    placeholder="Email"
-                    className="w-full rounded-full border border-beige-dark bg-white px-5 py-3 text-sm text-navy placeholder:text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors"
-                  />
-                  <input
-                    type="tel"
-                    placeholder="Phone"
-                    className="w-full rounded-full border border-beige-dark bg-white px-5 py-3 text-sm text-navy placeholder:text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors"
-                  />
-
-                  <div className="relative">
-                    <select
-                      defaultValue=""
-                      className="w-full appearance-none rounded-full border border-beige-dark bg-white px-5 py-3 pr-10 text-sm text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors"
-                    >
-                      <option value="" disabled>How did you hear about us?</option>
-                      <option value="search">Search Engine</option>
-                      <option value="social">Social Media</option>
-                      <option value="referral">Referral</option>
-                      <option value="job-board">Job Board</option>
-                      <option value="other">Other</option>
-                    </select>
-                    <svg className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-navy/30" width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <path d="M3.5 5.5L7 9L10.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-
-                  <div className="relative">
-                    <select
-                      defaultValue=""
-                      className="w-full appearance-none rounded-full border border-beige-dark bg-white px-5 py-3 pr-10 text-sm text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors"
-                    >
-                      <option value="" disabled>Are you willing to relocate?</option>
-                      <option value="yes">Yes</option>
-                      <option value="no">No</option>
-                    </select>
-                    <svg className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-navy/30" width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <path d="M3.5 5.5L7 9L10.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-
-                  {/* Hidden field for pre-selected position */}
-                  {jobTitle && <input type="hidden" name="position" value={jobTitle} />}
-
-                  <div className="sm:col-span-2 mt-2">
-                    <p className="text-sm font-semibold text-navy mb-3">Resume Upload</p>
-                    <div className="w-full rounded-2xl border-2 border-dashed border-beige-dark bg-cream/50 px-6 py-8 text-center hover:border-magenta/40 transition-colors cursor-pointer">
-                      <p className="text-sm text-navy/40 mb-2">
-                        Drop files here or
-                      </p>
-                      <span className="inline-flex items-center rounded-full bg-magenta px-5 py-2 text-sm font-semibold text-white">
-                        Select files
-                      </span>
+                {status === "success" ? (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+                      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <path d="M10 16l4 4 8-8" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
                     </div>
-                    <p className="text-xs text-navy/30 mt-2">Max. file size: 25 MB.</p>
-                  </div>
-
-                  <div className="sm:col-span-2 mt-2">
-                    <button
-                      type="submit"
-                      className="w-full rounded-full bg-magenta py-3.5 text-sm font-semibold text-white hover:bg-magenta-dark transition-colors"
-                    >
-                      Submit
+                    <h2 className="text-2xl font-bold text-navy mb-2">Application submitted!</h2>
+                    <p className="text-navy/50 text-sm mb-6">We&rsquo;ll review your application and get back to you soon.</p>
+                    <button onClick={onClose} className="rounded-full bg-navy px-6 py-2.5 text-sm font-semibold text-white hover:bg-navy-light transition-colors">
+                      Close
                     </button>
                   </div>
-                </form>
+                ) : (
+                  <>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-navy mb-2">
+                      Apply now
+                    </h2>
+                    <p className="text-navy/50 text-sm mb-8">
+                      Tell us a little more about you.
+                    </p>
+
+                    <form className="grid grid-cols-1 sm:grid-cols-2 gap-4" onSubmit={handleSubmit}>
+                      <input
+                        type="text"
+                        name="firstName"
+                        value={form.firstName}
+                        onChange={handleChange}
+                        placeholder="First name"
+                        required
+                        className="w-full rounded-full border border-beige-dark bg-white px-5 py-3 text-sm text-navy placeholder:text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors"
+                      />
+                      <input
+                        type="text"
+                        name="lastName"
+                        value={form.lastName}
+                        onChange={handleChange}
+                        placeholder="Last name"
+                        required
+                        className="w-full rounded-full border border-beige-dark bg-white px-5 py-3 text-sm text-navy placeholder:text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors"
+                      />
+                      <input
+                        type="email"
+                        name="email"
+                        value={form.email}
+                        onChange={handleChange}
+                        placeholder="Email"
+                        required
+                        className="w-full rounded-full border border-beige-dark bg-white px-5 py-3 text-sm text-navy placeholder:text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors"
+                      />
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={form.phone}
+                        onChange={handleChange}
+                        placeholder="Phone"
+                        required
+                        className="w-full rounded-full border border-beige-dark bg-white px-5 py-3 text-sm text-navy placeholder:text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors"
+                      />
+
+                      <div className="relative">
+                        <select
+                          name="referralSource"
+                          value={form.referralSource}
+                          onChange={handleChange}
+                          className="w-full appearance-none rounded-full border border-beige-dark bg-white px-5 py-3 pr-10 text-sm text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors"
+                        >
+                          <option value="" disabled>How did you hear about us?</option>
+                          <option value="search">Search Engine</option>
+                          <option value="social">Social Media</option>
+                          <option value="referral">Referral</option>
+                          <option value="job-board">Job Board</option>
+                          <option value="other">Other</option>
+                        </select>
+                        <svg className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-navy/30" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                          <path d="M3.5 5.5L7 9L10.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </div>
+
+                      <div className="relative">
+                        <select
+                          name="willingToRelocate"
+                          value={form.willingToRelocate}
+                          onChange={handleChange}
+                          className="w-full appearance-none rounded-full border border-beige-dark bg-white px-5 py-3 pr-10 text-sm text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors"
+                        >
+                          <option value="" disabled>Are you willing to relocate?</option>
+                          <option value="yes">Yes</option>
+                          <option value="no">No</option>
+                        </select>
+                        <svg className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-navy/30" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                          <path d="M3.5 5.5L7 9L10.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </div>
+
+                      <div className="sm:col-span-2 mt-2">
+                        <p className="text-sm font-semibold text-navy mb-3">Resume Upload</p>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept=".pdf,.doc,.docx"
+                          className="hidden"
+                          onChange={(e) => setResume(e.target.files?.[0] || null)}
+                        />
+                        <div
+                          className="w-full rounded-2xl border-2 border-dashed border-beige-dark bg-cream/50 px-6 py-8 text-center hover:border-magenta/40 transition-colors cursor-pointer"
+                          onClick={() => fileInputRef.current?.click()}
+                          onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const file = e.dataTransfer.files[0];
+                            if (file) setResume(file);
+                          }}
+                        >
+                          {resume ? (
+                            <p className="text-sm text-navy font-medium">{resume.name}</p>
+                          ) : (
+                            <>
+                              <p className="text-sm text-navy/40 mb-2">
+                                Drop files here or
+                              </p>
+                              <span className="inline-flex items-center rounded-full bg-magenta px-5 py-2 text-sm font-semibold text-white">
+                                Select files
+                              </span>
+                            </>
+                          )}
+                        </div>
+                        <p className="text-xs text-navy/30 mt-2">Max. file size: 25 MB. PDF, DOC, DOCX.</p>
+                      </div>
+
+                      {status === "error" && (
+                        <div className="sm:col-span-2">
+                          <p className="text-sm text-red-600 bg-red-50 rounded-lg px-4 py-2">{errorMsg}</p>
+                        </div>
+                      )}
+
+                      <div className="sm:col-span-2 mt-2">
+                        <button
+                          type="submit"
+                          disabled={status === "loading"}
+                          className="w-full rounded-full bg-magenta py-3.5 text-sm font-semibold text-white hover:bg-magenta-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                          {status === "loading" ? "Submitting..." : "Submit"}
+                        </button>
+                      </div>
+                    </form>
+                  </>
+                )}
               </div>
             </motion.div>
           </div>
