@@ -7,7 +7,7 @@ const stats = [
   { value: 5000, suffix: "+", label: "Trusted Providers" },
   { text: "Multi", label: "State Licensed" },
   { value: 500000, suffix: "+", label: "Prescriptions Filled" },
-  { text: "Licensed", label: "Pharmacy" },
+  { value: 10, suffix: "+", label: "Years in Business" },
 ];
 
 function AnimatedNumber({ target, suffix, inView }: { target: number; suffix: string; inView: boolean }) {
