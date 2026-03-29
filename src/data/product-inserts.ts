@@ -36,6 +36,10 @@ export const productInserts: ProductInsert[] = [
           "Before starting, gather all supplies: your prescribed medication vial, an alcohol swab, a drawing needle (typically 18G), an injection needle (typically 22–25G, 1–1.5 inches), a syringe of appropriate volume, a sharps disposal container, and a clean bandage or cotton ball.",
           "Ensure all packaging is intact and that the medication has not expired. Check the solution for any discoloration, particles, or cloudiness. If anything appears abnormal, do not use the medication and contact Logos RX or your provider.",
         ],
+        image: {
+          src: "/images/product-inserts/insert-fig1-supplies.png",
+          alt: "Figure 1: Required supplies for injectable medication including medication vial, diluent, syringe, sharps container, alcohol swabs, and adhesive bandages",
+        },
       },
       {
         title: "Preparation",
@@ -46,6 +50,10 @@ export const productInserts: ProductInsert[] = [
           "Step 4: Insert the drawing needle into the vial and push the air in. Invert the vial and slowly draw the medication to the prescribed dose. Tap the syringe gently to move air bubbles to the top, then push the plunger slightly to expel any air.",
           "Step 5: Remove the drawing needle and replace it with the injection needle. Do not touch the needle tip.",
         ],
+        image: {
+          src: "/images/product-inserts/insert-fig2-syringe-draw.png",
+          alt: "Figure 2: Syringe with measurement markings and technique for drawing medication from an inverted vial",
+        },
       },
       {
         title: "Injection Site Selection",
@@ -57,8 +65,8 @@ export const productInserts: ProductInsert[] = [
           "Rotate injection sites with each dose to prevent tissue irritation, scarring, or lipodystrophy.",
         ],
         image: {
-          src: "/images/product-inserts/im-injection-sites.png",
-          alt: "Intramuscular injection site diagram showing deltoid, vastus lateralis, and ventrogluteal sites with 90-degree needle angle",
+          src: "/images/product-inserts/insert-fig5-im-sites.png",
+          alt: "Figure 5: Intramuscular injection sites showing deltoid, vastus lateralis, and ventrogluteal on front and side body views",
         },
       },
       {
@@ -72,8 +80,8 @@ export const productInserts: ProductInsert[] = [
           "Step 6: Apply gentle pressure to the site with a cotton ball or bandage. Do not rub the injection site.",
         ],
         image: {
-          src: "/images/product-inserts/im-injection-steps.png",
-          alt: "Step-by-step intramuscular injection technique showing hand washing, vial preparation, drawing medication, cleaning site, inserting needle at 90 degrees, and applying bandage",
+          src: "/images/product-inserts/insert-fig3-angles.png",
+          alt: "Figure 4: Injection technique showing 90-degree and 45-degree needle angles with skin cross-section showing subcutaneous and muscle layers",
         },
       },
       {
@@ -89,6 +97,10 @@ export const productInserts: ProductInsert[] = [
           "Store your medication as directed on the label — most injectable medications should be kept at room temperature (68–77°F) and away from direct sunlight. Some medications require refrigeration; refer to your specific product label.",
           "Dispose of all used needles and syringes immediately in an FDA-cleared sharps container. Never recap, bend, or break needles. When the sharps container is three-quarters full, seal it and follow your community's disposal guidelines or contact Logos RX for assistance.",
         ],
+        image: {
+          src: "/images/product-inserts/insert-fig6-disposal.png",
+          alt: "Figure 7: Proper sharps disposal technique showing hand dropping used syringe into biohazard sharps container",
+        },
       },
       {
         title: "When to Contact Your Provider",
@@ -118,6 +130,10 @@ export const productInserts: ProductInsert[] = [
           "Before starting, gather all supplies: your prescribed medication vial, an alcohol swab, a subcutaneous needle (typically 25–30G, ½–⅝ inch), a syringe of appropriate volume, a sharps disposal container, and a clean bandage or cotton ball.",
           "Ensure all packaging is intact and that the medication has not expired. Inspect the solution for any discoloration, particles, or cloudiness. If anything appears abnormal, do not use the medication and contact Logos RX or your provider.",
         ],
+        image: {
+          src: "/images/product-inserts/insert-fig1-supplies.png",
+          alt: "Figure 1: Required supplies for injectable medication including medication vial, diluent, syringe, sharps container, alcohol swabs, and adhesive bandages",
+        },
       },
       {
         title: "Preparation",
@@ -128,6 +144,10 @@ export const productInserts: ProductInsert[] = [
           "Step 4: Insert the needle into the vial and push the air in. Invert the vial and slowly draw the medication to the prescribed dose. Tap the syringe gently to move air bubbles to the top, then push the plunger slightly to expel any air.",
           "Step 5: Remove the needle from the vial. If using a separate injection needle, swap it now. Do not touch the needle tip.",
         ],
+        image: {
+          src: "/images/product-inserts/insert-fig2-syringe-draw.png",
+          alt: "Figure 2: Syringe with measurement markings and technique for drawing medication from an inverted vial",
+        },
       },
       {
         title: "Injection Site Selection",
@@ -139,8 +159,8 @@ export const productInserts: ProductInsert[] = [
           "Rotate injection sites systematically — for example, use different quadrants of the abdomen or alternate between left and right sides. Keep at least 1 inch between injection points to prevent tissue changes.",
         ],
         image: {
-          src: "/images/product-inserts/subq-injection-sites.png",
-          alt: "Subcutaneous injection site diagram showing abdomen, front/outer thigh, and back of upper arm sites with 45-degree needle angle",
+          src: "/images/product-inserts/insert-fig4-subq-sites.png",
+          alt: "Figure 5: Subcutaneous injection sites showing abdomen, upper thigh, and upper arm on front and back body views",
         },
       },
       {
@@ -154,8 +174,8 @@ export const productInserts: ProductInsert[] = [
           "Step 6: Apply gentle pressure with a cotton ball or bandage. Do not rub the site, as this can affect absorption.",
         ],
         image: {
-          src: "/images/product-inserts/subq-injection-steps.png",
-          alt: "Step-by-step subcutaneous injection technique showing gathering supplies, drawing medication, pinching skin, inserting needle at 45 degrees, injecting, and applying pressure",
+          src: "/images/product-inserts/insert-fig3-angles.png",
+          alt: "Figure 4: Injection technique showing 90-degree and 45-degree needle angles with skin cross-section and pinching technique",
         },
       },
       {
@@ -171,6 +191,10 @@ export const productInserts: ProductInsert[] = [
           "Store your medication as directed on the label. Most SubQ medications should be kept at room temperature (68–77°F) away from direct sunlight, though some may require refrigeration. Always check your specific product label for storage instructions.",
           "Dispose of all used needles and syringes immediately in an FDA-cleared sharps container. Never recap, bend, or break needles. When the container is three-quarters full, seal it and follow your community's disposal guidelines or contact Logos RX for assistance.",
         ],
+        image: {
+          src: "/images/product-inserts/insert-fig6-disposal.png",
+          alt: "Figure 7: Proper sharps disposal technique showing hand dropping used syringe into biohazard sharps container",
+        },
       },
       {
         title: "When to Contact Your Provider",
