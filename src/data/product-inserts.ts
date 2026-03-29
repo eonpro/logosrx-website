@@ -38,7 +38,7 @@ export const productInserts: ProductInsert[] = [
         ],
         image: {
           src: "/images/product-inserts/insert-fig1-supplies.png",
-          alt: "Figure 1: Required supplies for injectable medication including medication vial, diluent, syringe, sharps container, alcohol swabs, and adhesive bandages",
+          alt: "Figure 1: Required supplies for injectable medication including pre-mixed medication vial, syringe, sharps container, alcohol swabs, and adhesive bandage",
         },
       },
       {
@@ -132,7 +132,7 @@ export const productInserts: ProductInsert[] = [
         ],
         image: {
           src: "/images/product-inserts/insert-fig1-supplies.png",
-          alt: "Figure 1: Required supplies for injectable medication including medication vial, diluent, syringe, sharps container, alcohol swabs, and adhesive bandages",
+          alt: "Figure 1: Required supplies for injectable medication including pre-mixed medication vial, syringe, sharps container, alcohol swabs, and adhesive bandage",
         },
       },
       {
