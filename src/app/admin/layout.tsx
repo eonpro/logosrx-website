@@ -22,7 +22,7 @@ const navItems = [
     href: "/admin/applications",
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M14 2H6a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2z" strokeLinecap="round" />
+        <path d="M14 2H6a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 00-2-2z" strokeLinecap="round" />
         <path d="M7 7h6M7 10h6M7 13h4" strokeLinecap="round" />
       </svg>
     ),
@@ -54,10 +54,14 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const isSignInPage = pathname.startsWith("/admin/sign-in");
+
+  if (isSignInPage) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="flex min-h-screen bg-cream">
-      {/* Sidebar */}
       <aside className="fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-navy-deep text-white">
         <div className="flex h-16 items-center gap-3 px-6 border-b border-white/10">
           <div className="w-8 h-8 rounded-lg bg-magenta flex items-center justify-center font-bold text-sm">
@@ -109,7 +113,6 @@ export default function AdminLayout({
         </div>
       </aside>
 
-      {/* Main content */}
       <div className="flex-1 pl-64">
         <main className="p-8">{children}</main>
       </div>
