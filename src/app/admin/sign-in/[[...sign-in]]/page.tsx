@@ -1,6 +1,7 @@
 "use client";
 
 import { SignIn } from "@clerk/nextjs";
+import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
@@ -60,30 +61,29 @@ export default function AdminSignInPage() {
       />
 
       {/* Content */}
-      <div className="relative z-10 w-full max-w-[460px] px-6">
-        {/* Logo + brand */}
+      <div className="relative z-10 w-full max-w-[420px] px-6">
+        {/* Logo */}
         <motion.div
-          className="mb-10 text-center"
+          className="mb-10 flex flex-col items-center"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-linear-to-br from-magenta to-purple-deep mb-5 shadow-[0_0_60px_rgba(198,46,136,0.3)]">
-            <span className="text-white font-bold text-lg tracking-wide">
-              LX
-            </span>
-          </div>
-          <h1 className="text-[28px] font-bold text-white tracking-tight">
-            Logos RX
-          </h1>
-          <p className="text-white/30 text-sm mt-1 tracking-wide uppercase font-medium">
+          <Image
+            src="/images/logo-white.svg"
+            alt="Logos RX"
+            width={200}
+            height={64}
+            className="h-14 w-auto mb-4"
+            priority
+          />
+          <p className="text-white/25 text-[11px] tracking-[0.25em] uppercase font-medium">
             Admin Portal
           </p>
         </motion.div>
 
-        {/* Glass card */}
+        {/* Sign-in form — no card, fully transparent */}
         <motion.div
-          className="rounded-2xl border border-white/8 bg-white/4 p-8 backdrop-blur-xl shadow-[0_32px_64px_rgba(0,0,0,0.4)]"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.15 }}
@@ -96,33 +96,46 @@ export default function AdminSignInPage() {
             appearance={{
               elements: {
                 rootBox: "w-full",
-                cardBox: "shadow-none w-full border-0 bg-transparent",
-                card: "shadow-none w-full p-0 bg-transparent gap-6",
+                cardBox:
+                  "!shadow-none w-full !border-0 !bg-transparent !rounded-none",
+                card: "!shadow-none w-full !p-0 !bg-transparent !border-0 !rounded-none gap-5",
+                header: "hidden",
                 headerTitle: "hidden",
                 headerSubtitle: "hidden",
+                logoBox: "hidden",
                 socialButtonsBlockButton:
-                  "border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-200 text-white/90 font-medium rounded-xl h-12 backdrop-blur-sm",
+                  "!border !border-white/10 !bg-white/5 hover:!bg-white/10 transition-all duration-200 !text-white/90 font-medium !rounded-xl !h-12",
                 socialButtonsBlockButtonText:
-                  "text-white/90 font-medium text-[14px]",
-                socialButtonsBlockButtonArrow: "text-white/40",
-                dividerLine: "bg-white/8",
-                dividerText: "text-white/20 text-xs uppercase tracking-widest",
+                  "!text-white/90 font-medium !text-[14px]",
+                socialButtonsBlockButtonArrow: "!text-white/40",
+                dividerLine: "!bg-white/8",
+                dividerText:
+                  "!text-white/20 !text-xs uppercase tracking-[0.15em]",
                 formFieldLabel:
-                  "text-white/50 font-medium text-xs uppercase tracking-wider",
+                  "!text-white/40 font-medium !text-xs uppercase tracking-wider",
                 formFieldInput:
-                  "border-white/10 bg-white/5 focus:border-magenta focus:ring-1 focus:ring-magenta/30 rounded-xl h-12 text-white placeholder:text-white/20 backdrop-blur-sm",
-                formFieldInputShowPasswordButton: "text-white/30 hover:text-white/60",
+                  "!border-white/10 !bg-white/5 focus:!border-magenta focus:!ring-1 focus:!ring-magenta/30 !rounded-xl !h-12 !text-white placeholder:!text-white/20",
+                formFieldInputShowPasswordButton:
+                  "!text-white/30 hover:!text-white/60",
                 formButtonPrimary:
-                  "bg-gradient-to-r from-magenta to-magenta-dark hover:from-magenta-dark hover:to-magenta text-white font-semibold rounded-xl shadow-[0_0_24px_rgba(198,46,136,0.3)] hover:shadow-[0_0_32px_rgba(198,46,136,0.5)] transition-all duration-300 h-12 text-[15px]",
+                  "!bg-gradient-to-r !from-magenta !to-magenta-dark hover:!from-magenta-dark hover:!to-magenta !text-white font-semibold !rounded-xl !shadow-[0_0_24px_rgba(198,46,136,0.3)] hover:!shadow-[0_0_32px_rgba(198,46,136,0.5)] transition-all duration-300 !h-12 !text-[15px]",
                 footerAction: "hidden",
                 footer: "hidden",
-                formFieldAction: "text-magenta-light hover:text-magenta text-xs",
+                formFieldAction:
+                  "!text-magenta-light hover:!text-magenta !text-xs",
                 identityPreviewEditButton:
-                  "text-magenta-light hover:text-magenta",
-                identityPreviewText: "text-white/70",
-                formResendCodeLink: "text-magenta-light hover:text-magenta",
-                alert: "bg-red-500/10 border border-red-500/20 text-red-300 rounded-xl",
-                alertText: "text-red-300",
+                  "!text-magenta-light hover:!text-magenta",
+                identityPreviewText: "!text-white/70",
+                formResendCodeLink:
+                  "!text-magenta-light hover:!text-magenta",
+                alert:
+                  "!bg-red-500/10 !border !border-red-500/20 !text-red-300 !rounded-xl",
+                alertText: "!text-red-300",
+                otpCodeFieldInput:
+                  "!border-white/10 !bg-white/5 !text-white !rounded-lg",
+                formHeaderTitle: "!text-white",
+                formHeaderSubtitle: "!text-white/50",
+                backLink: "!text-magenta-light hover:!text-magenta",
               },
             }}
           />
@@ -130,12 +143,11 @@ export default function AdminSignInPage() {
 
         {/* Footer */}
         <motion.div
-          className="mt-8 flex flex-col items-center gap-5"
+          className="mt-12 flex flex-col items-center gap-5"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.3 }}
         >
-          {/* Trust indicators */}
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-1.5 text-white/15">
               <svg
