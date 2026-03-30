@@ -10,7 +10,7 @@ function VialPlaceholder({ name }: { name: string }) {
   return (
     <div className="relative w-16 h-40 rounded-lg bg-gradient-to-b from-magenta/80 via-purple-deep/70 to-navy-deep/90 flex flex-col items-center shadow-lg">
       <div className="w-7 h-4 rounded-t-md bg-magenta-light/80 -mt-px" />
-      <div className="flex-1 w-[calc(100%-6px)] rounded-b-md bg-white/10 backdrop-blur-sm mt-1 flex items-center justify-center">
+      <div className="flex-1 w-[calc(100%-6px)] rounded-b-md bg-white/10 mt-1 flex items-center justify-center">
         <div className="text-center text-white/80">
           <p className="text-[7px] font-bold tracking-wider uppercase">
             Logos RX
@@ -28,7 +28,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   return (
     <Link
       href={`/products/${product.slug}`}
-      className="group relative flex flex-col rounded-2xl bg-beige overflow-hidden transition-all duration-500 ease-out hover:bg-beige-dark"
+      className="group relative flex flex-col rounded-2xl bg-beige overflow-hidden transition-colors duration-500 ease-out hover:bg-beige-dark"
     >
       {product.badge && (
         <span className="absolute top-4 left-4 z-10 rounded-full bg-magenta px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">
@@ -39,7 +39,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       {/* Image area — product floating in center */}
       <div className="relative h-72 flex items-center justify-center">
         {hasImage ? (
-          <div className="relative transition-all duration-500 ease-out group-hover:scale-[1.08] group-hover:-translate-y-1.5">
+          <div className="relative transition-transform duration-500 ease-out group-hover:scale-[1.08] group-hover:-translate-y-1.5">
             <Image
               src={product.image}
               alt={product.name}
@@ -47,12 +47,12 @@ export default function ProductCard({ product }: ProductCardProps) {
               height={200}
               className="relative z-10 h-44 w-auto object-contain"
             />
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-24 h-5 rounded-[50%] bg-black/15 blur-xl transition-all duration-500 ease-out group-hover:w-32 group-hover:bg-black/20 group-hover:blur-2xl" />
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-24 h-5 rounded-[50%] bg-black/10 blur-md transition-[width] duration-500 ease-out group-hover:w-32" />
           </div>
         ) : (
-          <div className="relative transition-all duration-500 ease-out group-hover:scale-[1.08] group-hover:-translate-y-1.5">
+          <div className="relative transition-transform duration-500 ease-out group-hover:scale-[1.08] group-hover:-translate-y-1.5">
             <VialPlaceholder name={product.name} />
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-20 h-5 rounded-[50%] bg-black/15 blur-xl transition-all duration-500 ease-out group-hover:w-28 group-hover:bg-black/20 group-hover:blur-2xl" />
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-20 h-5 rounded-[50%] bg-black/10 blur-md transition-[width] duration-500 ease-out group-hover:w-28" />
           </div>
         )}
       </div>

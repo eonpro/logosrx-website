@@ -1,8 +1,30 @@
 "use client";
 
+import { useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 
 export default function DrivenByExcellence() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          video.play();
+        } else {
+          video.pause();
+        }
+      },
+      { threshold: 0.25 },
+    );
+
+    observer.observe(video);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <section id="services" className="bg-white py-24 sm:py-32 overflow-hidden">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -15,10 +37,11 @@ export default function DrivenByExcellence() {
             className="relative aspect-[4/3] rounded-3xl overflow-hidden bg-navy-deep"
           >
             <video
-              autoPlay
+              ref={videoRef}
               loop
               muted
               playsInline
+              preload="none"
               className="absolute inset-0 w-full h-full object-cover"
             >
               <source

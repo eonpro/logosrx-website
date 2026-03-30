@@ -14,21 +14,7 @@ export default function Header() {
     const darkSections = document.querySelectorAll("[data-header-theme='dark']");
     if (!darkSections.length) return;
 
-    const observer = new IntersectionObserver(
-      () => {
-        const headerBottom = 80;
-        const hit = Array.from(darkSections).some((sec) => {
-          const rect = sec.getBoundingClientRect();
-          return rect.top < headerBottom && rect.bottom > 0;
-        });
-        setOnDark(hit);
-      },
-      { threshold: [0, 0.01, 0.1, 0.5, 1] },
-    );
-
-    darkSections.forEach((sec) => observer.observe(sec));
-
-    const onScroll = () => {
+    const check = () => {
       const headerBottom = 80;
       const hit = Array.from(darkSections).some((sec) => {
         const rect = sec.getBoundingClientRect();
@@ -36,17 +22,20 @@ export default function Header() {
       });
       setOnDark(hit);
     };
-    window.addEventListener("scroll", onScroll, { passive: true });
 
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("scroll", onScroll);
-    };
+    const observer = new IntersectionObserver(check, {
+      rootMargin: "-1px 0px -90% 0px",
+      threshold: [0, 0.01, 0.1, 0.5, 1],
+    });
+
+    darkSections.forEach((sec) => observer.observe(sec));
+
+    return () => observer.disconnect();
   }, []);
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/0 border-b border-white/10 transition-colors duration-300">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 border-b border-white/10 transition-colors duration-300 supports-backdrop-filter:backdrop-blur-md supports-backdrop-filter:bg-white/60">
         <div className="mx-auto max-w-7xl flex items-center justify-between px-6 py-4 lg:px-8">
           <Link href="/" className="relative flex items-center gap-2" aria-label={SITE.name}>
             <Image
