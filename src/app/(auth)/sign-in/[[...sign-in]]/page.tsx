@@ -4,14 +4,14 @@ import { SignIn } from "@clerk/nextjs";
 import AuthShell from "@/components/auth/AuthShell";
 import { clerkDarkAppearance } from "@/components/auth/clerk-dark-appearance";
 
-export default function AdminSignInPage() {
+export default function SignInPage() {
   return (
-    <AuthShell subtitle="Admin Portal">
+    <AuthShell>
       <SignIn
         routing="path"
-        path="/admin/sign-in"
-        signUpUrl={undefined}
-        forceRedirectUrl="/admin"
+        path="/sign-in"
+        signUpUrl="/sign-up"
+        forceRedirectUrl="/"
         appearance={clerkDarkAppearance}
       />
     </AuthShell>

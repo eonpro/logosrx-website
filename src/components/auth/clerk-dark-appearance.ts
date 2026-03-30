@@ -1,0 +1,45 @@
+export const clerkDarkAppearance = {
+  elements: {
+    rootBox: "w-full clerk-dark-form",
+    cardBox: "!shadow-none w-full !border-0 !bg-transparent !rounded-none",
+    card: "!shadow-none w-full !p-0 !bg-transparent !border-0 !rounded-none gap-5",
+    header: "hidden",
+    headerTitle: "hidden",
+    headerSubtitle: "hidden",
+    logoBox: "hidden",
+    logoImage: "hidden",
+    socialButtonsBlockButton:
+      "!border !border-white/10 !bg-white/5 hover:!bg-white/10 transition-all duration-200 !text-white/90 font-medium !rounded-xl !h-12",
+    socialButtonsBlockButtonText: "!text-white/90 font-medium !text-[14px]",
+    socialButtonsBlockButtonArrow: "!text-white/40",
+    dividerLine: "!bg-white/8",
+    dividerText: "!text-white/20 !text-xs uppercase tracking-[0.15em]",
+    formFieldLabel:
+      "!text-white/40 font-medium !text-xs uppercase tracking-wider",
+    formFieldInput:
+      "!border-white/10 !bg-white/5 focus:!border-magenta focus:!ring-1 focus:!ring-magenta/30 !rounded-xl !h-12 !text-white placeholder:!text-white/20",
+    formFieldInputShowPasswordButton: "!text-white/30 hover:!text-white/60",
+    formButtonPrimary:
+      "!bg-gradient-to-r !from-magenta !to-magenta-dark hover:!from-magenta-dark hover:!to-magenta !text-white font-semibold !rounded-xl !shadow-[0_0_24px_rgba(198,46,136,0.3)] hover:!shadow-[0_0_32px_rgba(198,46,136,0.5)] transition-all duration-300 !h-12 !text-[15px]",
+    footerAction: "hidden",
+    footer: "hidden",
+    formFieldAction: "!text-magenta-light hover:!text-magenta !text-xs",
+    identityPreviewEditButton: "!text-magenta-light hover:!text-magenta",
+    identityPreviewText: "!text-white/70",
+    formResendCodeLink: "!text-magenta-light hover:!text-magenta",
+    alert: "!bg-red-500/10 !border !border-red-500/20 !text-red-300 !rounded-xl",
+    alertText: "!text-red-300",
+    otpCodeFieldInput: "!border-white/10 !bg-white/5 !text-white !rounded-lg",
+    formHeaderTitle: "!text-white",
+    formHeaderSubtitle: "!text-white/50",
+    backLink: "!text-magenta-light hover:!text-magenta",
+    phoneInputBox: "!border-white/10 !bg-white/5 !rounded-xl",
+    formFieldInputGroup: "!border-white/10 !bg-white/5 !rounded-xl",
+    selectButton: "!text-white/70 !border-white/10 hover:!bg-white/10",
+    selectButtonIcon: "!text-white/50",
+    selectSearchInput:
+      "!text-white !bg-white/5 !border-white/10 placeholder:!text-white/30",
+    selectOptionsContainer: "!bg-[#1a1750] !border-white/10 !rounded-xl",
+    selectOption: "!text-white/70 hover:!bg-white/10 hover:!text-white",
+  },
+} as const;
