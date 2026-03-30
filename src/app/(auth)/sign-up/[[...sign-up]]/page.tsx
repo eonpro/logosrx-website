@@ -6,7 +6,13 @@ import { clerkDarkAppearance } from "@/components/auth/clerk-dark-appearance";
 
 export default function SignUpPage() {
   return (
-    <AuthShell>
+    <AuthShell
+      footerLink={{
+        text: "Already have an account?",
+        label: "Sign in",
+        href: "/sign-in",
+      }}
+    >
       <SignUp
         routing="path"
         path="/sign-up"

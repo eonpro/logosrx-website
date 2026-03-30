@@ -32,9 +32,11 @@ function GradientOrb({
 export default function AuthShell({
   children,
   subtitle,
+  footerLink,
 }: {
   children: React.ReactNode;
   subtitle?: string;
+  footerLink?: { label: string; text: string; href: string };
 }) {
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0c0a1d]">
@@ -94,11 +96,22 @@ export default function AuthShell({
         </motion.div>
 
         <motion.div
-          className="mt-12 flex flex-col items-center gap-5"
+          className="mt-10 flex flex-col items-center gap-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.3 }}
         >
+          {footerLink && (
+            <p className="text-sm text-white/30">
+              {footerLink.text}{" "}
+              <Link
+                href={footerLink.href}
+                className="text-magenta-light hover:text-white transition-colors font-medium"
+              >
+                {footerLink.label}
+              </Link>
+            </p>
+          )}
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-1.5 text-white/15">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
