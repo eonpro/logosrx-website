@@ -53,3 +53,93 @@ body {
 .animate-marquee {
   animation: marquee 30s linear infinite;
 }
+
+/* Clerk dark form overrides for phone input & country selector */
+.clerk-dark-form .cl-phoneInputBox,
+.clerk-dark-form .cl-formFieldInputGroup {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-radius: 0.75rem !important;
+}
+
+.clerk-dark-form .cl-selectButton {
+  color: rgba(255, 255, 255, 0.7) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.clerk-dark-form .cl-selectButton:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.clerk-dark-form .cl-selectButton__phoneCode {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.clerk-dark-form .cl-selectButtonIcon {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.clerk-dark-form .cl-formFieldInput__phoneNumber {
+  color: white !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: transparent !important;
+}
+
+.clerk-dark-form .cl-formFieldInput__phoneNumber::placeholder {
+  color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.clerk-dark-form .cl-selectOptionsContainer {
+  background: #1a1750 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 0.75rem !important;
+}
+
+.clerk-dark-form .cl-selectOption {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.clerk-dark-form .cl-selectOption:hover,
+.clerk-dark-form .cl-selectOption[data-focused="true"] {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+}
+
+.clerk-dark-form .cl-selectSearchInput {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.clerk-dark-form .cl-selectSearchInput::placeholder {
+  color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.clerk-dark-form .cl-internal-b3fm6y,
+.clerk-dark-form [class*="cl-internal"] {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.clerk-dark-form .cl-logoBox,
+.clerk-dark-form .cl-logoImage {
+  display: none !important;
+}
+
+.clerk-dark-form .cl-formFieldInputShowPasswordButton,
+.clerk-dark-form .cl-formFieldAction {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.clerk-dark-form .cl-formFieldAction:hover {
+  color: var(--color-magenta-light) !important;
+}
+
+.clerk-dark-form .cl-alternativeMethodsBlockButton {
+  color: rgba(255, 255, 255, 0.6) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.clerk-dark-form .cl-alternativeMethodsBlockButton:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: white !important;
+}

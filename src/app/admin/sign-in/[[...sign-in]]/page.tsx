@@ -95,7 +95,7 @@ export default function AdminSignInPage() {
             forceRedirectUrl="/admin"
             appearance={{
               elements: {
-                rootBox: "w-full",
+                rootBox: "w-full clerk-dark-form",
                 cardBox:
                   "!shadow-none w-full !border-0 !bg-transparent !rounded-none",
                 card: "!shadow-none w-full !p-0 !bg-transparent !border-0 !rounded-none gap-5",
@@ -103,6 +103,7 @@ export default function AdminSignInPage() {
                 headerTitle: "hidden",
                 headerSubtitle: "hidden",
                 logoBox: "hidden",
+                logoImage: "hidden",
                 socialButtonsBlockButton:
                   "!border !border-white/10 !bg-white/5 hover:!bg-white/10 transition-all duration-200 !text-white/90 font-medium !rounded-xl !h-12",
                 socialButtonsBlockButtonText:
@@ -136,6 +137,18 @@ export default function AdminSignInPage() {
                 formHeaderTitle: "!text-white",
                 formHeaderSubtitle: "!text-white/50",
                 backLink: "!text-magenta-light hover:!text-magenta",
+                phoneInputBox: "!border-white/10 !bg-white/5 !rounded-xl",
+                formFieldInputGroup:
+                  "!border-white/10 !bg-white/5 !rounded-xl",
+                selectButton:
+                  "!text-white/70 !border-white/10 hover:!bg-white/10",
+                selectButtonIcon: "!text-white/50",
+                selectSearchInput:
+                  "!text-white !bg-white/5 !border-white/10 placeholder:!text-white/30",
+                selectOptionsContainer:
+                  "!bg-[#1a1750] !border-white/10 !rounded-xl",
+                selectOption:
+                  "!text-white/70 hover:!bg-white/10 hover:!text-white",
               },
             }}
           />
