@@ -38,7 +38,7 @@ export const products: Product[] = [
     category: "IV Therapy & Supplements",
     description:
       "A powerful intracellular antioxidant present in almost every human cell, Glutathione plays a crucial role in neutralizing oxidative stress, strengthening immune defense, aiding liver detoxification, and regulating inflammatory processes to promote overall cellular health and resilience.",
-    image: "/images/products/glutathione.png",
+    image: "/images/products/glutathione-vial.webp",
     concentration: "200mg/mL",
     form: "Injectable",
     size: "30mL",
