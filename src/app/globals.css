@@ -143,3 +143,13 @@ body {
   background: rgba(255, 255, 255, 0.05) !important;
   color: white !important;
 }
+
+.clerk-dark-form .cl-footer,
+.clerk-dark-form .cl-footerAction,
+.clerk-dark-form .cl-footerActionLink,
+.clerk-dark-form .cl-footerActionText,
+.clerk-dark-form .cl-footerPages,
+.clerk-dark-form .cl-footerPagesLink,
+.clerk-dark-form [class*="cl-footer"] {
+  display: none !important;
+}
