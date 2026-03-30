@@ -122,6 +122,18 @@ export default function MobileMenu({ open, onClose }: MobileMenuProps) {
               </a>
 
               <a
+                href="https://host4.lifefile.net/logospharmacy/doctor"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full py-3.5 rounded-full border-2 border-magenta text-magenta text-sm font-semibold hover:bg-magenta hover:text-white transition-colors"
+              >
+                EXISTING PROVIDER
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M3 1.5L9 6L3 10.5V1.5Z" fill="currentColor" />
+                </svg>
+              </a>
+
+              <a
                 href="/sign-in"
                 className="flex items-center justify-center gap-2 w-full py-3.5 rounded-full border-2 border-navy text-navy text-sm font-semibold hover:bg-navy hover:text-white transition-colors"
               >
