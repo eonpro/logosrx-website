@@ -41,7 +41,7 @@ export const products: Product[] = [
     image: "/images/products/glutathione-vial.webp",
     concentration: "200mg/mL",
     form: "Injectable",
-    size: "30mL",
+    size: "10mL",
     activeIngredient: {
       name: "L-Glutathione (Reduced)",
       description:
@@ -49,7 +49,7 @@ export const products: Product[] = [
     },
     details: [
       { label: "How to Use", content: "Administer as directed by your healthcare provider. For intramuscular or intravenous use only." },
-      { label: "Size", content: "30mL multi-dose vial" },
+      { label: "Size", content: "10mL vial" },
       { label: "Concentration", content: "200mg/mL" },
       { label: "Schedule", content: "As prescribed by your healthcare provider" },
       { label: "BUD", content: "Please refer to the vial label for the beyond-use date." },
