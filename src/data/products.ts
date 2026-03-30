@@ -64,9 +64,9 @@ export const products: Product[] = [
     badge: "Very Popular",
     sku: "364215376135191",
     image: "/images/products/nad-vial.webp",
-    concentration: "40mg/mL",
+    concentration: "100mg/mL",
     form: "Injectable",
-    size: "30mL",
+    size: "10mL",
     activeIngredient: {
       name: "Nicotinamide Adenine Dinucleotide (NAD+)",
       description:
@@ -74,8 +74,8 @@ export const products: Product[] = [
     },
     details: [
       { label: "How to Use", content: "Administer as directed by your healthcare provider. For intravenous use only." },
-      { label: "Size", content: "30mL multi-dose vial" },
-      { label: "Concentration", content: "40mg/mL or 100mg/mL" },
+      { label: "Size", content: "10mL vial" },
+      { label: "Concentration", content: "100mg/mL" },
       { label: "Schedule", content: "As prescribed by your healthcare provider" },
       { label: "BUD", content: "Please refer to the vial label for the beyond-use date." },
     ],
