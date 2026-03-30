@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 import type { Product } from "@/data/products";
 import CollapsibleSection from "./CollapsibleSection";
 import ProductCard from "./ProductCard";
@@ -11,6 +12,8 @@ interface ProductDetailProps {
 }
 
 export default function ProductDetail({ product, relatedProducts }: ProductDetailProps) {
+  const hasImage = product.image && !product.image.endsWith(".png");
+
   return (
     <>
       <section className="bg-white py-16 sm:py-24">
@@ -29,16 +32,28 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
                   </span>
                 )}
 
-                {/* Vial placeholder */}
-                <div className="relative w-28 h-56 rounded-xl bg-gradient-to-b from-magenta/80 via-magenta-dark/70 to-navy-deep/80 shadow-lg flex flex-col items-center">
-                  <div className="w-10 h-6 rounded-t-lg bg-magenta-light mt-[-2px]" />
-                  <div className="flex-1 w-[calc(100%-10px)] rounded-b-lg bg-white/10 backdrop-blur-sm mt-2 flex items-center justify-center">
-                    <div className="text-center text-white/80">
-                      <p className="text-[9px] font-bold tracking-wider uppercase">Logos RX</p>
-                      <p className="text-[7px] mt-0.5 opacity-70">{product.name}</p>
+                {hasImage ? (
+                  <div className="relative">
+                    <Image
+                      src={product.image}
+                      alt={product.name}
+                      width={400}
+                      height={400}
+                      className="relative z-10 h-80 w-auto object-contain drop-shadow-xl"
+                    />
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/5 h-6 rounded-[50%] bg-black/15 blur-lg" />
+                  </div>
+                ) : (
+                  <div className="relative w-28 h-56 rounded-xl bg-gradient-to-b from-magenta/80 via-purple-deep/70 to-navy-deep/90 shadow-lg flex flex-col items-center">
+                    <div className="w-10 h-6 rounded-t-lg bg-magenta-light/80 -mt-px" />
+                    <div className="flex-1 w-[calc(100%-10px)] rounded-b-lg bg-white/10 backdrop-blur-sm mt-2 flex items-center justify-center">
+                      <div className="text-center text-white/80">
+                        <p className="text-[9px] font-bold tracking-wider uppercase">Logos RX</p>
+                        <p className="text-[7px] mt-0.5 opacity-70">{product.name}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Thumbnail dots */}

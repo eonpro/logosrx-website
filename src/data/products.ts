@@ -63,7 +63,7 @@ export const products: Product[] = [
       "NAD+ is an essential molecule that fuels cellular energy, metabolism, and repair mechanisms. Since its natural levels drop over time, replenishing NAD+ may help restore vitality, promote longevity, and strengthen the body's ability to repair and renew itself.",
     badge: "Very Popular",
     sku: "364215376135191",
-    image: "/images/products/nad.png",
+    image: "/images/products/nad.webp",
     concentration: "40mg/mL",
     form: "Injectable",
     size: "30mL",
