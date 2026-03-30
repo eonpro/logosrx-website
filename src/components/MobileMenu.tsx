@@ -63,8 +63,14 @@ export default function MobileMenu({ open, onClose }: MobileMenuProps) {
                     onClick={onClose}
                     className="flex-shrink-0 w-28 rounded-xl bg-beige p-3 text-center hover:bg-beige-dark transition-colors"
                   >
-                    <div className="relative w-16 h-20 mx-auto mb-2">
-                      <div className="w-full h-full rounded-lg bg-gradient-to-br from-magenta/20 to-magenta/5" />
+                    <div className="relative w-16 h-20 mx-auto mb-2 flex items-center justify-center">
+                      <Image
+                        src={product.image}
+                        alt={product.name}
+                        width={56}
+                        height={72}
+                        className="h-16 w-auto object-contain"
+                      />
                     </div>
                     <p className="text-xs font-medium text-navy truncate">{product.name}</p>
                     {product.badge && (

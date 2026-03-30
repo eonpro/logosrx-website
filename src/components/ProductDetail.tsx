@@ -12,7 +12,7 @@ interface ProductDetailProps {
 }
 
 export default function ProductDetail({ product, relatedProducts }: ProductDetailProps) {
-  const hasImage = product.image && !product.image.endsWith(".png");
+  const hasImage = !!product.image;
 
   return (
     <>

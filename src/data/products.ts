@@ -86,7 +86,7 @@ export const products: Product[] = [
     category: "Peptide Therapy",
     description:
       "A bioidentical peptide that mimics the natural growth hormone–releasing hormone (GHRH), Sermorelin works by stimulating the pituitary gland to produce and secrete growth hormone in alignment with the body's natural circadian rhythm. This helps promote balanced growth hormone levels and supports overall metabolic and restorative functions.",
-    image: "/images/products/sermorelin.png",
+    image: "/images/products/sermorelin-vial.webp",
     concentration: "6mg/mL",
     form: "Injectable",
     size: "5mL",

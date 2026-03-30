@@ -23,7 +23,7 @@ function VialPlaceholder({ name }: { name: string }) {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const hasImage = product.image && !product.image.endsWith(".png");
+  const hasImage = !!product.image;
 
   return (
     <Link
