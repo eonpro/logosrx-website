@@ -32,12 +32,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="stylesheet" href="https://use.typekit.net/fcc6pra.css" />
         <JsonLd />
       </head>
-      <body className="min-h-screen flex flex-col">
+      <body className="min-h-screen flex flex-col" suppressHydrationWarning>
         <ClerkProvider>
           <a
             href="#main-content"

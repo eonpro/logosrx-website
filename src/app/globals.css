@@ -16,6 +16,10 @@
   --color-cream: #F5F4F1;
 }
 
+html {
+  position: relative;
+}
+
 html.lenis, html.lenis body {
   height: auto;
 }

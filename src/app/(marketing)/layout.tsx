@@ -11,7 +11,7 @@ export default function MarketingLayout({
     <>
       <SmoothScroll />
       <Header />
-      <main id="main-content" className="flex-1 pt-[72px]">
+      <main id="main-content" className="relative flex-1 pt-[72px]">
         {children}
       </main>
       <Footer />
