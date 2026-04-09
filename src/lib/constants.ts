@@ -29,12 +29,12 @@ export const HOURS = {
 } as const;
 
 export const NAV_LINKS = [
-  { label: "Services", href: "#services" },
-  { label: "Products", href: "#products" },
-  { label: "About Us", href: "#about" },
+  { label: "Services", href: "/#services" },
+  { label: "Products", href: "/#products" },
+  { label: "About Us", href: "/#about" },
   { label: "Support", href: "/support" },
   { label: "Careers", href: "/careers" },
-  { label: "Contact", href: "#contact" },
+  { label: "Contact", href: "/#contact" },
 ] as const;
 
 export const LEGAL_LINKS = [

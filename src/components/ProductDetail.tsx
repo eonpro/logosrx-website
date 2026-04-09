@@ -56,17 +56,6 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
                 )}
               </div>
 
-              {/* Thumbnail dots */}
-              <div className="flex items-center justify-center gap-2 mt-4">
-                {[0, 1, 2, 3, 4].map((i) => (
-                  <div
-                    key={i}
-                    className={`w-2.5 h-2.5 rounded-full transition-colors ${
-                      i === 0 ? "bg-magenta" : "bg-beige-dark"
-                    }`}
-                  />
-                ))}
-              </div>
             </motion.div>
 
             {/* Right — Product Info */}
