@@ -367,6 +367,17 @@ export const catalogProducts: CatalogProduct[] = [
     brand: "Logos RX",
     therapeuticAreas: ["Peptide Therapy"],
   },
+  {
+    id: "glutathione-200mg-5ml",
+    name: "Glutathione 200mg/5mL",
+    strength: "200 mg/mL",
+    form: "Injectable",
+    unit: "Each",
+    pricing: { retail: 50, provider: 40, volume: null },
+    productFamily: ["Peptide Therapy"],
+    brand: "Logos RX",
+    therapeuticAreas: ["Peptide Therapy"],
+  },
 ];
 
 /* ──────────────────────────── Search-param parsing ──────────────────────────── */
