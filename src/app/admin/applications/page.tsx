@@ -4,8 +4,10 @@ import { db } from "@/lib/db";
 import { employmentApplications } from "@/lib/db/schema";
 import { desc } from "drizzle-orm";
 import { ApplicationsTable } from "./ApplicationsTable";
+import { requireAdmin } from "@/lib/auth/admin";
 
 export default async function ApplicationsPage() {
+  await requireAdmin();
   const applications = await db
     .select()
     .from(employmentApplications)
@@ -15,14 +17,14 @@ export default async function ApplicationsPage() {
     <div>
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-navy">Employment Applications</h1>
-        <p className="text-navy/50 text-sm mt-1">
+        <p className="text-navy/70 text-sm mt-1">
           {applications.length} total application{applications.length !== 1 ? "s" : ""}
         </p>
       </div>
 
       {applications.length === 0 ? (
         <div className="rounded-2xl bg-white border border-beige p-12 text-center">
-          <p className="text-navy/40 text-sm">No applications yet.</p>
+          <p className="text-navy/65 text-sm">No applications yet.</p>
         </div>
       ) : (
         <ApplicationsTable applications={applications} />

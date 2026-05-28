@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import MobileMenu from "./MobileMenu";
-import { SITE } from "@/lib/constants";
+import { NAV_LINKS, SITE } from "@/lib/constants";
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -55,23 +55,46 @@ export default function Header() {
             />
           </Link>
 
-          <div className="flex items-center gap-4">
-            <a
+          <nav
+            aria-label="Primary"
+            className="hidden lg:flex items-center gap-7 xl:gap-9"
+          >
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`text-sm font-semibold tracking-wide transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta focus-visible:ring-offset-2 rounded ${
+                  onDark
+                    ? "text-white/80 hover:text-white focus-visible:ring-offset-navy-deep"
+                    : "text-navy hover:text-magenta focus-visible:ring-offset-white"
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Link
               href="/sign-in"
-              className={`hidden sm:inline-flex items-center gap-2 text-sm font-semibold transition-colors duration-300 ${
-                onDark ? "text-white hover:text-white/70" : "text-navy hover:text-magenta"
+              className={`hidden sm:inline-flex items-center gap-2 text-sm font-semibold transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta rounded-full px-3 py-1.5 ${
+                onDark
+                  ? "text-white hover:text-white/80"
+                  : "text-navy hover:text-magenta"
               }`}
             >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="opacity-60">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" className="opacity-60">
                 <path d="M3 2L11 7L3 12V2Z" fill="currentColor" />
               </svg>
               LOG IN
-            </a>
+            </Link>
 
             <button
               onClick={() => setMenuOpen(true)}
-              className="flex flex-col items-center justify-center gap-[5px] w-10 h-10 rounded-lg hover:bg-beige/60 transition-colors"
+              className="lg:hidden flex flex-col items-center justify-center gap-[5px] w-10 h-10 rounded-lg hover:bg-beige/60 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta"
               aria-label="Open menu"
+              aria-expanded={menuOpen}
+              aria-controls="primary-mobile-menu"
             >
               <span className={`block w-5 h-[2px] rounded-full transition-colors duration-300 ${onDark ? "bg-white" : "bg-navy"}`} />
               <span className={`block w-5 h-[2px] rounded-full transition-colors duration-300 ${onDark ? "bg-white" : "bg-navy"}`} />

@@ -5,10 +5,10 @@ import { motion } from "framer-motion";
 import { STATES_SERVED } from "@/lib/constants";
 
 const inputClass =
-  "w-full rounded-full border border-beige-dark bg-white px-5 py-3 text-sm text-navy placeholder:text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors";
+  "w-full rounded-full border border-beige-dark bg-white px-5 py-3 text-sm text-navy placeholder:text-navy/65 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors";
 
 const selectClass =
-  "w-full appearance-none rounded-full border border-beige-dark bg-white px-5 py-3 pr-10 text-sm text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors";
+  "w-full appearance-none rounded-full border border-beige-dark bg-white px-5 py-3 pr-10 text-sm text-navy/65 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors";
 
 export default function ClinicSignupForm() {
   const [form, setForm] = useState({
@@ -20,6 +20,8 @@ export default function ClinicSignupForm() {
     state: "",
     specialty: "",
     message: "",
+    // Honeypot — humans never set this. Bots that fill every input will trip it.
+    company_website: "",
   });
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -65,7 +67,7 @@ export default function ClinicSignupForm() {
           </svg>
         </div>
         <h3 className="text-2xl font-bold text-navy mb-2">Request submitted!</h3>
-        <p className="text-navy/50 text-sm max-w-md mx-auto">
+        <p className="text-navy/70 text-sm max-w-md mx-auto">
           Thank you for your interest in partnering with Logos RX. Our team will review
           your information and reach out within 1&ndash;2 business days.
         </p>
@@ -73,108 +75,200 @@ export default function ClinicSignupForm() {
     );
   }
 
+  const errorId = "clinic-signup-error";
+  const hasError = status === "error";
+  const labelClass = "sr-only";
+  const requiredMark = (
+    <span aria-hidden="true" className="ml-0.5 text-magenta">
+      *
+    </span>
+  );
+
   return (
-    <form onSubmit={handleSubmit} className="rounded-2xl bg-white border border-beige p-8 sm:p-10">
+    <form
+      onSubmit={handleSubmit}
+      noValidate
+      aria-describedby={hasError ? errorId : undefined}
+      className="rounded-2xl bg-white border border-beige p-8 sm:p-10"
+    >
+      <input
+        type="text"
+        name="company_website"
+        tabIndex={-1}
+        autoComplete="off"
+        value={form.company_website}
+        onChange={handleChange}
+        aria-hidden="true"
+        className="absolute h-0 w-0 -left-[9999px] opacity-0 pointer-events-none"
+      />
+      <p className="mb-4 text-xs text-navy/55">
+        Fields marked with <span className="text-magenta">*</span> are required.
+      </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <input
-          type="text"
-          name="clinicName"
-          value={form.clinicName}
-          onChange={handleChange}
-          placeholder="Clinic / Practice name"
-          required
-          className={inputClass}
-        />
-        <input
-          type="text"
-          name="contactName"
-          value={form.contactName}
-          onChange={handleChange}
-          placeholder="Contact name"
-          required
-          className={inputClass}
-        />
-        <input
-          type="email"
-          name="email"
-          value={form.email}
-          onChange={handleChange}
-          placeholder="Email"
-          required
-          className={inputClass}
-        />
-        <input
-          type="tel"
-          name="phone"
-          value={form.phone}
-          onChange={handleChange}
-          placeholder="Phone"
-          required
-          className={inputClass}
-        />
-        <input
-          type="text"
-          name="npiNumber"
-          value={form.npiNumber}
-          onChange={handleChange}
-          placeholder="NPI Number (optional)"
-          className={inputClass}
-        />
-        <div className="relative">
-          <select
-            name="state"
-            value={form.state}
+        <div>
+          <label htmlFor="clinic-name" className={labelClass}>
+            Clinic or practice name{requiredMark}
+          </label>
+          <input
+            id="clinic-name"
+            type="text"
+            name="clinicName"
+            value={form.clinicName}
             onChange={handleChange}
-            className={selectClass}
-          >
-            <option value="" disabled>Select state</option>
-            {STATES_SERVED.map((st) => (
-              <option key={st} value={st}>
-                {st}
-              </option>
-            ))}
-          </select>
-          <svg className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-navy/30" width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M3.5 5.5L7 9L10.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+            placeholder="Clinic / Practice name *"
+            required
+            autoComplete="organization"
+            aria-required="true"
+            aria-invalid={hasError ? "true" : undefined}
+            className={inputClass}
+          />
         </div>
-        <div className="relative">
-          <select
-            name="specialty"
-            value={form.specialty}
+        <div>
+          <label htmlFor="contact-name" className={labelClass}>
+            Contact name{requiredMark}
+          </label>
+          <input
+            id="contact-name"
+            type="text"
+            name="contactName"
+            value={form.contactName}
             onChange={handleChange}
-            className={selectClass}
-          >
-            <option value="" disabled>Specialty (optional)</option>
-            <option value="primary-care">Primary Care</option>
-            <option value="dermatology">Dermatology</option>
-            <option value="endocrinology">Endocrinology</option>
-            <option value="urology">Urology</option>
-            <option value="obgyn">OB/GYN</option>
-            <option value="pain-management">Pain Management</option>
-            <option value="anti-aging">Anti-Aging / Wellness</option>
-            <option value="functional-medicine">Functional Medicine</option>
-            <option value="veterinary">Veterinary</option>
-            <option value="other">Other</option>
-          </select>
-          <svg className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-navy/30" width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M3.5 5.5L7 9L10.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+            placeholder="Contact name *"
+            required
+            autoComplete="name"
+            aria-required="true"
+            aria-invalid={hasError ? "true" : undefined}
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label htmlFor="clinic-email" className={labelClass}>
+            Email address{requiredMark}
+          </label>
+          <input
+            id="clinic-email"
+            type="email"
+            name="email"
+            value={form.email}
+            onChange={handleChange}
+            placeholder="Email *"
+            required
+            autoComplete="email"
+            aria-required="true"
+            aria-invalid={hasError ? "true" : undefined}
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label htmlFor="clinic-phone" className={labelClass}>
+            Phone number{requiredMark}
+          </label>
+          <input
+            id="clinic-phone"
+            type="tel"
+            name="phone"
+            value={form.phone}
+            onChange={handleChange}
+            placeholder="Phone *"
+            required
+            autoComplete="tel"
+            aria-required="true"
+            aria-invalid={hasError ? "true" : undefined}
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label htmlFor="clinic-npi" className={labelClass}>
+            NPI number (optional)
+          </label>
+          <input
+            id="clinic-npi"
+            type="text"
+            name="npiNumber"
+            value={form.npiNumber}
+            onChange={handleChange}
+            placeholder="NPI Number (optional)"
+            inputMode="numeric"
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label htmlFor="clinic-state" className={labelClass}>
+            State
+          </label>
+          <div className="relative">
+            <select
+              id="clinic-state"
+              name="state"
+              value={form.state}
+              onChange={handleChange}
+              className={selectClass}
+            >
+              <option value="" disabled>Select state</option>
+              {STATES_SERVED.map((st) => (
+                <option key={st} value={st}>
+                  {st}
+                </option>
+              ))}
+            </select>
+            <svg aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-navy/65" width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M3.5 5.5L7 9L10.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+        </div>
+        <div>
+          <label htmlFor="clinic-specialty" className={labelClass}>
+            Specialty (optional)
+          </label>
+          <div className="relative">
+            <select
+              id="clinic-specialty"
+              name="specialty"
+              value={form.specialty}
+              onChange={handleChange}
+              className={selectClass}
+            >
+              <option value="" disabled>Specialty (optional)</option>
+              <option value="primary-care">Primary Care</option>
+              <option value="dermatology">Dermatology</option>
+              <option value="endocrinology">Endocrinology</option>
+              <option value="urology">Urology</option>
+              <option value="obgyn">OB/GYN</option>
+              <option value="pain-management">Pain Management</option>
+              <option value="anti-aging">Anti-Aging / Wellness</option>
+              <option value="functional-medicine">Functional Medicine</option>
+              <option value="veterinary">Veterinary</option>
+              <option value="other">Other</option>
+            </select>
+            <svg aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-navy/65" width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M3.5 5.5L7 9L10.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
         </div>
         <div className="sm:col-span-2">
+          <label htmlFor="clinic-message" className={labelClass}>
+            Additional details (optional)
+          </label>
           <textarea
+            id="clinic-message"
             name="message"
             value={form.message}
             onChange={handleChange}
             placeholder="Tell us about your practice or any questions (optional)"
             rows={4}
-            className="w-full rounded-2xl border border-beige-dark bg-white px-5 py-3 text-sm text-navy placeholder:text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors resize-none"
+            className="w-full rounded-2xl border border-beige-dark bg-white px-5 py-3 text-sm text-navy placeholder:text-navy/65 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors resize-none"
           />
         </div>
 
-        {status === "error" && (
+        {hasError && (
           <div className="sm:col-span-2">
-            <p className="text-sm text-red-600 bg-red-50 rounded-lg px-4 py-2">{errorMsg}</p>
+            <p
+              id={errorId}
+              role="alert"
+              className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-2"
+            >
+              {errorMsg}
+            </p>
           </div>
         )}
 

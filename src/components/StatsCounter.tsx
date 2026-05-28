@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
 const stats = [
   { value: 5000, suffix: "+", label: "Trusted Providers" },
@@ -10,27 +11,47 @@ const stats = [
   { value: 10, suffix: "+", label: "Years in Business" },
 ];
 
-function AnimatedNumber({ target, suffix, inView }: { target: number; suffix: string; inView: boolean }) {
+/**
+ * Animates an integer from 0 → `target` with an ease-out curve.
+ * Uses `requestAnimationFrame` so the animation pauses when the tab is
+ * backgrounded and never accumulates drift the way `setInterval` did.
+ * If the user prefers reduced motion, we jump straight to the final value.
+ */
+function AnimatedNumber({
+  target,
+  suffix,
+  inView,
+}: {
+  target: number;
+  suffix: string;
+  inView: boolean;
+}) {
   const [count, setCount] = useState(0);
+  const reducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
     if (!inView) return;
+    if (reducedMotion) {
+      setCount(target);
+      return;
+    }
 
-    let start = 0;
-    const duration = 2000;
-    const increment = target / (duration / 16);
-    const timer = setInterval(() => {
-      start += increment;
-      if (start >= target) {
-        setCount(target);
-        clearInterval(timer);
-      } else {
-        setCount(Math.floor(start));
-      }
-    }, 16);
+    const duration = 1800;
+    const start = performance.now();
+    let rafId = 0;
 
-    return () => clearInterval(timer);
-  }, [inView, target]);
+    const tick = (now: number) => {
+      const elapsed = now - start;
+      const progress = Math.min(1, elapsed / duration);
+      // easeOutCubic — fast start, gentle settle.
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.round(target * eased));
+      if (progress < 1) rafId = requestAnimationFrame(tick);
+    };
+
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [inView, target, reducedMotion]);
 
   const formatted = target >= 1000 ? count.toLocaleString() : count;
 
@@ -61,12 +82,16 @@ export default function StatsCounter() {
             >
               <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-navy mb-2">
                 {"value" in stat && stat.value !== undefined ? (
-                  <AnimatedNumber target={stat.value} suffix={stat.suffix ?? ""} inView={inView} />
+                  <AnimatedNumber
+                    target={stat.value}
+                    suffix={stat.suffix ?? ""}
+                    inView={inView}
+                  />
                 ) : (
                   <span>{stat.text}</span>
                 )}
               </p>
-              <p className="text-sm sm:text-base text-navy/50 font-medium">
+              <p className="text-sm sm:text-base text-navy/65 font-medium">
                 {stat.label}
               </p>
             </motion.div>

@@ -1,0 +1,75 @@
+version: 2
+
+# Dependabot keeps the dependency tree current without forcing the team to
+# baby-sit it. PRs are batched into "groups" so we get one PR per concern
+# instead of 40 individual ones; the security ecosystem still gets its own
+# PR per advisory so we don't accidentally batch a vulnerable patch behind
+# an unrelated feature bump.
+
+updates:
+  # npm: every package.json + package-lock.json at repo root.
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/New_York
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+      - automerge-candidate
+    groups:
+      next-ecosystem:
+        patterns:
+          - "next"
+          - "@next/*"
+          - "eslint-config-next"
+      react-ecosystem:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react*"
+      tailwind:
+        patterns:
+          - "tailwindcss"
+          - "@tailwindcss/*"
+      sentry:
+        patterns:
+          - "@sentry/*"
+      clerk:
+        patterns:
+          - "@clerk/*"
+      radix:
+        patterns:
+          - "@radix-ui/*"
+      drizzle:
+        patterns:
+          - "drizzle-orm"
+          - "drizzle-kit"
+      testing:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+          - "@vitejs/*"
+          - "@testing-library/*"
+          - "happy-dom"
+      types:
+        patterns:
+          - "@types/*"
+      linters:
+        patterns:
+          - "eslint*"
+          - "@typescript-eslint/*"
+
+  # GitHub Actions: bump action SHAs/tags weekly.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/New_York
+    labels:
+      - dependencies
+      - github-actions

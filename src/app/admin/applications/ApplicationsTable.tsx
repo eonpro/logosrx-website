@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import type { EmploymentApplication } from "@/lib/db/schema";
 import { updateApplicationStatus } from "./actions";
 
 const statusStyles: Record<string, string> = {
   new: "bg-magenta/10 text-magenta",
   reviewed: "bg-sky/10 text-sky",
-  archived: "bg-beige-dark/50 text-navy/40",
+  archived: "bg-beige-dark/50 text-navy/65",
 };
 
 export function ApplicationsTable({
@@ -39,9 +39,8 @@ export function ApplicationsTable({
         </thead>
         <tbody className="divide-y divide-beige">
           {applications.map((app) => (
-            <>
+            <Fragment key={app.id}>
               <tr
-                key={app.id}
                 className="hover:bg-cream/30 transition-colors cursor-pointer"
                 onClick={() =>
                   setExpandedId(expandedId === app.id ? null : app.id)
@@ -51,7 +50,7 @@ export function ApplicationsTable({
                   {app.firstName} {app.lastName}
                 </td>
                 <td className="px-6 py-4 text-navy/60">{app.position}</td>
-                <td className="px-6 py-4 text-navy/40">
+                <td className="px-6 py-4 text-navy/65">
                   {new Date(app.createdAt).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
@@ -71,7 +70,7 @@ export function ApplicationsTable({
                     height="16"
                     viewBox="0 0 16 16"
                     fill="none"
-                    className={`text-navy/30 transition-transform ${expandedId === app.id ? "rotate-180" : ""}`}
+                    className={`text-navy/65 transition-transform ${expandedId === app.id ? "rotate-180" : ""}`}
                   >
                     <path
                       d="M4 6l4 4 4-4"
@@ -84,11 +83,11 @@ export function ApplicationsTable({
                 </td>
               </tr>
               {expandedId === app.id && (
-                <tr key={`${app.id}-detail`}>
+                <tr>
                   <td colSpan={5} className="px-6 py-5 bg-cream/30">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
                       <div>
-                        <p className="text-navy/40 text-xs uppercase tracking-wider mb-1">
+                        <p className="text-navy/65 text-xs uppercase tracking-wider mb-1">
                           Email
                         </p>
                         <a
@@ -99,7 +98,7 @@ export function ApplicationsTable({
                         </a>
                       </div>
                       <div>
-                        <p className="text-navy/40 text-xs uppercase tracking-wider mb-1">
+                        <p className="text-navy/65 text-xs uppercase tracking-wider mb-1">
                           Phone
                         </p>
                         <a
@@ -110,7 +109,7 @@ export function ApplicationsTable({
                         </a>
                       </div>
                       <div>
-                        <p className="text-navy/40 text-xs uppercase tracking-wider mb-1">
+                        <p className="text-navy/65 text-xs uppercase tracking-wider mb-1">
                           Referral Source
                         </p>
                         <p className="text-navy">
@@ -118,7 +117,7 @@ export function ApplicationsTable({
                         </p>
                       </div>
                       <div>
-                        <p className="text-navy/40 text-xs uppercase tracking-wider mb-1">
+                        <p className="text-navy/65 text-xs uppercase tracking-wider mb-1">
                           Willing to Relocate
                         </p>
                         <p className="text-navy capitalize">
@@ -127,9 +126,13 @@ export function ApplicationsTable({
                       </div>
                     </div>
 
-                    {app.resumeUrl && (
+                    {(app.resumePathname || app.resumeUrl) && (
                       <a
-                        href={app.resumeUrl}
+                        href={
+                          app.resumePathname
+                            ? `/api/admin/resumes/${app.id}`
+                            : app.resumeUrl!
+                        }
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 rounded-full bg-navy px-4 py-2 text-xs font-semibold text-white hover:bg-navy-light transition-colors mb-4"
@@ -164,7 +167,7 @@ export function ApplicationsTable({
                             disabled={app.status === status}
                             className={`rounded-full px-3.5 py-1.5 text-xs font-semibold capitalize transition-colors ${
                               app.status === status
-                                ? "bg-navy/10 text-navy/30 cursor-not-allowed"
+                                ? "bg-navy/10 text-navy/65 cursor-not-allowed"
                                 : "bg-white border border-beige hover:border-magenta hover:text-magenta text-navy/60"
                             }`}
                           >
@@ -176,7 +179,7 @@ export function ApplicationsTable({
                   </td>
                 </tr>
               )}
-            </>
+            </Fragment>
           ))}
         </tbody>
       </table>

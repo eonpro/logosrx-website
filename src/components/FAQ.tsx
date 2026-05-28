@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import Reveal from "./Reveal";
 import CollapsibleSection from "./CollapsibleSection";
 
 const faqs = [
@@ -46,32 +46,20 @@ export default function FAQ() {
     <section className="bg-white py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
-          {/* Left — heading */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.5 }}
-          >
+          <Reveal>
             <p className="text-xs sm:text-sm font-semibold tracking-[0.2em] uppercase text-magenta mb-3">
               FAQ
             </p>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-navy leading-tight mb-6">
               Frequently Asked Questions
             </h2>
-            <p className="text-navy/60 leading-relaxed">
+            <p className="text-navy/70 leading-relaxed">
               Have a question not listed here? Reach out to our team — we&rsquo;re
               here to help providers and patients alike.
             </p>
-          </motion.div>
+          </Reveal>
 
-          {/* Right — accordion */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
+          <Reveal delay={100}>
             {faqs.map((faq, i) => (
               <CollapsibleSection
                 key={i}
@@ -80,7 +68,7 @@ export default function FAQ() {
                 defaultOpen={i === 0}
               />
             ))}
-          </motion.div>
+          </Reveal>
         </div>
       </div>
     </section>

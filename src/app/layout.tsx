@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import JsonLd from "@/components/JsonLd";
 import { SITE } from "@/lib/constants";
@@ -34,19 +33,37 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/*
+         * Adobe Typekit (sofia-pro) optimized load:
+         *   - preconnect both Typekit hosts to warm DNS + TLS in parallel
+         *     with the HTML parse.
+         *   - preload the stylesheet so the browser fetches it at high
+         *     priority but doesn't block render. The companion `<link
+         *     rel="stylesheet">` activates it once parsed.
+         *   - `<noscript>` fallback ensures the font still loads if JS is
+         *     disabled or blocked.
+         *
+         * Adobe's TOS prohibits redistributing the kit, so we cannot fully
+         * self-host. This is the best perf we can get within those bounds.
+         */}
+        <link rel="preconnect" href="https://use.typekit.net" crossOrigin="" />
+        <link rel="preconnect" href="https://p.typekit.net" crossOrigin="" />
+        <link
+          rel="preload"
+          as="style"
+          href="https://use.typekit.net/fcc6pra.css"
+        />
         <link rel="stylesheet" href="https://use.typekit.net/fcc6pra.css" />
         <JsonLd />
       </head>
       <body className="min-h-screen flex flex-col" suppressHydrationWarning>
-        <ClerkProvider>
-          <a
-            href="#main-content"
-            className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-lg focus:bg-magenta focus:px-4 focus:py-2 focus:text-white focus:text-sm focus:font-semibold"
-          >
-            Skip to main content
-          </a>
-          {children}
-        </ClerkProvider>
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-lg focus:bg-magenta focus:px-4 focus:py-2 focus:text-white focus:text-sm focus:font-semibold"
+        >
+          Skip to main content
+        </a>
+        {children}
       </body>
     </html>
   );

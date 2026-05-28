@@ -40,7 +40,7 @@ export default async function ProductInsertPage({
         <div className="mx-auto max-w-4xl px-6 lg:px-8">
           <Link
             href="/support"
-            className="inline-flex items-center gap-2 text-sm font-medium text-navy/40 hover:text-magenta transition-colors mb-10"
+            className="inline-flex items-center gap-2 text-sm font-medium text-navy/65 hover:text-magenta transition-colors mb-10"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -59,7 +59,7 @@ export default async function ProductInsertPage({
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-navy leading-[1.1] text-center mb-5">
             {insert.title}
           </h1>
-          <p className="text-lg text-navy/50 leading-relaxed text-center max-w-2xl mx-auto mb-8">
+          <p className="text-lg text-navy/70 leading-relaxed text-center max-w-2xl mx-auto mb-8">
             {insert.subtitle}
           </p>
 
@@ -106,8 +106,8 @@ export default async function ProductInsertPage({
 
         {/* Disclaimer */}
         <div className="mt-24 border-t border-beige pt-8">
-          <p className="text-xs text-navy/35 leading-relaxed max-w-2xl">
-            <strong className="text-navy/50">Disclaimer:</strong> This product insert is
+          <p className="text-xs text-navy/65 leading-relaxed max-w-2xl">
+            <strong className="text-navy/70">Disclaimer:</strong> This product insert is
             provided for educational purposes only and does not constitute medical advice.
             Always follow the specific instructions provided by your healthcare provider
             and the medication label. If you have questions about your prescribed therapy,
@@ -124,7 +124,7 @@ export default async function ProductInsertPage({
           <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">
             Questions about your medication?
           </h3>
-          <p className="text-sm text-white/40 mb-8 max-w-md mx-auto">
+          <p className="text-sm text-white/75 mb-8 max-w-md mx-auto">
             Our pharmacists are available to help with injection technique, dosage questions,
             and medication storage.
           </p>

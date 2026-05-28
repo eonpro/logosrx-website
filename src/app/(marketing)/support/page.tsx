@@ -50,7 +50,7 @@ export default function SupportPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-xs text-navy/40 font-medium uppercase tracking-wider">Email</p>
+                <p className="text-xs text-navy/65 font-medium uppercase tracking-wider">Email</p>
                 <a href={CONTACT.emailHref} className="text-sm font-semibold text-navy hover:text-magenta transition-colors">
                   {CONTACT.email}
                 </a>
@@ -66,7 +66,7 @@ export default function SupportPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-xs text-navy/40 font-medium uppercase tracking-wider">Phone</p>
+                <p className="text-xs text-navy/65 font-medium uppercase tracking-wider">Phone</p>
                 <a href={CONTACT.phoneHref} className="text-sm font-semibold text-navy hover:text-magenta transition-colors">
                   {CONTACT.phone}
                 </a>
@@ -138,7 +138,7 @@ export default function SupportPage() {
                     <h3 className="text-base font-bold text-navy group-hover:text-magenta transition-colors mb-1">
                       {insert.title}
                     </h3>
-                    <p className="text-sm text-navy/50 leading-relaxed">
+                    <p className="text-sm text-navy/70 leading-relaxed">
                       {insert.description}
                     </p>
                     <span className="inline-flex items-center gap-1.5 mt-3 text-xs font-semibold text-magenta uppercase tracking-wider">
@@ -212,11 +212,11 @@ export default function SupportPage() {
                   <h3 className="text-base font-bold text-navy group-hover:text-magenta transition-colors mb-3 leading-snug">
                     {article.title}
                   </h3>
-                  <p className="text-sm text-navy/50 leading-relaxed line-clamp-3 mb-4">
+                  <p className="text-sm text-navy/70 leading-relaxed line-clamp-3 mb-4">
                     {article.excerpt}
                   </p>
                   <div className="mt-auto flex items-center justify-between">
-                    <time className="text-xs text-navy/30">
+                    <time className="text-xs text-navy/65">
                       {new Date(article.date).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",

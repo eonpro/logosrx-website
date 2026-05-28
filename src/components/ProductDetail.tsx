@@ -69,7 +69,7 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
               </h1>
 
               {product.sku && (
-                <p className="text-xs text-navy/40 font-mono mb-6">SKU: {product.sku}</p>
+                <p className="text-xs text-navy/65 font-mono mb-6">SKU: {product.sku}</p>
               )}
 
               <p className="text-base leading-relaxed text-navy/60 mb-8">
@@ -94,14 +94,14 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
 
               {/* Share */}
               <div className="mt-8 flex items-center gap-3">
-                <span className="text-xs font-semibold uppercase tracking-wider text-navy/40">
+                <span className="text-xs font-semibold uppercase tracking-wider text-navy/65">
                   Share
                 </span>
                 <div className="flex gap-2">
                   {["facebook", "twitter", "linkedin"].map((platform) => (
                     <button
                       key={platform}
-                      className="w-8 h-8 rounded-full bg-beige flex items-center justify-center text-navy/40 hover:bg-magenta hover:text-white transition-colors"
+                      className="w-8 h-8 rounded-full bg-beige flex items-center justify-center text-navy/65 hover:bg-magenta hover:text-white transition-colors"
                       aria-label={`Share on ${platform}`}
                     >
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">

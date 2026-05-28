@@ -47,3 +47,6 @@ next-env.d.ts
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+# sentry build plugin auth token (populated by `sentry-wizard` if used)
+.env.sentry-build-plugin

@@ -44,10 +44,12 @@ export default function DrivenByExcellence() {
               preload="none"
               className="absolute inset-0 w-full h-full object-cover"
             >
-              <source
-                src="https://video.wixstatic.com/video/c49a9b_1b1b71b6d6854065b140aeeadc56db43/720p/mp4/file.mp4"
-                type="video/mp4"
-              />
+              {/*
+                Self-hosted on Vercel's edge (P1d). Originally proxied from
+                video.wixstatic.com which forced a third-party DNS lookup,
+                leaked client IPs to Wix, and required a CSP allowlist entry.
+              */}
+              <source src="/videos/excellence.mp4" type="video/mp4" />
             </video>
           </motion.div>
 

@@ -28,7 +28,7 @@ export default function Footer() {
               />
             </div>
 
-            <p className="text-sm text-white/50 leading-relaxed mb-4">
+            <p className="text-sm text-white/80 leading-relaxed mb-4">
               {SITE.name} is a multi-state licensed 503A compounding pharmacy with
               sterile and non-sterile compounding labs.
             </p>
@@ -83,7 +83,7 @@ export default function Footer() {
             <dl className="space-y-4 text-sm">
               <div>
                 <dt className="font-medium text-white/90">Retail</dt>
-                <dd className="text-white/60">{HOURS.retail}</dd>
+                <dd className="text-white/85">{HOURS.retail}</dd>
               </div>
               <div>
                 <dt className="font-medium text-sky">Online</dt>
@@ -101,7 +101,7 @@ export default function Footer() {
       {/* Bottom bar */}
       <div className="border-t border-white/10">
         <div className="mx-auto max-w-7xl px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex flex-nowrap items-center justify-center gap-x-4 gap-y-1 text-xs text-white/40 whitespace-nowrap">
+          <div className="flex flex-nowrap items-center justify-center gap-x-4 gap-y-1 text-xs text-white/75 whitespace-nowrap">
             <span className="font-semibold text-sky/60">Legal</span>
             {LEGAL_LINKS.map((link, i) => (
               <span key={link.href} className="flex items-center gap-4">
@@ -113,7 +113,7 @@ export default function Footer() {
             ))}
           </div>
 
-          <p className="text-xs text-white/30">
+          <p className="text-xs text-white/75">
             All rights reserved {SITE.name} &copy; {new Date().getFullYear()}
           </p>
         </div>

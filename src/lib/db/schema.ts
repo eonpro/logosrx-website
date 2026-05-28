@@ -34,8 +34,14 @@ export const employmentApplications = pgTable("employment_applications", {
   position: varchar("position", { length: 200 }).notNull(),
   referralSource: varchar("referral_source", { length: 50 }),
   willingToRelocate: varchar("willing_to_relocate", { length: 10 }),
-  resumeUrl: text("resume_url"),
+  // Pathname inside the private @vercel/blob store. Source of truth.
+  resumePathname: text("resume_pathname"),
+  // MIME type as verified by server-side magic-byte detection.
+  resumeContentType: varchar("resume_content_type", { length: 100 }),
+  // User-friendly original filename, sanitized.
   resumeFilename: varchar("resume_filename", { length: 255 }),
+  // @deprecated — legacy public blob URL. Do not write. Kept for migration only.
+  resumeUrl: text("resume_url"),
   status: applicationStatusEnum("status").default("new").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
