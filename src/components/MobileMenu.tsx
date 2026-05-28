@@ -12,6 +12,16 @@ interface MobileMenuProps {
   onClose: () => void;
 }
 
+/**
+ * Featured carousel: prefer products that have a real photo so the menu
+ * showcases imagery rather than placeholders, then backfill with the rest
+ * to keep up to six tiles.
+ */
+const featuredProducts = [
+  ...products.filter((p) => p.image),
+  ...products.filter((p) => !p.image),
+].slice(0, 6);
+
 export default function MobileMenu({ open, onClose }: MobileMenuProps) {
   return (
     <Dialog.Root open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
@@ -68,7 +78,7 @@ export default function MobileMenu({ open, onClose }: MobileMenuProps) {
                   Featured Products
                 </p>
                 <div className="flex gap-3 overflow-x-auto pb-4 -mx-1 px-1">
-                  {products.slice(0, 6).map((product) => (
+                  {featuredProducts.map((product) => (
                     <Link
                       key={product.slug}
                       href={`/products/${product.slug}`}

@@ -1039,7 +1039,95 @@ export const products: Product[] = [
         a: "Cycling 5-on / 2-off helps maintain pituitary sensitivity and avoids long-term receptor downregulation.",
       },
     ],
-    relatedSlugs: ["bpc-157", "nad-plus"],
+    relatedSlugs: ["tesamorelin", "bpc-157", "nad-plus"],
+  },
+
+  {
+    slug: "tesamorelin",
+    name: "Tesamorelin",
+    category: "Peptide Therapy",
+    categoryKey: "Injectable",
+    tagline:
+      "A growth hormone–releasing hormone (GHRH) analog used to reduce visceral fat and support healthy body composition.",
+    heroBullets: [
+      "GHRH analog — stimulates the body's natural HGH",
+      "Studied for reducing visceral adipose tissue (deep belly fat)",
+      "Supports body composition, recovery, and metabolic health",
+      "Subcutaneous injection, typically once daily",
+    ],
+    descriptionParagraphs: [
+      "Tesamorelin is a growth hormone–releasing hormone (GHRH) analog that stimulates the pituitary gland to produce and release the body's own human growth hormone (HGH). It is best known for its clinically studied ability to reduce visceral adipose tissue — the deep abdominal fat associated with metabolic and cardiovascular risk.",
+      "By increasing endogenous HGH in a natural, pulsatile pattern rather than replacing it directly, Tesamorelin supports improved body composition, recovery, and metabolic health. It is commonly used in body-composition, longevity, and hormone-optimization protocols, often alongside other peptides.",
+    ],
+    description:
+      "GHRH analog studied for reducing visceral fat and supporting healthy body composition.",
+    image: "/images/products/tesamorelin.webp",
+    imageAlt: "Logos RX Tesamorelin subcutaneous injection multi-dose vial",
+    concentration: "5 mg/mL",
+    form: "Injectable",
+    size: "2 mL",
+    activeIngredient: {
+      name: "Tesamorelin Acetate",
+      description:
+        "A synthetic analog of growth hormone–releasing hormone (GHRH) that binds GHRH receptors on pituitary somatotrophs, stimulating endogenous HGH release.",
+    },
+    ingredientHighlights: [
+      {
+        title: "Stimulates endogenous HGH",
+        description:
+          "Tesamorelin amplifies the body's natural pulsatile release of HGH rather than introducing exogenous hormone, preserving normal feedback regulation.",
+      },
+      {
+        title: "Visceral fat reduction",
+        description:
+          "Best known clinically for its ability to reduce visceral adipose tissue — the metabolically active deep abdominal fat.",
+      },
+      {
+        title: "Bedtime dosing",
+        description:
+          "Administered before bed to align with the body's nocturnal HGH pulse, the largest natural surge in adults.",
+      },
+    ],
+    howToTake: SUBQ_HOW_TO_TAKE,
+    variants: [{ vialTotalMg: "10 mg", concentration: "5 mg/mL", ml: "2 mL" }],
+    variantColumns: ["vialTotalMg", "concentration", "ml"],
+    dosageSchedule: {
+      columns: ["weeks", "units", "mg", "ml", "directions"],
+      rows: [
+        {
+          weeks: "1–4",
+          units: "20",
+          mg: "1 mg",
+          ml: "0.2 mL",
+          directions: "Inject 20 units (1 mg) subcutaneously once daily before bedtime.",
+        },
+        {
+          weeks: "5+",
+          units: "40",
+          mg: "2 mg",
+          ml: "0.4 mL",
+          directions: "Inject 40 units (2 mg) subcutaneously once daily before bedtime, or as directed by your provider.",
+        },
+      ],
+    },
+    details: [
+      { label: "How to Use", content: "Administer subcutaneously before bedtime, as directed by your provider." },
+      { label: "Size", content: "2 mL multi-dose vial (10 mg)" },
+      { label: "Concentration", content: "5 mg/mL" },
+      { label: "Schedule", content: "Once daily, or as prescribed." },
+      { label: "BUD", content: "Refer to the vial label for the beyond-use date." },
+    ],
+    faqs: [
+      {
+        q: "How is Tesamorelin different from Sermorelin?",
+        a: "Both are GHRH analogs that stimulate the body's own HGH. Tesamorelin is most studied for reducing visceral adipose tissue (deep belly fat), while Sermorelin is more commonly used for general age-management and recovery support. Your provider will recommend the best fit for your goals.",
+      },
+      {
+        q: "Why is Tesamorelin dosed at bedtime?",
+        a: "Dosing before bed aligns with the body's natural overnight HGH pulse, the largest physiologic surge in adults — supporting a more natural release pattern.",
+      },
+    ],
+    relatedSlugs: ["sermorelin", "bpc-157", "nad-plus"],
   },
 
   {
