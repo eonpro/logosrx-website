@@ -353,6 +353,8 @@ export const products: Product[] = [
     ],
     description:
       "An oral aromatase inhibitor used to maintain testosterone-to-estrogen balance during hormone therapy.",
+    image: "/images/products/anastrozole.webp",
+    imageAlt: "Logos RX Anastrozole oral tablets",
     concentration: "0.25 mg / 0.50 mg / 1 mg",
     form: "Oral Tablets",
     size: "As prescribed",
@@ -437,6 +439,8 @@ export const products: Product[] = [
     ],
     description:
       "A SERM that stimulates the body's own testosterone production while preserving fertility.",
+    image: "/images/products/enclomiphene-citrate.webp",
+    imageAlt: "Logos RX Enclomiphene Citrate oral capsules",
     concentration: "25 mg / 50 mg",
     form: "Oral Capsules",
     size: "As prescribed",
@@ -1153,6 +1157,8 @@ export const products: Product[] = [
     ],
     description:
       "Synthetic pentadecapeptide explored for soft-tissue recovery, tendon and ligament support, and gut integrity.",
+    image: "/images/products/bpc-157.webp",
+    imageAlt: "Logos RX BPC-157 subcutaneous injection vial",
     concentration: "2.5 mg/mL",
     form: "Injectable",
     size: "4 mL",
@@ -1367,7 +1373,97 @@ export const products: Product[] = [
         a: "Glutathione is commonly used alongside NAD+, B-vitamin, and other wellness injectable protocols. Your provider will coordinate dosing across your regimen.",
       },
     ],
-    relatedSlugs: ["nad-plus", "sermorelin"],
+    relatedSlugs: ["cyanocobalamin-b12", "nad-plus", "sermorelin"],
+  },
+
+  {
+    slug: "cyanocobalamin-b12",
+    name: "Cyanocobalamin",
+    modifier: "Vitamin B12",
+    modifierStyle: "subtitle",
+    category: "Wellness",
+    categoryKey: "Injectable",
+    tagline:
+      "Injectable vitamin B12 to support energy, metabolism, nerve function, and healthy red blood cell production.",
+    heroBullets: [
+      "Highly bioavailable injectable vitamin B12",
+      "Supports energy, focus, and metabolic function",
+      "Aids healthy red blood cell and nerve function",
+      "1,000 mcg/mL multi-dose vial",
+    ],
+    descriptionParagraphs: [
+      "Cyanocobalamin is a stable, injectable form of vitamin B12 — an essential nutrient that supports energy production, metabolism, neurological function, and the formation of healthy red blood cells. Injectable B12 bypasses the digestive tract for reliable absorption, making it ideal for individuals with low B12 levels, absorption issues, or increased metabolic demand.",
+      "Regular B12 injections can help combat fatigue, support mental clarity and mood, and complement weight-management and wellness protocols by supporting healthy energy metabolism.",
+    ],
+    description:
+      "Injectable vitamin B12 to support energy, metabolism, nerve function, and red blood cell production.",
+    image: "/images/products/cyanocobalamin-b12.webp",
+    imageAlt: "Logos RX Cyanocobalamin Vitamin B12 injection multi-dose vial",
+    concentration: "1,000 mcg/mL",
+    form: "Injectable",
+    size: "10 mL",
+    activeIngredient: {
+      name: "Cyanocobalamin (Vitamin B12)",
+      description:
+        "A synthetic, highly stable form of vitamin B12 that the body converts to its active coenzyme forms, supporting energy metabolism, DNA synthesis, and nerve health.",
+    },
+    ingredientHighlights: [
+      {
+        title: "Reliable absorption",
+        description:
+          "Injection bypasses the gut, ensuring full uptake for patients with malabsorption, pernicious anemia, or low dietary intake.",
+      },
+      {
+        title: "Energy and metabolism",
+        description:
+          "B12 is a cofactor in energy metabolism and is commonly paired with weight-management and wellness protocols to support vitality.",
+      },
+      {
+        title: "Nerve and blood health",
+        description:
+          "Essential for myelin formation and red blood cell production, supporting neurological function and oxygen transport.",
+      },
+    ],
+    howToTake: SUBQ_HOW_TO_TAKE,
+    variants: [{ vialTotalMg: "10,000 mcg", concentration: "1,000 mcg/mL", ml: "10 mL" }],
+    variantColumns: ["vialTotalMg", "concentration", "ml"],
+    dosageSchedule: {
+      columns: ["weeks", "units", "mg", "ml", "directions"],
+      rows: [
+        {
+          weeks: "1–4",
+          units: "100",
+          mg: "1,000 mcg",
+          ml: "1 mL",
+          directions: "Inject 100 units (1,000 mcg) subcutaneously or intramuscularly once weekly.",
+        },
+        {
+          weeks: "5+",
+          units: "100",
+          mg: "1,000 mcg",
+          ml: "1 mL",
+          directions: "Inject 100 units (1,000 mcg) once weekly or as directed by your provider for maintenance.",
+        },
+      ],
+    },
+    details: [
+      { label: "How to Use", content: "Administer subcutaneously or intramuscularly as directed by your provider." },
+      { label: "Size", content: "10 mL multi-dose vial (1,000 mcg/mL)" },
+      { label: "Concentration", content: "1,000 mcg/mL" },
+      { label: "Schedule", content: "Once weekly, or as prescribed." },
+      { label: "BUD", content: "Refer to the vial label for the beyond-use date." },
+    ],
+    faqs: [
+      {
+        q: "Why choose injectable B12 over oral supplements?",
+        a: "Injectable B12 bypasses the digestive tract, ensuring reliable absorption — especially helpful for those with absorption issues, pernicious anemia, or low dietary intake where oral supplements may be less effective.",
+      },
+      {
+        q: "How often are B12 injections given?",
+        a: "B12 is commonly dosed once weekly, then adjusted to a maintenance schedule based on your symptoms and lab levels. Your provider will personalize the frequency.",
+      },
+    ],
+    relatedSlugs: ["glutathione", "nad-plus", "semaglutide-glycine"],
   },
 
   {
