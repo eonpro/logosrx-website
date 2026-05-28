@@ -123,6 +123,7 @@ export const PRODUCT_FAMILIES = [
   "Longevity",
   "Peptide Therapy",
   "IV Therapy & Supplements",
+  "Detox",
   "Numbing Creams",
   "Custom Compound",
 ] as const;
@@ -138,6 +139,7 @@ export const THERAPEUTIC_AREAS = [
   "Longevity",
   "Peptide Therapy",
   "IV Therapy & Supplements",
+  "Detox",
   "Vitality",
   "Sexual Wellness",
   "Fertility",
@@ -223,6 +225,17 @@ export const catalogProducts: CatalogProduct[] = [
     form: "Injectable",
     unit: "Each",
     pricing: { retail: 30, provider: 25, volume: 20 },
+    productFamily: ["Hormone Replacement"],
+    brand: "Logos RX",
+    therapeuticAreas: ["Hormone Replacement"],
+  },
+  {
+    id: "pregnyl-hcg-10000iu",
+    name: "Pregnyl HCG 10,000ui",
+    strength: "10,000 IU",
+    form: "Injectable",
+    unit: "Each",
+    pricing: { retail: 250, provider: 225, volume: null },
     productFamily: ["Hormone Replacement"],
     brand: "Logos RX",
     therapeuticAreas: ["Hormone Replacement"],
@@ -367,6 +380,7 @@ export const catalogProducts: CatalogProduct[] = [
     brand: "Logos RX",
     therapeuticAreas: ["Peptide Therapy"],
   },
+  // ── Detox ──
   {
     id: "glutathione-200mg-5ml",
     name: "Glutathione 200mg/5mL",
@@ -374,9 +388,9 @@ export const catalogProducts: CatalogProduct[] = [
     form: "Injectable",
     unit: "Each",
     pricing: { retail: 50, provider: 40, volume: null },
-    productFamily: ["Peptide Therapy"],
+    productFamily: ["Detox"],
     brand: "Logos RX",
-    therapeuticAreas: ["Peptide Therapy"],
+    therapeuticAreas: ["Detox"],
   },
 ];
 
