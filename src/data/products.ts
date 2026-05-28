@@ -255,6 +255,8 @@ export const products: Product[] = [
     ],
     description:
       "Long-acting injectable bioidentical testosterone, compounded in pharmaceutical-grade grape seed oil for smooth absorption and steady serum levels.",
+    image: "/images/products/testosterone-cypionate.webp",
+    imageAlt: "Logos RX Testosterone Cypionate 200 mg/mL multi-dose vial",
     concentration: "200 mg/mL",
     form: "Injectable",
     size: "5 mL",
@@ -518,6 +520,8 @@ export const products: Product[] = [
     ],
     description:
       "FDA-approved Human Chorionic Gonadotropin (hCG) used to preserve testicular function and fertility during testosterone therapy.",
+    image: "/images/products/pregnyl-hcg.webp",
+    imageAlt: "Pregnyl (hCG) lyophilized powder vial with reconstitution kit",
     concentration: "1,000 IU/mL",
     form: "Injectable (Lyophilized Powder)",
     size: "10 mL",
@@ -621,6 +625,8 @@ export const products: Product[] = [
     ],
     description:
       "GLP-1 receptor agonist co-formulated with glycine for weight management and metabolic support.",
+    image: "/images/products/semaglutide-glycine.webp",
+    imageAlt: "Logos RX Semaglutide and Glycine injection multi-dose vial",
     concentration: "2.5 mg/mL",
     form: "Injectable",
     size: "1 mL",
@@ -711,6 +717,8 @@ export const products: Product[] = [
     ],
     description:
       "Dual GLP-1/GIP receptor agonist co-formulated with glycine for advanced weight management.",
+    image: "/images/products/tirzepatide-glycine.webp",
+    imageAlt: "Logos RX Tirzepatide and Glycine injection multi-dose vial",
     concentration: "10 mg/mL",
     form: "Injectable",
     size: "1 mL",
@@ -965,6 +973,8 @@ export const products: Product[] = [
     ],
     description:
       "GHRH analog that stimulates the body's natural growth hormone release.",
+    image: "/images/products/sermorelin.webp",
+    imageAlt: "Logos RX Sermorelin subcutaneous injection multi-dose vial",
     concentration: "2 mg/mL",
     form: "Injectable",
     size: "5 mL",
@@ -1137,6 +1147,8 @@ export const products: Product[] = [
     ],
     description:
       "Essential coenzyme that supports cellular energy, DNA repair, and longevity.",
+    image: "/images/products/nad-plus.webp",
+    imageAlt: "Logos RX NAD+ (Nicotinamide Adenine Dinucleotide) multi-dose vial",
     concentration: "100 mg/mL",
     form: "Injectable",
     size: "10 mL",
@@ -1212,6 +1224,8 @@ export const products: Product[] = [
     ],
     description:
       "Master intracellular antioxidant — supports detoxification, immunity, and cellular renewal.",
+    image: "/images/products/glutathione.webp",
+    imageAlt: "Logos RX Glutathione subcutaneous/intramuscular injection multi-dose vial",
     concentration: "200 mg/mL",
     form: "Injectable",
     size: "5 mL",
