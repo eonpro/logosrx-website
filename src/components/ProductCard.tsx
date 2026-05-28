@@ -23,7 +23,7 @@ function VialPlaceholder({ name }: { name: string }) {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const hasImage = !!product.image;
+  const imageSrc = product.image;
 
   return (
     <Link
@@ -38,10 +38,10 @@ export default function ProductCard({ product }: ProductCardProps) {
 
       {/* Image area — product floating in center */}
       <div className="relative h-72 flex items-center justify-center">
-        {hasImage ? (
+        {imageSrc ? (
           <div className="relative transition-transform duration-500 ease-out group-hover:scale-[1.08] group-hover:-translate-y-1.5">
             <Image
-              src={product.image}
+              src={imageSrc}
               alt={product.name}
               width={200}
               height={200}

@@ -68,7 +68,7 @@ export default function MobileMenu({ open, onClose }: MobileMenuProps) {
                   Featured Products
                 </p>
                 <div className="flex gap-3 overflow-x-auto pb-4 -mx-1 px-1">
-                  {products.map((product) => (
+                  {products.slice(0, 6).map((product) => (
                     <Link
                       key={product.slug}
                       href={`/products/${product.slug}`}
@@ -76,13 +76,20 @@ export default function MobileMenu({ open, onClose }: MobileMenuProps) {
                       className="flex-shrink-0 w-28 rounded-xl bg-beige p-3 text-center hover:bg-beige-dark transition-colors"
                     >
                       <div className="relative w-16 h-20 mx-auto mb-2 flex items-center justify-center">
-                        <Image
-                          src={product.image}
-                          alt={product.name}
-                          width={56}
-                          height={72}
-                          className="h-16 w-auto object-contain"
-                        />
+                        {product.image ? (
+                          <Image
+                            src={product.image}
+                            alt={product.name}
+                            width={56}
+                            height={72}
+                            className="h-16 w-auto object-contain"
+                          />
+                        ) : (
+                          <div
+                            className="w-12 h-18 rounded-md bg-gradient-to-b from-magenta/70 via-purple-deep/60 to-navy-deep/80 shadow"
+                            aria-hidden="true"
+                          />
+                        )}
                       </div>
                       <p className="text-xs font-medium text-navy truncate">{product.name}</p>
                       {product.badge && (

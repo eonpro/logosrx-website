@@ -7,14 +7,29 @@ interface CollapsibleSectionProps {
   label: string;
   content: string;
   defaultOpen?: boolean;
+  /**
+   * Visual tone for the trigger label.
+   *
+   * - `"label"` (default): uppercase, tracked, small — for product-detail
+   *   key/value labels like "Active Ingredients" or "How to Use".
+   * - `"question"`: sentence-cased, larger — for FAQ rows where the trigger
+   *   is a full question.
+   */
+  tone?: "label" | "question";
 }
 
 export default function CollapsibleSection({
   label,
   content,
   defaultOpen = false,
+  tone = "label",
 }: CollapsibleSectionProps) {
   const [open, setOpen] = useState(defaultOpen);
+
+  const triggerClass =
+    tone === "question"
+      ? "text-base sm:text-lg font-semibold text-navy group-hover:text-magenta transition-colors pr-4"
+      : "text-sm font-semibold uppercase tracking-wider text-navy group-hover:text-magenta transition-colors";
 
   return (
     <div className="border-b border-beige last:border-b-0">
@@ -23,9 +38,7 @@ export default function CollapsibleSection({
         className="flex w-full items-center justify-between py-5 text-left group"
         aria-expanded={open}
       >
-        <span className="text-sm font-semibold uppercase tracking-wider text-navy group-hover:text-magenta transition-colors">
-          {label}
-        </span>
+        <span className={triggerClass}>{label}</span>
         <motion.svg
           animate={{ rotate: open ? 180 : 0 }}
           transition={{ duration: 0.25 }}
