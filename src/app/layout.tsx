@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import JsonLd from "@/components/JsonLd";
 import { SITE } from "@/lib/constants";
@@ -23,6 +23,38 @@ export const metadata: Metadata = {
     title: `${SITE.name} — ${SITE.tagline}`,
     description: SITE.description,
   },
+  appleWebApp: {
+    capable: true,
+    title: SITE.name,
+    statusBarStyle: "black-translucent",
+  },
+  applicationName: SITE.name,
+  formatDetection: {
+    // Suppress iOS auto-linking of digits as phone numbers — the catalog has
+    // a lot of dosage strings like "10mg/2mL" that iOS otherwise turns into
+    // tappable phone links.
+    telephone: false,
+    address: false,
+    date: false,
+    email: false,
+  },
+};
+
+/**
+ * Viewport-level controls. `viewportFit: cover` lets the page paint behind
+ * the iOS safe area inset (notch + home indicator) so the catalog's sticky
+ * toolbar can sit flush against the top edge while content still respects
+ * `env(safe-area-inset-*)` paddings. `themeColor` matches the navy brand so
+ * the iOS Safari URL bar tints to the brand when scrolled.
+ */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#262262" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a1750" },
+  ],
 };
 
 export default function RootLayout({

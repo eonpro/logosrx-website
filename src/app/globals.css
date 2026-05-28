@@ -63,6 +63,108 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  /*
+   * iOS pinch / double-tap zoom on text fields is triggered when the input
+   * font-size renders below 16 px in CSS pixels. Default body is unaffected
+   * because we never drop below 14 px for body copy; specific input
+   * overrides below pin form controls at 16 px on small viewports so the
+   * keyboard never causes a viewport zoom.
+   */
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+/*
+ * iOS Safari treats taps on interactive elements as mouse-like by default,
+ * which paints a translucent grey overlay on press. That overlay is the
+ * #1 visual giveaway that "this is a website, not an app". Killing it
+ * everywhere and re-introducing intentional pressed-state styles via
+ * `:active` keeps the surface feeling native.
+ */
+a,
+button,
+[role="button"],
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * Pin form-control font-size at >=16 px on touch devices to suppress iOS's
+ * automatic zoom-on-focus. Desktop keeps its tighter default for visual
+ * density.
+ */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/*
+ * App-shell safe-area helpers. Layouts that need to extend behind the iOS
+ * status bar / home indicator pad themselves with these.
+ *   - `.safe-pt` adds top inset (sticky nav bars on viewportFit:cover pages)
+ *   - `.safe-pb` adds bottom inset (bottom sheets, mobile sticky CTAs)
+ *   - `.safe-px` adds left + right inset (landscape notch on iPhone)
+ *   - `.safe-min-h-screen` is `100svh` so iOS toolbars don't push content
+ *     under the fold mid-scroll.
+ */
+.safe-pt {
+  padding-top: env(safe-area-inset-top);
+}
+.safe-pb {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.safe-px {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+.safe-min-h-screen {
+  min-height: 100svh;
+}
+
+/*
+ * Utility — horizontally scrollable strip that snaps each child into view.
+ * Used by mobile filter chips + tier segments where the row may overflow
+ * the viewport and the user should be able to swipe through it like an
+ * iOS segmented control.
+ */
+.snap-x-strip {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.snap-x-strip::-webkit-scrollbar {
+  display: none;
+}
+.snap-x-strip > * {
+  scroll-snap-align: start;
+}
+
+/*
+ * Sticky catalog toolbar — sits under the fixed marketing header (72 px)
+ * while content scrolls behind it. The blur + saturate gives the iOS
+ * navigation-bar effect without hardcoding a colour, so the toolbar reads
+ * correctly over both the cream hero and the white card list.
+ */
+.catalog-sticky-toolbar {
+  position: sticky;
+  top: 72px;
+  z-index: 30;
+  backdrop-filter: saturate(180%) blur(14px);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+  background-color: color-mix(in srgb, #ffffff 85%, transparent);
+  border-bottom: 1px solid var(--color-beige);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  /* Fallback for browsers without backdrop-filter — solid background */
+  .catalog-sticky-toolbar {
+    background-color: #ffffff;
+  }
 }
 
 ::selection {

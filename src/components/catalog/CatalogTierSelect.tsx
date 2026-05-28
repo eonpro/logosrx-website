@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useId, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   CATALOG_CONFIG,
@@ -23,6 +23,10 @@ export default function CatalogTierSelect({ value }: CatalogTierSelectProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [, startTransition] = useTransition();
+  // Unique per instance — the page renders this control twice (a mobile
+  // segmented control + the desktop toolbar), so a hardcoded id would
+  // produce duplicate DOM ids and break the radiogroup label association.
+  const labelId = useId();
 
   function setTier(nextTier: CatalogTier) {
     if (nextTier === value) return;
@@ -40,17 +44,18 @@ export default function CatalogTierSelect({ value }: CatalogTierSelectProps) {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex w-full items-center gap-2 lg:w-auto">
       <span
-        id="catalog-tier-label"
-        className="text-xs font-semibold uppercase tracking-wider text-navy/65 whitespace-nowrap"
+        id={labelId}
+        className="shrink-0 text-xs font-semibold uppercase tracking-wider text-navy/65 whitespace-nowrap"
       >
-        Highlight
+        <span className="lg:hidden">Show price</span>
+        <span className="hidden lg:inline">Highlight</span>
       </span>
       <div
         role="radiogroup"
-        aria-labelledby="catalog-tier-label"
-        className="inline-flex items-center rounded-full border border-beige bg-white p-0.5"
+        aria-labelledby={labelId}
+        className="flex w-full items-center rounded-full border border-beige bg-white p-0.5 lg:inline-flex lg:w-auto"
       >
         {CATALOG_TIERS.map((tier) => {
           const isActive = tier === value;
@@ -61,7 +66,7 @@ export default function CatalogTierSelect({ value }: CatalogTierSelectProps) {
               role="radio"
               aria-checked={isActive}
               onClick={() => setTier(tier)}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta ${
+              className={`flex-1 rounded-full px-3 py-2 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta lg:flex-none lg:py-1.5 lg:text-xs ${
                 isActive
                   ? "bg-navy text-white"
                   : "text-navy/65 hover:text-navy"

@@ -702,3 +702,34 @@ export function countActiveFilters(filters: CatalogFilters): number {
     filters.form.length
   );
 }
+
+/* ──────────────────────────── Detail-page linking ──────────────────────────── */
+
+/**
+ * Map a catalog SKU `id` onto a product detail-page slug.
+ *
+ * Catalog SKU ids are variant-level (e.g. `"semaglutide-glycine-2.5mg-1ml"`),
+ * while detail pages are product-level (`"semaglutide-glycine"`). A SKU links
+ * to a detail page when a known slug is an exact match or a hyphen-bounded
+ * prefix of the SKU id. When several slugs match (e.g. `"nad"` and
+ * `"nad-plus"`), the longest wins so the most specific page is chosen.
+ *
+ * Hyphen-bounded matching prevents false positives like `"semaglutide"`
+ * matching `"semaglutide-glycine"`-only ids when an unrelated
+ * `"semaglutidexyz"` slug exists.
+ *
+ * Pure + dependency-free (slugs are injected) so it stays trivially testable
+ * and avoids a `catalog.ts` → `products.ts` import cycle.
+ */
+export function resolveDetailSlug(
+  catalogId: string,
+  knownSlugs: readonly string[],
+): string | undefined {
+  let best: string | undefined;
+  for (const slug of knownSlugs) {
+    if (catalogId === slug || catalogId.startsWith(`${slug}-`)) {
+      if (best === undefined || slug.length > best.length) best = slug;
+    }
+  }
+  return best;
+}

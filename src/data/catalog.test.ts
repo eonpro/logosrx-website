@@ -11,6 +11,7 @@ import {
   getFilterGroupLabel,
   paginateCatalog,
   parseCatalogSearchParams,
+  resolveDetailSlug,
   serializeCatalogSearchParams,
   sortCatalog,
   toggleFilterValue,
@@ -416,5 +417,48 @@ describe("countActiveFilters / getFilterGroupLabel", () => {
 describe("CATALOG_TIERS exhaustiveness", () => {
   it("contains exactly retail / provider / volume", () => {
     expect([...CATALOG_TIERS]).toEqual(["retail", "provider", "volume"]);
+  });
+});
+
+describe("resolveDetailSlug", () => {
+  const slugs = [
+    "testosterone-cypionate",
+    "semaglutide-glycine",
+    "tirzepatide-glycine",
+    "nad-plus",
+    "sermorelin",
+  ];
+
+  it("matches a hyphen-bounded slug prefix on a variant SKU id", () => {
+    expect(resolveDetailSlug("semaglutide-glycine-2.5mg-1ml", slugs)).toBe(
+      "semaglutide-glycine",
+    );
+    expect(resolveDetailSlug("tirzepatide-glycine-10mg-4ml", slugs)).toBe(
+      "tirzepatide-glycine",
+    );
+    expect(resolveDetailSlug("nad-plus-100mg-5ml", slugs)).toBe("nad-plus");
+  });
+
+  it("matches when the SKU id equals the slug exactly", () => {
+    expect(resolveDetailSlug("sermorelin", slugs)).toBe("sermorelin");
+  });
+
+  it("returns the longest (most specific) matching slug", () => {
+    expect(resolveDetailSlug("nad-plus-100mg-5ml", ["nad", "nad-plus"])).toBe(
+      "nad-plus",
+    );
+  });
+
+  it("returns undefined when nothing matches", () => {
+    expect(resolveDetailSlug("glutathione-200mg-2ml", slugs)).toBeUndefined();
+  });
+
+  it("does not match a non-hyphen-bounded prefix", () => {
+    // "sermorelin" must not match "sermorelinx..." (no hyphen boundary).
+    expect(resolveDetailSlug("sermorelinx-5mg", slugs)).toBeUndefined();
+  });
+
+  it("handles an empty slug list", () => {
+    expect(resolveDetailSlug("anything-1ml", [])).toBeUndefined();
   });
 });
