@@ -8,7 +8,7 @@ const statusStyles: Record<string, string> = {
   new: "bg-magenta/10 text-magenta",
   contacted: "bg-sky/10 text-sky",
   onboarded: "bg-green-100 text-green-700",
-  archived: "bg-beige-dark/50 text-navy/40",
+  archived: "bg-beige-dark/50 text-navy/65",
 };
 
 export function ClinicSignupsTable({
@@ -56,7 +56,7 @@ export function ClinicSignupsTable({
                 </td>
                 <td className="px-6 py-4 text-navy/60">{signup.contactName}</td>
                 <td className="px-6 py-4 text-navy/60">{signup.state || "—"}</td>
-                <td className="px-6 py-4 text-navy/40">
+                <td className="px-6 py-4 text-navy/65">
                   {new Date(signup.createdAt).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
@@ -76,7 +76,7 @@ export function ClinicSignupsTable({
                     height="16"
                     viewBox="0 0 16 16"
                     fill="none"
-                    className={`text-navy/30 transition-transform ${expandedId === signup.id ? "rotate-180" : ""}`}
+                    className={`text-navy/65 transition-transform ${expandedId === signup.id ? "rotate-180" : ""}`}
                   >
                     <path
                       d="M4 6l4 4 4-4"
@@ -93,7 +93,7 @@ export function ClinicSignupsTable({
                   <td colSpan={6} className="px-6 py-5 bg-cream/30">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
                       <div>
-                        <p className="text-navy/40 text-xs uppercase tracking-wider mb-1">
+                        <p className="text-navy/65 text-xs uppercase tracking-wider mb-1">
                           Email
                         </p>
                         <a
@@ -104,7 +104,7 @@ export function ClinicSignupsTable({
                         </a>
                       </div>
                       <div>
-                        <p className="text-navy/40 text-xs uppercase tracking-wider mb-1">
+                        <p className="text-navy/65 text-xs uppercase tracking-wider mb-1">
                           Phone
                         </p>
                         <a
@@ -115,13 +115,13 @@ export function ClinicSignupsTable({
                         </a>
                       </div>
                       <div>
-                        <p className="text-navy/40 text-xs uppercase tracking-wider mb-1">
+                        <p className="text-navy/65 text-xs uppercase tracking-wider mb-1">
                           NPI Number
                         </p>
                         <p className="text-navy">{signup.npiNumber || "—"}</p>
                       </div>
                       <div>
-                        <p className="text-navy/40 text-xs uppercase tracking-wider mb-1">
+                        <p className="text-navy/65 text-xs uppercase tracking-wider mb-1">
                           Specialty
                         </p>
                         <p className="text-navy">{signup.specialty || "—"}</p>
@@ -130,7 +130,7 @@ export function ClinicSignupsTable({
 
                     {signup.message && (
                       <div className="mb-4">
-                        <p className="text-navy/40 text-xs uppercase tracking-wider mb-1">
+                        <p className="text-navy/65 text-xs uppercase tracking-wider mb-1">
                           Message
                         </p>
                         <p className="text-navy text-sm leading-relaxed bg-white rounded-lg p-3 border border-beige">
@@ -152,7 +152,7 @@ export function ClinicSignupsTable({
                           disabled={signup.status === status}
                           className={`rounded-full px-3.5 py-1.5 text-xs font-semibold capitalize transition-colors ${
                             signup.status === status
-                              ? "bg-navy/10 text-navy/30 cursor-not-allowed"
+                              ? "bg-navy/10 text-navy/65 cursor-not-allowed"
                               : "bg-white border border-beige hover:border-magenta hover:text-magenta text-navy/60"
                           }`}
                         >

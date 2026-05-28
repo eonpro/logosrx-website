@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { motion } from "framer-motion";
+import Reveal from "./Reveal";
 import { SITE } from "@/lib/constants";
 
 export default function Testimonial() {
@@ -18,13 +18,7 @@ export default function Testimonial() {
 
       <div className="relative mx-auto max-w-7xl px-6 lg:px-8 py-24 sm:py-32">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          {/* Left — CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6 }}
-          >
+          <Reveal duration={600} offsetY={30}>
             <div className="mb-8">
               <Image
                 src="/images/logos-icon-testimonial.png"
@@ -52,16 +46,9 @@ export default function Testimonial() {
                 <path d="M3 1.5L9 6L3 10.5V1.5Z" fill="currentColor" />
               </svg>
             </a>
-          </motion.div>
+          </Reveal>
 
-          {/* Right — Quote */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6, delay: 0.15 }}
-            className="relative"
-          >
+          <Reveal duration={600} offsetY={30} delay={150} className="relative">
             <div className="flex items-center gap-5">
               <Image
                 src="/images/gavin-sigle.png"
@@ -83,7 +70,7 @@ export default function Testimonial() {
               &ldquo;Logos Rx makes my job easier every day. Their team actually cares
               about both the provider and the patient&mdash;that&rsquo;s rare to find.&rdquo;
             </blockquote>
-          </motion.div>
+          </Reveal>
         </div>
       </div>
     </section>

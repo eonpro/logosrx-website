@@ -37,7 +37,7 @@ export const productInserts: ProductInsert[] = [
           "Ensure all packaging is intact and that the medication has not expired. Check the solution for any discoloration, particles, or cloudiness. If anything appears abnormal, do not use the medication and contact Logos RX or your provider.",
         ],
         image: {
-          src: "/images/product-inserts/insert-fig1-supplies.png",
+          src: "/images/product-inserts/insert-fig1-supplies.webp",
           alt: "Figure 1: Required supplies for injectable medication including pre-mixed medication vial, syringe, sharps container, alcohol swabs, and adhesive bandage",
         },
       },
@@ -51,7 +51,7 @@ export const productInserts: ProductInsert[] = [
           "Step 5: Remove the drawing needle and replace it with the injection needle. Do not touch the needle tip.",
         ],
         image: {
-          src: "/images/product-inserts/insert-fig2-syringe-draw.png",
+          src: "/images/product-inserts/insert-fig2-syringe-draw.webp",
           alt: "Figure 2: Syringe with measurement markings and technique for drawing medication from an inverted vial",
         },
       },
@@ -65,7 +65,7 @@ export const productInserts: ProductInsert[] = [
           "Rotate injection sites with each dose to prevent tissue irritation, scarring, or lipodystrophy.",
         ],
         image: {
-          src: "/images/product-inserts/insert-fig5-im-sites.png",
+          src: "/images/product-inserts/insert-fig5-im-sites.webp",
           alt: "Figure 5: Intramuscular injection sites showing deltoid, vastus lateralis, and ventrogluteal on front and side body views",
         },
       },
@@ -80,7 +80,7 @@ export const productInserts: ProductInsert[] = [
           "Step 6: Apply gentle pressure to the site with a cotton ball or bandage. Do not rub the injection site.",
         ],
         image: {
-          src: "/images/product-inserts/insert-fig3-angles.png",
+          src: "/images/product-inserts/insert-fig3-angles.webp",
           alt: "Figure 4: Injection technique showing 90-degree and 45-degree needle angles with skin cross-section showing subcutaneous and muscle layers",
         },
       },
@@ -98,7 +98,7 @@ export const productInserts: ProductInsert[] = [
           "Dispose of all used needles and syringes immediately in an FDA-cleared sharps container. Never recap, bend, or break needles. When the sharps container is three-quarters full, seal it and follow your community's disposal guidelines or contact Logos RX for assistance.",
         ],
         image: {
-          src: "/images/product-inserts/insert-fig6-disposal.png",
+          src: "/images/product-inserts/insert-fig6-disposal.webp",
           alt: "Figure 7: Proper sharps disposal technique showing hand dropping used syringe into biohazard sharps container",
         },
       },
@@ -131,7 +131,7 @@ export const productInserts: ProductInsert[] = [
           "Ensure all packaging is intact and that the medication has not expired. Inspect the solution for any discoloration, particles, or cloudiness. If anything appears abnormal, do not use the medication and contact Logos RX or your provider.",
         ],
         image: {
-          src: "/images/product-inserts/insert-fig1-supplies.png",
+          src: "/images/product-inserts/insert-fig1-supplies.webp",
           alt: "Figure 1: Required supplies for injectable medication including pre-mixed medication vial, syringe, sharps container, alcohol swabs, and adhesive bandage",
         },
       },
@@ -145,7 +145,7 @@ export const productInserts: ProductInsert[] = [
           "Step 5: Remove the needle from the vial. If using a separate injection needle, swap it now. Do not touch the needle tip.",
         ],
         image: {
-          src: "/images/product-inserts/insert-fig2-syringe-draw.png",
+          src: "/images/product-inserts/insert-fig2-syringe-draw.webp",
           alt: "Figure 2: Syringe with measurement markings and technique for drawing medication from an inverted vial",
         },
       },
@@ -159,7 +159,7 @@ export const productInserts: ProductInsert[] = [
           "Rotate injection sites systematically — for example, use different quadrants of the abdomen or alternate between left and right sides. Keep at least 1 inch between injection points to prevent tissue changes.",
         ],
         image: {
-          src: "/images/product-inserts/insert-fig4-subq-sites.png",
+          src: "/images/product-inserts/insert-fig4-subq-sites.webp",
           alt: "Figure 5: Subcutaneous injection sites showing abdomen, upper thigh, and upper arm on front and back body views",
         },
       },
@@ -174,7 +174,7 @@ export const productInserts: ProductInsert[] = [
           "Step 6: Apply gentle pressure with a cotton ball or bandage. Do not rub the site, as this can affect absorption.",
         ],
         image: {
-          src: "/images/product-inserts/insert-fig3-angles.png",
+          src: "/images/product-inserts/insert-fig3-angles.webp",
           alt: "Figure 4: Injection technique showing 90-degree and 45-degree needle angles with skin cross-section and pinching technique",
         },
       },
@@ -192,7 +192,7 @@ export const productInserts: ProductInsert[] = [
           "Dispose of all used needles and syringes immediately in an FDA-cleared sharps container. Never recap, bend, or break needles. When the container is three-quarters full, seal it and follow your community's disposal guidelines or contact Logos RX for assistance.",
         ],
         image: {
-          src: "/images/product-inserts/insert-fig6-disposal.png",
+          src: "/images/product-inserts/insert-fig6-disposal.webp",
           alt: "Figure 7: Proper sharps disposal technique showing hand dropping used syringe into biohazard sharps container",
         },
       },

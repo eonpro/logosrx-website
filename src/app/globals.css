@@ -18,6 +18,13 @@
 
 html {
   position: relative;
+  /*
+   * The marketing layout pushes content down by 72 px to clear the fixed
+   * header (`pt-[72px]`). Without `scroll-padding-top`, hash-anchor jumps
+   * scroll the target *under* the header. Browsers honor this for both
+   * native fragment navigation and `element.scrollIntoView()` calls.
+   */
+  scroll-padding-top: 80px;
 }
 
 html.lenis, html.lenis body {
@@ -33,11 +40,29 @@ html.lenis, html.lenis body {
 }
 
 body {
-  font-family: "sofia-pro", sans-serif;
+  /*
+   * Fallback stack closely matches sofia-pro's geometric humanist character
+   * so the layout barely shifts when the kit finishes loading (minimises
+   * Cumulative Layout Shift). System fonts are listed in order of overall
+   * availability + visual similarity.
+   */
+  font-family:
+    "sofia-pro",
+    "Avenir Next",
+    "Avenir",
+    "Helvetica Neue",
+    Helvetica,
+    "Segoe UI",
+    Roboto,
+    -apple-system,
+    BlinkMacSystemFont,
+    system-ui,
+    sans-serif;
   color: var(--color-navy);
   background: #ffffff;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 ::selection {
@@ -56,6 +81,29 @@ body {
 
 .animate-marquee {
   animation: marquee 30s linear infinite;
+}
+
+/*
+ * Honor the OS-level reduced-motion preference globally. This is the
+ * universally recommended "neuter all animations" stanza — animations and
+ * transitions still run for one tick (0.01 ms) so JS that relies on
+ * `animationend` / `transitionend` events still fires, but the visual
+ * motion is imperceptible. Framer Motion is handled separately via
+ * `ReducedMotionProvider`.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-marquee {
+    animation: none !important;
+  }
 }
 
 /* Clerk dark form overrides for phone input & country selector */

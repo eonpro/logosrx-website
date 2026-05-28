@@ -102,7 +102,7 @@ export default function AuthShell({
           transition={{ duration: 0.6, delay: 0.3 }}
         >
           {footerLink && (
-            <p className="text-sm text-white/30">
+            <p className="text-sm text-white/75">
               {footerLink.text}{" "}
               <Link
                 href={footerLink.href}
@@ -136,7 +136,7 @@ export default function AuthShell({
           </div>
 
           <div className="flex items-center gap-4">
-            <Link href="/" className="text-[11px] text-white/20 hover:text-white/40 transition-colors">
+            <Link href="/" className="text-[11px] text-white/20 hover:text-white/75 transition-colors">
               logosrx.com
             </Link>
             <span className="text-white/10 text-[11px]">&bull;</span>

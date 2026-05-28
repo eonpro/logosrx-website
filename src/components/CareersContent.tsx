@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import * as Dialog from "@radix-ui/react-dialog";
 import { benefits, openPositions } from "@/data/careers";
 import { SITE } from "@/lib/constants";
 
@@ -18,7 +19,7 @@ function HeroSection() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-navy leading-tight mb-6">
               Join the Logos RX family
             </h1>
-            <p className="text-lg text-navy/50 max-w-md">
+            <p className="text-lg text-navy/70 max-w-md">
               Help us improve patient outcomes through personalized compounding excellence.
             </p>
           </motion.div>
@@ -37,7 +38,7 @@ function HeroSection() {
               </div>
             </div>
             <div className="absolute bottom-6 left-6 right-6">
-              <p className="text-white/50 text-sm">
+              <p className="text-white/80 text-sm">
                 State-of-the-art compounding facility in Tampa, FL
               </p>
             </div>
@@ -65,7 +66,7 @@ function CultureSection() {
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-6">
               Great talent, united by purpose.
             </h2>
-            <p className="text-lg text-white/50 leading-relaxed">
+            <p className="text-lg text-white/80 leading-relaxed">
               Our team comes from many different backgrounds, but what brings us
               together is our passion for excellence and our commitment to quality
               healthcare. At Logos RX, every team member plays a vital role in
@@ -135,7 +136,7 @@ function BenefitsSection() {
               <h3 className="text-lg sm:text-xl font-bold text-navy mb-3">
                 {benefit.title}
               </h3>
-              <p className="text-sm text-navy/50 leading-relaxed">
+              <p className="text-sm text-navy/70 leading-relaxed">
                 {benefit.description}
               </p>
             </motion.div>
@@ -160,24 +161,21 @@ function ApplyModal({ open, onClose, jobTitle }: ApplyModalProps) {
     phone: "",
     referralSource: "",
     willingToRelocate: "",
+    // Honeypot field — humans never see/fill this.
+    company_website: "",
   });
   const [resume, setResume] = useState<File | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (open) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => { document.body.style.overflow = ""; };
-  }, [open]);
+  // Radix Dialog handles body-scroll lock, focus trap, escape close, and
+  // restoring focus to the trigger button. We only need to reset the form
+  // when the modal closes.
 
   useEffect(() => {
     if (!open) {
-      setForm({ firstName: "", lastName: "", email: "", phone: "", referralSource: "", willingToRelocate: "" });
+      setForm({ firstName: "", lastName: "", email: "", phone: "", referralSource: "", willingToRelocate: "", company_website: "" });
       setResume(null);
       setStatus("idle");
       setErrorMsg("");
@@ -202,6 +200,7 @@ function ApplyModal({ open, onClose, jobTitle }: ApplyModalProps) {
       data.append("position", jobTitle || "General Application");
       if (form.referralSource) data.append("referralSource", form.referralSource);
       if (form.willingToRelocate) data.append("willingToRelocate", form.willingToRelocate);
+      if (form.company_website) data.append("company_website", form.company_website);
       if (resume) data.append("resume", resume);
 
       const res = await fetch("/api/applications", { method: "POST", body: data });
@@ -217,36 +216,49 @@ function ApplyModal({ open, onClose, jobTitle }: ApplyModalProps) {
   };
 
   return (
-    <AnimatePresence>
-      {open && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
-            onClick={onClose}
-          />
+    <Dialog.Root open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
+      <AnimatePresence>
+        {open && (
+          <Dialog.Portal forceMount>
+            <Dialog.Overlay asChild>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+              />
+            </Dialog.Overlay>
 
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
+            <Dialog.Content
+              asChild
+              aria-describedby="apply-modal-description"
+              onOpenAutoFocus={(e) => {
+                // Don't auto-focus the close button; let the first form field
+                // receive focus instead via the form's natural tab order.
+                e.preventDefault();
+                const firstInput = document.getElementById("apply-first-name");
+                firstInput?.focus();
+              }}
             >
-              <button
-                onClick={onClose}
-                className="absolute top-5 right-5 z-10 flex items-center justify-center w-8 h-8 rounded-full hover:bg-beige transition-colors"
-                aria-label="Close"
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                className="fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl focus:outline-none"
               >
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <path d="M4.5 4.5L13.5 13.5M13.5 4.5L4.5 13.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
-              </button>
+                <Dialog.Title id="apply-modal-title" className="sr-only">
+                  Apply for a position
+                </Dialog.Title>
+                <Dialog.Close
+                  className="absolute top-5 right-5 z-10 flex items-center justify-center w-8 h-8 rounded-full hover:bg-beige focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta transition-colors"
+                  aria-label="Close"
+                >
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                    <path d="M4.5 4.5L13.5 13.5M13.5 4.5L4.5 13.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                </Dialog.Close>
 
               <div className="p-8 sm:p-10">
                 {status === "success" ? (
@@ -257,7 +269,7 @@ function ApplyModal({ open, onClose, jobTitle }: ApplyModalProps) {
                       </svg>
                     </div>
                     <h2 className="text-2xl font-bold text-navy mb-2">Application submitted!</h2>
-                    <p className="text-navy/50 text-sm mb-6">We&rsquo;ll review your application and get back to you soon.</p>
+                    <p className="text-navy/70 text-sm mb-6">We&rsquo;ll review your application and get back to you soon.</p>
                     <button onClick={onClose} className="rounded-full bg-navy px-6 py-2.5 text-sm font-semibold text-white hover:bg-navy-light transition-colors">
                       Close
                     </button>
@@ -267,54 +279,112 @@ function ApplyModal({ open, onClose, jobTitle }: ApplyModalProps) {
                     <h2 className="text-2xl sm:text-3xl font-bold text-navy mb-2">
                       Apply now
                     </h2>
-                    <p className="text-navy/50 text-sm mb-8">
+                    <p id="apply-modal-description" className="text-navy/65 text-sm mb-2">
                       Tell us a little more about you.
                     </p>
+                    <p className="text-navy/55 text-xs mb-6">
+                      Fields marked with <span className="text-magenta">*</span> are required.
+                    </p>
 
-                    <form className="grid grid-cols-1 sm:grid-cols-2 gap-4" onSubmit={handleSubmit}>
+                    <form
+                      className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                      onSubmit={handleSubmit}
+                      noValidate
+                      aria-describedby={status === "error" ? "apply-error" : undefined}
+                    >
                       <input
                         type="text"
-                        name="firstName"
-                        value={form.firstName}
+                        name="company_website"
+                        tabIndex={-1}
+                        autoComplete="off"
+                        value={form.company_website}
                         onChange={handleChange}
-                        placeholder="First name"
-                        required
-                        className="w-full rounded-full border border-beige-dark bg-white px-5 py-3 text-sm text-navy placeholder:text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors"
+                        aria-hidden="true"
+                        className="absolute h-0 w-0 -left-[9999px] opacity-0 pointer-events-none sm:col-span-2"
                       />
-                      <input
-                        type="text"
-                        name="lastName"
-                        value={form.lastName}
-                        onChange={handleChange}
-                        placeholder="Last name"
-                        required
-                        className="w-full rounded-full border border-beige-dark bg-white px-5 py-3 text-sm text-navy placeholder:text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors"
-                      />
-                      <input
-                        type="email"
-                        name="email"
-                        value={form.email}
-                        onChange={handleChange}
-                        placeholder="Email"
-                        required
-                        className="w-full rounded-full border border-beige-dark bg-white px-5 py-3 text-sm text-navy placeholder:text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors"
-                      />
-                      <input
-                        type="tel"
-                        name="phone"
-                        value={form.phone}
-                        onChange={handleChange}
-                        placeholder="Phone"
-                        required
-                        className="w-full rounded-full border border-beige-dark bg-white px-5 py-3 text-sm text-navy placeholder:text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors"
-                      />
+                      <div>
+                        <label htmlFor="apply-first-name" className="sr-only">
+                          First name (required)
+                        </label>
+                        <input
+                          id="apply-first-name"
+                          type="text"
+                          name="firstName"
+                          value={form.firstName}
+                          onChange={handleChange}
+                          placeholder="First name *"
+                          required
+                          autoComplete="given-name"
+                          aria-required="true"
+                          aria-invalid={status === "error" ? "true" : undefined}
+                          className="w-full rounded-full border border-beige-dark bg-white px-5 py-3 text-sm text-navy placeholder:text-navy/55 focus:border-magenta focus:ring-2 focus:ring-magenta/40 outline-none transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="apply-last-name" className="sr-only">
+                          Last name (required)
+                        </label>
+                        <input
+                          id="apply-last-name"
+                          type="text"
+                          name="lastName"
+                          value={form.lastName}
+                          onChange={handleChange}
+                          placeholder="Last name *"
+                          required
+                          autoComplete="family-name"
+                          aria-required="true"
+                          aria-invalid={status === "error" ? "true" : undefined}
+                          className="w-full rounded-full border border-beige-dark bg-white px-5 py-3 text-sm text-navy placeholder:text-navy/55 focus:border-magenta focus:ring-2 focus:ring-magenta/40 outline-none transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="apply-email" className="sr-only">
+                          Email (required)
+                        </label>
+                        <input
+                          id="apply-email"
+                          type="email"
+                          name="email"
+                          value={form.email}
+                          onChange={handleChange}
+                          placeholder="Email *"
+                          required
+                          autoComplete="email"
+                          aria-required="true"
+                          aria-invalid={status === "error" ? "true" : undefined}
+                          className="w-full rounded-full border border-beige-dark bg-white px-5 py-3 text-sm text-navy placeholder:text-navy/55 focus:border-magenta focus:ring-2 focus:ring-magenta/40 outline-none transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="apply-phone" className="sr-only">
+                          Phone (required)
+                        </label>
+                        <input
+                          id="apply-phone"
+                          type="tel"
+                          name="phone"
+                          value={form.phone}
+                          onChange={handleChange}
+                          placeholder="Phone *"
+                          required
+                          autoComplete="tel"
+                          aria-required="true"
+                          aria-invalid={status === "error" ? "true" : undefined}
+                          className="w-full rounded-full border border-beige-dark bg-white px-5 py-3 text-sm text-navy placeholder:text-navy/55 focus:border-magenta focus:ring-2 focus:ring-magenta/40 outline-none transition-colors"
+                        />
+                      </div>
 
                       <div className="relative">
+                        <label htmlFor="apply-referral" className="sr-only">
+                          How did you hear about us?
+                        </label>
                         <select
+                          id="apply-referral"
                           name="referralSource"
                           value={form.referralSource}
                           onChange={handleChange}
-                          className="w-full appearance-none rounded-full border border-beige-dark bg-white px-5 py-3 pr-10 text-sm text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors"
+                          className="w-full appearance-none rounded-full border border-beige-dark bg-white px-5 py-3 pr-10 text-sm text-navy/70 focus:border-magenta focus:ring-2 focus:ring-magenta/40 outline-none transition-colors"
                         >
                           <option value="" disabled>How did you hear about us?</option>
                           <option value="search">Search Engine</option>
@@ -323,39 +393,58 @@ function ApplyModal({ open, onClose, jobTitle }: ApplyModalProps) {
                           <option value="job-board">Job Board</option>
                           <option value="other">Other</option>
                         </select>
-                        <svg className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-navy/30" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <svg aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-navy/65" width="14" height="14" viewBox="0 0 14 14" fill="none">
                           <path d="M3.5 5.5L7 9L10.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       </div>
 
                       <div className="relative">
+                        <label htmlFor="apply-relocate" className="sr-only">
+                          Willing to relocate?
+                        </label>
                         <select
+                          id="apply-relocate"
                           name="willingToRelocate"
                           value={form.willingToRelocate}
                           onChange={handleChange}
-                          className="w-full appearance-none rounded-full border border-beige-dark bg-white px-5 py-3 pr-10 text-sm text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors"
+                          className="w-full appearance-none rounded-full border border-beige-dark bg-white px-5 py-3 pr-10 text-sm text-navy/70 focus:border-magenta focus:ring-2 focus:ring-magenta/40 outline-none transition-colors"
                         >
                           <option value="" disabled>Are you willing to relocate?</option>
                           <option value="yes">Yes</option>
                           <option value="no">No</option>
                         </select>
-                        <svg className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-navy/30" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <svg aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-navy/65" width="14" height="14" viewBox="0 0 14 14" fill="none">
                           <path d="M3.5 5.5L7 9L10.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       </div>
 
                       <div className="sm:col-span-2 mt-2">
-                        <p className="text-sm font-semibold text-navy mb-3">Resume Upload</p>
+                        <p id="resume-upload-label" className="text-sm font-semibold text-navy mb-3">
+                          Resume upload
+                        </p>
                         <input
                           ref={fileInputRef}
+                          id="apply-resume"
                           type="file"
+                          name="resume"
                           accept=".pdf,.doc,.docx"
-                          className="hidden"
+                          className="sr-only"
+                          aria-describedby="resume-upload-hint"
                           onChange={(e) => setResume(e.target.files?.[0] || null)}
                         />
                         <div
-                          className="w-full rounded-2xl border-2 border-dashed border-beige-dark bg-cream/50 px-6 py-8 text-center hover:border-magenta/40 transition-colors cursor-pointer"
+                          role="button"
+                          tabIndex={0}
+                          aria-labelledby="resume-upload-label"
+                          aria-describedby="resume-upload-hint"
+                          className="w-full rounded-2xl border-2 border-dashed border-beige-dark bg-cream/50 px-6 py-8 text-center hover:border-magenta/40 focus:border-magenta focus:outline-none focus:ring-2 focus:ring-magenta/30 transition-colors cursor-pointer"
                           onClick={() => fileInputRef.current?.click()}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              fileInputRef.current?.click();
+                            }
+                          }}
                           onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                           onDrop={(e) => {
                             e.preventDefault();
@@ -368,7 +457,7 @@ function ApplyModal({ open, onClose, jobTitle }: ApplyModalProps) {
                             <p className="text-sm text-navy font-medium">{resume.name}</p>
                           ) : (
                             <>
-                              <p className="text-sm text-navy/40 mb-2">
+                              <p className="text-sm text-navy/65 mb-2">
                                 Drop files here or
                               </p>
                               <span className="inline-flex items-center rounded-full bg-magenta px-5 py-2 text-sm font-semibold text-white">
@@ -377,12 +466,20 @@ function ApplyModal({ open, onClose, jobTitle }: ApplyModalProps) {
                             </>
                           )}
                         </div>
-                        <p className="text-xs text-navy/30 mt-2">Max. file size: 25 MB. PDF, DOC, DOCX.</p>
+                        <p id="resume-upload-hint" className="text-xs text-navy/55 mt-2">
+                          Max. file size: 25 MB. PDF, DOC, or DOCX.
+                        </p>
                       </div>
 
                       {status === "error" && (
                         <div className="sm:col-span-2">
-                          <p className="text-sm text-red-600 bg-red-50 rounded-lg px-4 py-2">{errorMsg}</p>
+                          <p
+                            id="apply-error"
+                            role="alert"
+                            className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-2"
+                          >
+                            {errorMsg}
+                          </p>
                         </div>
                       )}
 
@@ -399,11 +496,12 @@ function ApplyModal({ open, onClose, jobTitle }: ApplyModalProps) {
                   </>
                 )}
               </div>
-            </motion.div>
-          </div>
-        </>
-      )}
-    </AnimatePresence>
+              </motion.div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        )}
+      </AnimatePresence>
+    </Dialog.Root>
   );
 }
 
@@ -439,13 +537,13 @@ function OpenPositionsSection({ onApply }: { onApply: (title: string) => void })
                   <span className="inline-block rounded-md bg-navy px-3 py-1 text-xs font-semibold text-white">
                     {job.department}
                   </span>
-                  <span className="flex items-center gap-1.5 text-sm text-navy/50">
+                  <span className="flex items-center gap-1.5 text-sm text-navy/70">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
                       <path d="M7 1.5C4.52 1.5 2.5 3.52 2.5 6c0 3.38 4.5 6.5 4.5 6.5s4.5-3.12 4.5-6.5c0-2.48-2.02-4.5-4.5-4.5Zm0 6.1a1.6 1.6 0 110-3.2 1.6 1.6 0 010 3.2Z" fill="currentColor"/>
                     </svg>
                     {job.location}
                   </span>
-                  <span className="flex items-center gap-1.5 text-sm text-navy/50">
+                  <span className="flex items-center gap-1.5 text-sm text-navy/70">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
                       <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.2" fill="none"/>
                       <path d="M7 4v3.5l2.5 1.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>

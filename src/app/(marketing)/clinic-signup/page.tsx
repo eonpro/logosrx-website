@@ -38,7 +38,7 @@ export default function ClinicSignupPage() {
           <h3 className="text-xl font-bold text-navy mb-3">
             Prefer to speak with someone?
           </h3>
-          <p className="text-navy/50 text-sm mb-6">
+          <p className="text-navy/70 text-sm mb-6">
             Our provider relations team is here to answer any questions.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

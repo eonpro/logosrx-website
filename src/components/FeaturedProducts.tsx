@@ -57,7 +57,7 @@ export default function FeaturedProducts() {
           {/* Product grid */}
           <div className="flex-1 min-w-0">
             {/* Active category label */}
-            <p className="text-xs font-semibold uppercase tracking-widest text-navy/40 mb-6">
+            <p className="text-xs font-semibold uppercase tracking-widest text-navy/65 mb-6">
               {active}:
             </p>
 

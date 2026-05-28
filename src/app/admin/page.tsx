@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { db } from "@/lib/db";
 import { employmentApplications, clinicSignups, emailSignups } from "@/lib/db/schema";
 import { count, eq } from "drizzle-orm";
+import { requireAdmin } from "@/lib/auth/admin";
 
 async function getStats() {
   const [appTotal] = await db
@@ -49,6 +50,7 @@ const cards = [
 ];
 
 export default async function AdminOverview() {
+  await requireAdmin();
   const stats = await getStats();
 
   const data = [
@@ -61,7 +63,7 @@ export default async function AdminOverview() {
     <div>
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-navy">Dashboard</h1>
-        <p className="text-navy/50 text-sm mt-1">
+        <p className="text-navy/70 text-sm mt-1">
           Overview of all submissions and sign-ups.
         </p>
       </div>
@@ -74,7 +76,7 @@ export default async function AdminOverview() {
             className="group relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm border border-beige hover:shadow-md hover:-translate-y-0.5 transition-all"
           >
             <div className={`absolute top-0 left-0 w-1 h-full ${card.color}`} />
-            <p className="text-sm font-medium text-navy/50 mb-1">
+            <p className="text-sm font-medium text-navy/70 mb-1">
               {card.label}
             </p>
             <p className="text-3xl font-bold text-navy">{card.total}</p>

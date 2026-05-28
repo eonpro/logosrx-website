@@ -1,0 +1,59 @@
+import {
+  CATALOG_CONFIG,
+  formatValidityDate,
+  type CatalogConfig,
+} from "@/data/catalog";
+
+interface CatalogHeroProps {
+  /**
+   * Override the global catalog config. Useful when we eventually support
+   * multiple catalog variants (e.g. retail vs. partner) — for now defaults
+   * to the single global config exported from `src/data/catalog.ts`.
+   */
+  config?: CatalogConfig;
+}
+
+/**
+ * Top-of-page hero for `/catalog`. Server component, ships no JS.
+ *
+ * Layout mirrors the Hallandale reference: eyebrow → big title → optional
+ * pill → validity range → italic disclaimer.
+ */
+export default function CatalogHero({ config = CATALOG_CONFIG }: CatalogHeroProps) {
+  return (
+    <section
+      aria-labelledby="catalog-heading"
+      className="bg-gradient-to-b from-cream to-white pt-16 pb-10 sm:pt-20 sm:pb-12"
+    >
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <p className="text-xs sm:text-sm font-semibold tracking-[0.2em] uppercase text-magenta mb-3">
+          {config.eyebrow}
+        </p>
+
+        <h1
+          id="catalog-heading"
+          className="text-4xl sm:text-5xl lg:text-6xl font-bold text-navy leading-tight"
+        >
+          {config.title}
+        </h1>
+
+        {config.pill && (
+          <div className="mt-5">
+            <span className="inline-flex items-center gap-2 rounded-full bg-magenta px-4 py-1.5 text-xs font-bold uppercase tracking-[0.15em] text-white">
+              {config.pill}
+            </span>
+          </div>
+        )}
+
+        <p className="mt-6 text-sm sm:text-base font-medium text-navy/80">
+          Valid {formatValidityDate(config.validFrom)} &ndash;{" "}
+          {formatValidityDate(config.validTo)}
+        </p>
+
+        <p className="mt-3 max-w-3xl text-sm italic text-navy/65 leading-relaxed">
+          {config.disclaimer}
+        </p>
+      </div>
+    </section>
+  );
+}

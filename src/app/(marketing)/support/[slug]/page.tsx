@@ -37,7 +37,7 @@ export default async function ArticlePage({
         <div className="mx-auto max-w-3xl px-6 lg:px-8">
           <Link
             href="/support"
-            className="inline-flex items-center gap-2 text-sm font-medium text-navy/50 hover:text-magenta transition-colors mb-8"
+            className="inline-flex items-center gap-2 text-sm font-medium text-navy/70 hover:text-magenta transition-colors mb-8"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -53,7 +53,7 @@ export default async function ArticlePage({
             {article.title}
           </h1>
 
-          <div className="flex items-center gap-4 text-sm text-navy/40">
+          <div className="flex items-center gap-4 text-sm text-navy/65">
             <time>
               {new Date(article.date).toLocaleDateString("en-US", {
                 month: "long",

@@ -62,7 +62,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         <h3 className="text-lg font-bold text-navy leading-snug">
           {product.name}
         </h3>
-        <p className="text-[13px] text-navy/40 mt-0.5">
+        <p className="text-[13px] text-navy/65 mt-0.5">
           {product.activeIngredient.name.split("(")[0].trim()}
         </p>
         <p className="text-[12px] text-navy/25 mt-1.5">
