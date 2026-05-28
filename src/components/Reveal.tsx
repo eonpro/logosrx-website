@@ -73,10 +73,11 @@ export default function Reveal({
     const node = ref.current;
     if (!node) return;
 
-    // SSR / no-IO fallback: assume visible so users without IntersectionObserver
+    // No-IO fallback: assume visible so users without IntersectionObserver
     // still see content (e.g. older Safari behind aggressive content blockers).
-    if (typeof window === "undefined" || !("IntersectionObserver" in window)) {
-      setVisible(true);
+    // Deferred via microtask to keep `setState` out of the effect body.
+    if (!("IntersectionObserver" in window)) {
+      queueMicrotask(() => setVisible(true));
       return;
     }
 

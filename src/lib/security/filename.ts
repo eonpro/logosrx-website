@@ -18,7 +18,6 @@ export function sanitizeFilename(input: string, maxLength = 200): string {
   const flat = trimmed.split(/[\\/]+/).pop() ?? "file";
 
   // Whitelist: letters, numbers, dot, hyphen, underscore. Collapse everything else to '-'.
-  // eslint-disable-next-line no-control-regex
   const cleaned = flat
     .replace(/[\x00-\x1f\x7f]/g, "")
     .replace(/[^A-Za-z0-9._-]+/g, "-")

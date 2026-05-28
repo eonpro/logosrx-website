@@ -30,11 +30,10 @@ function AnimatedNumber({
   const reducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
-    if (!inView) return;
-    if (reducedMotion) {
-      setCount(target);
-      return;
-    }
+    // Reduced-motion users skip the rAF loop entirely; the final value is
+    // surfaced through derived state below so we don't have to call setState
+    // synchronously inside the effect.
+    if (!inView || reducedMotion) return;
 
     const duration = 1800;
     const start = performance.now();
@@ -53,7 +52,8 @@ function AnimatedNumber({
     return () => cancelAnimationFrame(rafId);
   }, [inView, target, reducedMotion]);
 
-  const formatted = target >= 1000 ? count.toLocaleString() : count;
+  const displayed = reducedMotion && inView ? target : count;
+  const formatted = target >= 1000 ? displayed.toLocaleString() : displayed;
 
   return (
     <span className="tabular-nums">

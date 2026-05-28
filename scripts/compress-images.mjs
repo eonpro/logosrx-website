@@ -14,7 +14,7 @@
  * Re-runnable; only writes when the new file is smaller than the original.
  */
 
-import { readFile, writeFile, stat, unlink, readdir } from "node:fs/promises";
+import { readFile, writeFile, unlink, readdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join, dirname, extname, basename } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -32,31 +32,34 @@ function kb(bytes) {
 }
 
 async function compressWebP(file, { quality = 78, maxWidth = 1920 } = {}) {
-  const original = await stat(file);
-  const buffer = await sharp(file)
+  // Single read of the source bytes — no intermediate `stat()` check, so
+  // there is no time-of-check / time-of-use window between the size probe
+  // and the rewrite.
+  const originalBytes = await readFile(file);
+  const newBytes = await sharp(originalBytes)
     .rotate()
     .resize({ width: maxWidth, withoutEnlargement: true })
     .webp({ quality, effort: 6 })
     .toBuffer();
-  if (buffer.byteLength >= original.size) {
+  if (newBytes.byteLength >= originalBytes.byteLength) {
     log(`skip   ${file} (re-encoded was larger)`);
     return;
   }
-  await writeFile(file, buffer);
-  log(`webp   ${file}  ${kb(original.size)} → ${kb(buffer.byteLength)}`);
+  await writeFile(file, newBytes);
+  log(`webp   ${file}  ${kb(originalBytes.byteLength)} → ${kb(newBytes.byteLength)}`);
 }
 
 async function pngToWebP(pngFile, { quality = 82, maxWidth = 1400 } = {}) {
-  const original = await stat(pngFile);
+  const originalBytes = await readFile(pngFile);
   const webpFile = pngFile.replace(/\.png$/i, ".webp");
-  const buffer = await sharp(pngFile)
+  const buffer = await sharp(originalBytes)
     .rotate()
     .resize({ width: maxWidth, withoutEnlargement: true })
     .webp({ quality, effort: 6 })
     .toBuffer();
   await writeFile(webpFile, buffer);
   await unlink(pngFile);
-  log(`png→webp ${pngFile}  ${kb(original.size)} → ${kb(buffer.byteLength)}`);
+  log(`png→webp ${pngFile}  ${kb(originalBytes.byteLength)} → ${kb(buffer.byteLength)}`);
   return { from: basename(pngFile), to: basename(webpFile) };
 }
 
@@ -89,8 +92,17 @@ async function convertProductInserts() {
 }
 
 async function updateProductInsertsData(conversions) {
-  if (!conversions.length || !existsSync(PRODUCT_INSERTS_DATA)) return;
-  let source = await readFile(PRODUCT_INSERTS_DATA, "utf8");
+  if (!conversions.length) return;
+  // Read the file directly — letting `readFile` throw on ENOENT is the
+  // race-free way to "check then use" (no explicit `existsSync` probe
+  // before the read/write pair).
+  let source;
+  try {
+    source = await readFile(PRODUCT_INSERTS_DATA, "utf8");
+  } catch (err) {
+    if (err.code === "ENOENT") return;
+    throw err;
+  }
   for (const { from, to } of conversions) {
     source = source.replaceAll(from, to);
   }
