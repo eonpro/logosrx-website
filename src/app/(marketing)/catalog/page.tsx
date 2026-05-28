@@ -17,8 +17,10 @@ import CatalogTierSelect from "@/components/catalog/CatalogTierSelect";
 import CatalogActiveFilters from "@/components/catalog/CatalogActiveFilters";
 import CatalogResultsSummary from "@/components/catalog/CatalogResultsSummary";
 import CatalogTable from "@/components/catalog/CatalogTable";
+import CatalogProductCards from "@/components/catalog/CatalogProductCards";
 import CatalogPagination from "@/components/catalog/CatalogPagination";
 import CatalogEmptyState from "@/components/catalog/CatalogEmptyState";
+import { products } from "@/data/products";
 
 export const metadata: Metadata = {
   title: `${CATALOG_CONFIG.title} | Logos RX`,
@@ -51,15 +53,16 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
   const sorted = sortCatalog(matched, filters.sort, filters.tier);
   const pageData = paginateCatalog(sorted, filters.page, CATALOG_CONFIG.pageSize);
   const counts = getFilterCounts(catalogProducts, filters);
+  const detailSlugs = products.map((p) => p.slug);
 
   return (
     <>
       <CatalogHero />
 
-      <section className="bg-white pb-16 sm:pb-24">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          {/* Toolbar: search + sort + tier */}
-          <div className="flex flex-col gap-4 border-b border-beige pb-4 lg:flex-row lg:items-center lg:justify-between">
+      {/* App-style sticky toolbar — frosts over content as the list scrolls. */}
+      <div className="catalog-sticky-toolbar safe-px">
+        <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex-1 lg:max-w-md">
               <CatalogSearch
                 initialQuery={filters.q}
@@ -67,11 +70,30 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
               />
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 lg:flex-nowrap">
-              <CatalogMobileFilters filters={filters} counts={counts} />
+            {/* Mobile action row: Filters + Sort split evenly as big targets. */}
+            <div className="flex items-stretch gap-2 lg:hidden">
+              <div className="flex-1">
+                <CatalogMobileFilters filters={filters} counts={counts} />
+              </div>
+              <div className="flex-1">
+                <CatalogSortSelect value={filters.sort} tier={filters.tier} />
+              </div>
+            </div>
+
+            {/* Desktop controls. */}
+            <div className="hidden items-center gap-3 lg:flex">
               <CatalogTierSelect value={filters.tier} />
               <CatalogSortSelect value={filters.sort} tier={filters.tier} />
             </div>
+          </div>
+        </div>
+      </div>
+
+      <section className="bg-white pb-16 sm:pb-24">
+        <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">
+          {/* Mobile: tier "show price" segmented control above the list. */}
+          <div className="lg:hidden">
+            <CatalogTierSelect value={filters.tier} />
           </div>
 
           {/* Active filter chips + result count */}
@@ -103,7 +125,15 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
                 />
               ) : (
                 <div className="flex flex-col gap-6">
-                  <CatalogTable items={pageData.items} tier={filters.tier} />
+                  {/* Mobile: tappable cards. Desktop: dense table. */}
+                  <CatalogProductCards
+                    items={pageData.items}
+                    tier={filters.tier}
+                    detailSlugs={detailSlugs}
+                  />
+                  <div className="hidden lg:block">
+                    <CatalogTable items={pageData.items} tier={filters.tier} />
+                  </div>
                   <CatalogPagination
                     filters={filters}
                     page={pageData.page}

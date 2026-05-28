@@ -51,14 +51,14 @@ export default function CatalogPagination({
   return (
     <nav
       aria-label="Catalog pagination"
-      className="flex items-center justify-center gap-2 pt-4"
+      className="flex items-center justify-center gap-1.5 pt-4 sm:gap-2"
     >
       {prevHref ? (
         <Link
           href={prevHref}
           rel="prev"
           aria-label="Previous page"
-          className="inline-flex h-9 items-center gap-1.5 rounded-full border border-beige bg-white px-3.5 text-sm font-medium text-navy hover:border-navy/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta"
+          className="inline-flex h-11 items-center gap-1.5 rounded-full border border-beige bg-white px-4 text-sm font-medium text-navy hover:border-navy/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta sm:h-9 sm:px-3.5"
         >
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
             <path d="M6.5 2L3 5l3.5 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
@@ -68,7 +68,7 @@ export default function CatalogPagination({
       ) : (
         <span
           aria-disabled="true"
-          className="inline-flex h-9 cursor-not-allowed items-center gap-1.5 rounded-full border border-beige bg-cream/40 px-3.5 text-sm font-medium text-navy/35"
+          className="inline-flex h-11 cursor-not-allowed items-center gap-1.5 rounded-full border border-beige bg-cream/40 px-4 text-sm font-medium text-navy/35 sm:h-9 sm:px-3.5"
         >
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
             <path d="M6.5 2L3 5l3.5 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
@@ -97,7 +97,7 @@ export default function CatalogPagination({
                 href={pageHref(filters, p)}
                 aria-current={isCurrent ? "page" : undefined}
                 aria-label={`Page ${p}`}
-                className={`inline-flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta ${
+                className={`inline-flex h-11 w-11 items-center justify-center rounded-full text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta sm:h-9 sm:w-9 ${
                   isCurrent
                     ? "bg-navy text-white"
                     : "text-navy/75 hover:bg-cream"
@@ -115,7 +115,7 @@ export default function CatalogPagination({
           href={nextHref}
           rel="next"
           aria-label="Next page"
-          className="inline-flex h-9 items-center gap-1.5 rounded-full border border-beige bg-white px-3.5 text-sm font-medium text-navy hover:border-navy/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta"
+          className="inline-flex h-11 items-center gap-1.5 rounded-full border border-beige bg-white px-4 text-sm font-medium text-navy hover:border-navy/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta sm:h-9 sm:px-3.5"
         >
           Next
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
@@ -125,7 +125,7 @@ export default function CatalogPagination({
       ) : (
         <span
           aria-disabled="true"
-          className="inline-flex h-9 cursor-not-allowed items-center gap-1.5 rounded-full border border-beige bg-cream/40 px-3.5 text-sm font-medium text-navy/35"
+          className="inline-flex h-11 cursor-not-allowed items-center gap-1.5 rounded-full border border-beige bg-cream/40 px-4 text-sm font-medium text-navy/35 sm:h-9 sm:px-3.5"
         >
           Next
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">

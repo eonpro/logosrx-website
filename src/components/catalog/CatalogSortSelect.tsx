@@ -51,20 +51,36 @@ export default function CatalogSortSelect({ value, tier }: CatalogSortSelectProp
   const tierLabel = CATALOG_CONFIG.priceTierLabels[tier];
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex w-full items-center gap-2 lg:w-auto">
       <label
         htmlFor={id}
-        className="text-xs font-semibold uppercase tracking-wider text-navy/65 whitespace-nowrap"
+        className="hidden text-xs font-semibold uppercase tracking-wider text-navy/65 whitespace-nowrap lg:block"
       >
         Sort by
       </label>
-      <div className="relative">
+      <div className="relative w-full lg:w-auto">
+        {/* Leading sort glyph — only needed on mobile where the label is hidden. */}
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 14 14"
+          fill="none"
+          aria-hidden="true"
+          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-navy/45 lg:hidden"
+        >
+          <path
+            d="M2.5 3.5h9M4 7h6M5.5 10.5h3"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
         <select
           id={id}
           value={value}
           onChange={handleChange}
           aria-label={`Sort catalog by ${tierLabel} price or name`}
-          className="appearance-none rounded-full border border-beige bg-white py-2 pl-3.5 pr-9 text-sm font-medium text-navy hover:border-navy/30 focus:border-magenta focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta cursor-pointer"
+          className="min-h-11 w-full appearance-none rounded-full border border-beige bg-white py-2 pl-10 pr-9 text-sm font-medium text-navy hover:border-navy/30 focus:border-magenta focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta cursor-pointer lg:min-h-0 lg:w-auto lg:pl-3.5"
         >
           {SORT_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>

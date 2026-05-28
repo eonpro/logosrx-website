@@ -7,6 +7,7 @@ import ProductDosageSchedule from "./product/ProductDosageSchedule";
 import ProductFAQ from "./product/ProductFAQ";
 import ProductPrescribeCTA from "./product/ProductPrescribeCTA";
 import ProductRelated from "./product/ProductRelated";
+import ProductStickyCTA from "./product/ProductStickyCTA";
 
 interface ProductDetailProps {
   product: Product;
@@ -37,6 +38,10 @@ export default function ProductDetail({ product, relatedProducts }: ProductDetai
       <ProductFAQ product={product} />
       <ProductPrescribeCTA productName={product.name} />
       <ProductRelated products={relatedProducts} />
+
+      {/* Spacer so the fixed mobile action bar never covers related products. */}
+      <div aria-hidden="true" className="h-20 lg:hidden" />
+      <ProductStickyCTA productName={product.name} />
     </article>
   );
 }
