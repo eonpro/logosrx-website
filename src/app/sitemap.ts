@@ -3,6 +3,7 @@ import { SITE } from "@/lib/constants";
 import { products } from "@/data/products";
 import { articles } from "@/data/articles";
 import { productInserts } from "@/data/product-inserts";
+import { learningArticles } from "@/data/learning";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const productPages = products.map((product) => ({
@@ -67,6 +68,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: "yearly" as const,
       priority: 0.5,
+    })),
+    ...learningArticles.map((article) => ({
+      url: `${SITE.url}/learn/${article.slug}`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
     })),
   ];
 }
