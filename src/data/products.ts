@@ -62,6 +62,7 @@ export type ProductBadgeVariant =
   | "fda"
   | "coming-soon"
   | "popular"
+  | "commercial"
   | "info";
 
 export interface ProductBadge {
@@ -1379,24 +1380,26 @@ export const products: Product[] = [
   {
     slug: "cyanocobalamin-b12",
     name: "Cyanocobalamin",
-    modifier: "Vitamin B12",
+    modifier: "Commercially available Vitamin B12",
     modifierStyle: "subtitle",
     category: "Wellness",
     categoryKey: "Injectable",
+    badges: [{ label: "Commercial", variant: "commercial" }],
     tagline:
-      "Injectable vitamin B12 to support energy, metabolism, nerve function, and healthy red blood cell production.",
+      "A stable, commercially available form of injectable vitamin B12 used to restore and maintain healthy B12 status.",
     heroBullets: [
-      "Highly bioavailable injectable vitamin B12",
-      "Supports energy, focus, and metabolic function",
-      "Aids healthy red blood cell and nerve function",
+      "Converted to the active coenzymes methylcobalamin and 5-deoxyadenosylcobalamin",
+      "Supports red blood cell formation, DNA synthesis, and CNS function",
+      "Restores B12 status in deficiency, malabsorption, or dietary insufficiency",
       "1,000 mcg/mL multi-dose vial",
     ],
     descriptionParagraphs: [
-      "Cyanocobalamin is a stable, injectable form of vitamin B12 — an essential nutrient that supports energy production, metabolism, neurological function, and the formation of healthy red blood cells. Injectable B12 bypasses the digestive tract for reliable absorption, making it ideal for individuals with low B12 levels, absorption issues, or increased metabolic demand.",
-      "Regular B12 injections can help combat fatigue, support mental clarity and mood, and complement weight-management and wellness protocols by supporting healthy energy metabolism.",
+      "Cyanocobalamin is a stable, synthetic form of vitamin B12 that is converted in the body into the active cobalamin coenzymes methylcobalamin and 5-deoxyadenosylcobalamin. Vitamin B12 is essential for healthy red blood cell formation, DNA synthesis, central nervous system function, myelin support, and normal cellular metabolism. Clinically, cyanocobalamin is commonly used to restore and maintain adequate B12 status in patients with deficiency, malabsorption, increased requirements, or dietary insufficiency.",
+      "Mechanistically, vitamin B12 serves as a key cofactor for methionine synthase and L-methylmalonyl-CoA mutase. Through these pathways, it supports methylation, homocysteine metabolism, fatty acid metabolism, neurologic integrity, and hematopoiesis. Deficiency can present with fatigue, weakness, glossitis, megaloblastic anemia, numbness or tingling, balance changes, cognitive symptoms, and neurologic findings that may occur even before anemia is obvious.",
+      "From a clinical standpoint, cyanocobalamin is especially relevant in patients with pernicious anemia, gastric or intestinal surgery, gastrointestinal malabsorption, long-term metformin or acid-suppressing medication use, vegetarian or vegan dietary patterns, and other conditions that impair B12 intake or absorption. Because absorption of food-bound B12 depends on gastric acid, intrinsic factor, and distal ileal function, injectable or other clinician-directed forms may be preferred when absorption is unreliable.",
     ],
     description:
-      "Injectable vitamin B12 to support energy, metabolism, nerve function, and red blood cell production.",
+      "Commercially available injectable vitamin B12 used to restore and maintain healthy B12 status.",
     image: "/images/products/cyanocobalamin-b12.webp",
     imageAlt: "Logos RX Cyanocobalamin Vitamin B12 injection multi-dose vial",
     concentration: "1,000 mcg/mL",
@@ -1405,23 +1408,23 @@ export const products: Product[] = [
     activeIngredient: {
       name: "Cyanocobalamin (Vitamin B12)",
       description:
-        "A synthetic, highly stable form of vitamin B12 that the body converts to its active coenzyme forms, supporting energy metabolism, DNA synthesis, and nerve health.",
+        "A stable, synthetic form of vitamin B12 converted in the body into the active cobalamin coenzymes methylcobalamin and 5-deoxyadenosylcobalamin — a key cofactor for methionine synthase and L-methylmalonyl-CoA mutase.",
     },
     ingredientHighlights: [
       {
-        title: "Reliable absorption",
+        title: "Essential methylation cofactor",
         description:
-          "Injection bypasses the gut, ensuring full uptake for patients with malabsorption, pernicious anemia, or low dietary intake.",
+          "Serves as a cofactor for methionine synthase and L-methylmalonyl-CoA mutase, supporting methylation, homocysteine metabolism, and fatty acid metabolism.",
       },
       {
-        title: "Energy and metabolism",
+        title: "Hematopoiesis and nerve health",
         description:
-          "B12 is a cofactor in energy metabolism and is commonly paired with weight-management and wellness protocols to support vitality.",
+          "Essential for healthy red blood cell formation, DNA synthesis, myelin support, and neurologic integrity.",
       },
       {
-        title: "Nerve and blood health",
+        title: "Reliable when absorption is impaired",
         description:
-          "Essential for myelin formation and red blood cell production, supporting neurological function and oxygen transport.",
+          "Injectable B12 bypasses dependence on gastric acid, intrinsic factor, and ileal function — preferred when food-bound B12 absorption is unreliable.",
       },
     ],
     howToTake: SUBQ_HOW_TO_TAKE,
@@ -1432,17 +1435,10 @@ export const products: Product[] = [
       rows: [
         {
           weeks: "1–4",
-          units: "100",
-          mg: "1,000 mcg",
-          ml: "1 mL",
-          directions: "Inject 100 units (1,000 mcg) subcutaneously or intramuscularly once weekly.",
-        },
-        {
-          weeks: "5+",
-          units: "100",
-          mg: "1,000 mcg",
-          ml: "1 mL",
-          directions: "Inject 100 units (1,000 mcg) once weekly or as directed by your provider for maintenance.",
+          units: "50",
+          mg: "500 mcg",
+          ml: "0.50 mL",
+          directions: "Inject 50 units subcutaneously or intramuscularly once daily, Monday through Friday.",
         },
       ],
     },
@@ -1450,17 +1446,17 @@ export const products: Product[] = [
       { label: "How to Use", content: "Administer subcutaneously or intramuscularly as directed by your provider." },
       { label: "Size", content: "10 mL multi-dose vial (1,000 mcg/mL)" },
       { label: "Concentration", content: "1,000 mcg/mL" },
-      { label: "Schedule", content: "Once weekly, or as prescribed." },
+      { label: "Schedule", content: "Once daily, Monday through Friday, or as prescribed." },
       { label: "BUD", content: "Refer to the vial label for the beyond-use date." },
     ],
     faqs: [
       {
         q: "Why choose injectable B12 over oral supplements?",
-        a: "Injectable B12 bypasses the digestive tract, ensuring reliable absorption — especially helpful for those with absorption issues, pernicious anemia, or low dietary intake where oral supplements may be less effective.",
+        a: "Absorption of food-bound and oral B12 depends on gastric acid, intrinsic factor, and distal ileal function. Injectable cyanocobalamin bypasses these steps, making it preferable when absorption is unreliable — such as in pernicious anemia, after GI surgery, or with long-term metformin or acid-suppressing medication use.",
       },
       {
-        q: "How often are B12 injections given?",
-        a: "B12 is commonly dosed once weekly, then adjusted to a maintenance schedule based on your symptoms and lab levels. Your provider will personalize the frequency.",
+        q: "Who is most likely to need B12 repletion?",
+        a: "Patients with deficiency, malabsorption, increased requirements, or dietary insufficiency — including vegetarian or vegan diets. Deficiency can cause fatigue, weakness, numbness or tingling, and cognitive changes, sometimes before anemia appears.",
       },
     ],
     relatedSlugs: ["glutathione", "nad-plus", "semaglutide-glycine"],

@@ -47,12 +47,10 @@ export default function ProductCard({ product }: ProductCardProps) {
               height={200}
               className="relative z-10 h-44 w-auto object-contain"
             />
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-24 h-5 rounded-[50%] bg-black/10 blur-md transition-[width] duration-500 ease-out group-hover:w-32" />
           </div>
         ) : (
           <div className="relative transition-transform duration-500 ease-out group-hover:scale-[1.08] group-hover:-translate-y-1.5">
             <VialPlaceholder name={product.name} />
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-20 h-5 rounded-[50%] bg-black/10 blur-md transition-[width] duration-500 ease-out group-hover:w-28" />
           </div>
         )}
       </div>

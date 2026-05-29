@@ -9,6 +9,7 @@ const VARIANT_CLASSES: Record<ProductBadgeData["variant"], string> = {
   fda: "bg-[#6E469B] text-white",
   "coming-soon": "bg-orange-500 text-white",
   popular: "bg-magenta text-white",
+  commercial: "bg-magenta text-white",
   info: "text-navy/80 bg-transparent border border-navy/15",
 };
 
