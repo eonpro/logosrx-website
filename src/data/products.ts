@@ -62,6 +62,7 @@ export type ProductBadgeVariant =
   | "fda"
   | "coming-soon"
   | "popular"
+  | "commercial"
   | "info";
 
 export interface ProductBadge {
@@ -353,6 +354,8 @@ export const products: Product[] = [
     ],
     description:
       "An oral aromatase inhibitor used to maintain testosterone-to-estrogen balance during hormone therapy.",
+    image: "/images/products/anastrozole.webp",
+    imageAlt: "Logos RX Anastrozole oral tablets",
     concentration: "0.25 mg / 0.50 mg / 1 mg",
     form: "Oral Tablets",
     size: "As prescribed",
@@ -437,6 +440,8 @@ export const products: Product[] = [
     ],
     description:
       "A SERM that stimulates the body's own testosterone production while preserving fertility.",
+    image: "/images/products/enclomiphene-citrate.webp",
+    imageAlt: "Logos RX Enclomiphene Citrate oral capsules",
     concentration: "25 mg / 50 mg",
     form: "Oral Capsules",
     size: "As prescribed",
@@ -1039,7 +1044,95 @@ export const products: Product[] = [
         a: "Cycling 5-on / 2-off helps maintain pituitary sensitivity and avoids long-term receptor downregulation.",
       },
     ],
-    relatedSlugs: ["bpc-157", "nad-plus"],
+    relatedSlugs: ["tesamorelin", "bpc-157", "nad-plus"],
+  },
+
+  {
+    slug: "tesamorelin",
+    name: "Tesamorelin",
+    category: "Peptide Therapy",
+    categoryKey: "Injectable",
+    tagline:
+      "A growth hormone–releasing hormone (GHRH) analog used to reduce visceral fat and support healthy body composition.",
+    heroBullets: [
+      "GHRH analog — stimulates the body's natural HGH",
+      "Studied for reducing visceral adipose tissue (deep belly fat)",
+      "Supports body composition, recovery, and metabolic health",
+      "Subcutaneous injection, typically once daily",
+    ],
+    descriptionParagraphs: [
+      "Tesamorelin is a growth hormone–releasing hormone (GHRH) analog that stimulates the pituitary gland to produce and release the body's own human growth hormone (HGH). It is best known for its clinically studied ability to reduce visceral adipose tissue — the deep abdominal fat associated with metabolic and cardiovascular risk.",
+      "By increasing endogenous HGH in a natural, pulsatile pattern rather than replacing it directly, Tesamorelin supports improved body composition, recovery, and metabolic health. It is commonly used in body-composition, longevity, and hormone-optimization protocols, often alongside other peptides.",
+    ],
+    description:
+      "GHRH analog studied for reducing visceral fat and supporting healthy body composition.",
+    image: "/images/products/tesamorelin.webp",
+    imageAlt: "Logos RX Tesamorelin subcutaneous injection multi-dose vial",
+    concentration: "5 mg/mL",
+    form: "Injectable",
+    size: "2 mL",
+    activeIngredient: {
+      name: "Tesamorelin Acetate",
+      description:
+        "A synthetic analog of growth hormone–releasing hormone (GHRH) that binds GHRH receptors on pituitary somatotrophs, stimulating endogenous HGH release.",
+    },
+    ingredientHighlights: [
+      {
+        title: "Stimulates endogenous HGH",
+        description:
+          "Tesamorelin amplifies the body's natural pulsatile release of HGH rather than introducing exogenous hormone, preserving normal feedback regulation.",
+      },
+      {
+        title: "Visceral fat reduction",
+        description:
+          "Best known clinically for its ability to reduce visceral adipose tissue — the metabolically active deep abdominal fat.",
+      },
+      {
+        title: "Bedtime dosing",
+        description:
+          "Administered before bed to align with the body's nocturnal HGH pulse, the largest natural surge in adults.",
+      },
+    ],
+    howToTake: SUBQ_HOW_TO_TAKE,
+    variants: [{ vialTotalMg: "10 mg", concentration: "5 mg/mL", ml: "2 mL" }],
+    variantColumns: ["vialTotalMg", "concentration", "ml"],
+    dosageSchedule: {
+      columns: ["weeks", "units", "mg", "ml", "directions"],
+      rows: [
+        {
+          weeks: "1–4",
+          units: "20",
+          mg: "1 mg",
+          ml: "0.2 mL",
+          directions: "Inject 20 units (1 mg) subcutaneously once daily before bedtime.",
+        },
+        {
+          weeks: "5+",
+          units: "40",
+          mg: "2 mg",
+          ml: "0.4 mL",
+          directions: "Inject 40 units (2 mg) subcutaneously once daily before bedtime, or as directed by your provider.",
+        },
+      ],
+    },
+    details: [
+      { label: "How to Use", content: "Administer subcutaneously before bedtime, as directed by your provider." },
+      { label: "Size", content: "2 mL multi-dose vial (10 mg)" },
+      { label: "Concentration", content: "5 mg/mL" },
+      { label: "Schedule", content: "Once daily, or as prescribed." },
+      { label: "BUD", content: "Refer to the vial label for the beyond-use date." },
+    ],
+    faqs: [
+      {
+        q: "How is Tesamorelin different from Sermorelin?",
+        a: "Both are GHRH analogs that stimulate the body's own HGH. Tesamorelin is most studied for reducing visceral adipose tissue (deep belly fat), while Sermorelin is more commonly used for general age-management and recovery support. Your provider will recommend the best fit for your goals.",
+      },
+      {
+        q: "Why is Tesamorelin dosed at bedtime?",
+        a: "Dosing before bed aligns with the body's natural overnight HGH pulse, the largest physiologic surge in adults — supporting a more natural release pattern.",
+      },
+    ],
+    relatedSlugs: ["sermorelin", "bpc-157", "nad-plus"],
   },
 
   {
@@ -1065,6 +1158,8 @@ export const products: Product[] = [
     ],
     description:
       "Synthetic pentadecapeptide explored for soft-tissue recovery, tendon and ligament support, and gut integrity.",
+    image: "/images/products/bpc-157.webp",
+    imageAlt: "Logos RX BPC-157 subcutaneous injection vial",
     concentration: "2.5 mg/mL",
     form: "Injectable",
     size: "4 mL",
@@ -1279,7 +1374,92 @@ export const products: Product[] = [
         a: "Glutathione is commonly used alongside NAD+, B-vitamin, and other wellness injectable protocols. Your provider will coordinate dosing across your regimen.",
       },
     ],
-    relatedSlugs: ["nad-plus", "sermorelin"],
+    relatedSlugs: ["cyanocobalamin-b12", "nad-plus", "sermorelin"],
+  },
+
+  {
+    slug: "cyanocobalamin-b12",
+    name: "Cyanocobalamin",
+    modifier: "Commercially available Vitamin B12",
+    modifierStyle: "subtitle",
+    category: "Wellness",
+    categoryKey: "Injectable",
+    badges: [{ label: "Commercial", variant: "commercial" }],
+    tagline:
+      "A stable, commercially available form of injectable vitamin B12 used to restore and maintain healthy B12 status.",
+    heroBullets: [
+      "Converted to the active coenzymes methylcobalamin and 5-deoxyadenosylcobalamin",
+      "Supports red blood cell formation, DNA synthesis, and CNS function",
+      "Restores B12 status in deficiency, malabsorption, or dietary insufficiency",
+      "1,000 mcg/mL multi-dose vial",
+    ],
+    descriptionParagraphs: [
+      "Cyanocobalamin is a stable, synthetic form of vitamin B12 that is converted in the body into the active cobalamin coenzymes methylcobalamin and 5-deoxyadenosylcobalamin. Vitamin B12 is essential for healthy red blood cell formation, DNA synthesis, central nervous system function, myelin support, and normal cellular metabolism. Clinically, cyanocobalamin is commonly used to restore and maintain adequate B12 status in patients with deficiency, malabsorption, increased requirements, or dietary insufficiency.",
+      "Mechanistically, vitamin B12 serves as a key cofactor for methionine synthase and L-methylmalonyl-CoA mutase. Through these pathways, it supports methylation, homocysteine metabolism, fatty acid metabolism, neurologic integrity, and hematopoiesis. Deficiency can present with fatigue, weakness, glossitis, megaloblastic anemia, numbness or tingling, balance changes, cognitive symptoms, and neurologic findings that may occur even before anemia is obvious.",
+      "From a clinical standpoint, cyanocobalamin is especially relevant in patients with pernicious anemia, gastric or intestinal surgery, gastrointestinal malabsorption, long-term metformin or acid-suppressing medication use, vegetarian or vegan dietary patterns, and other conditions that impair B12 intake or absorption. Because absorption of food-bound B12 depends on gastric acid, intrinsic factor, and distal ileal function, injectable or other clinician-directed forms may be preferred when absorption is unreliable.",
+    ],
+    description:
+      "Commercially available injectable vitamin B12 used to restore and maintain healthy B12 status.",
+    image: "/images/products/cyanocobalamin-b12.webp",
+    imageAlt: "Logos RX Cyanocobalamin Vitamin B12 injection multi-dose vial",
+    concentration: "1,000 mcg/mL",
+    form: "Injectable",
+    size: "10 mL",
+    activeIngredient: {
+      name: "Cyanocobalamin (Vitamin B12)",
+      description:
+        "A stable, synthetic form of vitamin B12 converted in the body into the active cobalamin coenzymes methylcobalamin and 5-deoxyadenosylcobalamin — a key cofactor for methionine synthase and L-methylmalonyl-CoA mutase.",
+    },
+    ingredientHighlights: [
+      {
+        title: "Essential methylation cofactor",
+        description:
+          "Serves as a cofactor for methionine synthase and L-methylmalonyl-CoA mutase, supporting methylation, homocysteine metabolism, and fatty acid metabolism.",
+      },
+      {
+        title: "Hematopoiesis and nerve health",
+        description:
+          "Essential for healthy red blood cell formation, DNA synthesis, myelin support, and neurologic integrity.",
+      },
+      {
+        title: "Reliable when absorption is impaired",
+        description:
+          "Injectable B12 bypasses dependence on gastric acid, intrinsic factor, and ileal function — preferred when food-bound B12 absorption is unreliable.",
+      },
+    ],
+    howToTake: SUBQ_HOW_TO_TAKE,
+    variants: [{ vialTotalMg: "10,000 mcg", concentration: "1,000 mcg/mL", ml: "10 mL" }],
+    variantColumns: ["vialTotalMg", "concentration", "ml"],
+    dosageSchedule: {
+      columns: ["weeks", "units", "mg", "ml", "directions"],
+      rows: [
+        {
+          weeks: "1–4",
+          units: "50",
+          mg: "500 mcg",
+          ml: "0.50 mL",
+          directions: "Inject 50 units subcutaneously or intramuscularly once daily, Monday through Friday.",
+        },
+      ],
+    },
+    details: [
+      { label: "How to Use", content: "Administer subcutaneously or intramuscularly as directed by your provider." },
+      { label: "Size", content: "10 mL multi-dose vial (1,000 mcg/mL)" },
+      { label: "Concentration", content: "1,000 mcg/mL" },
+      { label: "Schedule", content: "Once daily, Monday through Friday, or as prescribed." },
+      { label: "BUD", content: "Refer to the vial label for the beyond-use date." },
+    ],
+    faqs: [
+      {
+        q: "Why choose injectable B12 over oral supplements?",
+        a: "Absorption of food-bound and oral B12 depends on gastric acid, intrinsic factor, and distal ileal function. Injectable cyanocobalamin bypasses these steps, making it preferable when absorption is unreliable — such as in pernicious anemia, after GI surgery, or with long-term metformin or acid-suppressing medication use.",
+      },
+      {
+        q: "Who is most likely to need B12 repletion?",
+        a: "Patients with deficiency, malabsorption, increased requirements, or dietary insufficiency — including vegetarian or vegan diets. Deficiency can cause fatigue, weakness, numbness or tingling, and cognitive changes, sometimes before anemia appears.",
+      },
+    ],
+    relatedSlugs: ["glutathione", "nad-plus", "semaglutide-glycine"],
   },
 
   {
