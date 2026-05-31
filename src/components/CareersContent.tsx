@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Dialog from "@radix-ui/react-dialog";
 import { benefits, openPositions } from "@/data/careers";
@@ -28,17 +29,19 @@ function HeroSection() {
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.15 }}
-            className="relative aspect-[4/3] rounded-3xl overflow-hidden bg-gradient-to-br from-navy via-navy-light to-navy-deep"
+            className="relative aspect-[4/3] rounded-3xl overflow-hidden bg-navy"
           >
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="grid grid-cols-4 gap-3 p-10 opacity-20">
-                {[...Array(16)].map((_, i) => (
-                  <div key={i} className="w-12 h-12 rounded-lg bg-white/20" />
-                ))}
-              </div>
-            </div>
+            <Image
+              src="/images/facility-tampa.png"
+              alt="State-of-the-art Logos RX compounding facility in Tampa, FL"
+              fill
+              priority
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              className="object-cover"
+            />
+            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent" />
             <div className="absolute bottom-6 left-6 right-6">
-              <p className="text-white/80 text-sm">
+              <p className="text-white text-sm">
                 State-of-the-art compounding facility in Tampa, FL
               </p>
             </div>
