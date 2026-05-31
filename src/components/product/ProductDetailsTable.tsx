@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type {
   Product,
   ProductVariant,
@@ -27,6 +28,8 @@ export default function ProductDetailsTable({ product }: ProductDetailsTableProp
   const rows = product.variants ?? [];
   if (columns.length === 0 || rows.length === 0) return null;
 
+  const hasImages = rows.some((variant) => variant.image);
+
   return (
     <section id="product-details" className="bg-cream py-20 sm:py-28 scroll-mt-24">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -44,6 +47,14 @@ export default function ProductDetailsTable({ product }: ProductDetailsTableProp
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-navy text-white">
+                  {hasImages ? (
+                    <th
+                      scope="col"
+                      className="px-6 py-4 text-[11px] font-bold uppercase tracking-wider"
+                    >
+                      Vial
+                    </th>
+                  ) : null}
                   {columns.map((c) => (
                     <th
                       key={c}
@@ -61,6 +72,21 @@ export default function ProductDetailsTable({ product }: ProductDetailsTableProp
                     key={i}
                     className={i % 2 === 0 ? "bg-white" : "bg-cream/50"}
                   >
+                    {hasImages ? (
+                      <td className="px-6 py-3">
+                        {variant.image ? (
+                          <Image
+                            src={variant.image}
+                            alt={variant.imageAlt ?? `${product.name} vial`}
+                            width={96}
+                            height={96}
+                            className="h-16 w-auto object-contain"
+                          />
+                        ) : (
+                          <span className="text-navy/30">—</span>
+                        )}
+                      </td>
+                    ) : null}
                     {columns.map((c, j) => (
                       <td
                         key={`${i}-${c}`}

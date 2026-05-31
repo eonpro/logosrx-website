@@ -97,6 +97,10 @@ export interface ProductVariant {
   concentration?: string;
   /** "5 mL". */
   ml?: string;
+  /** Optional per-strength vial photo, shown as a thumbnail in the details table. */
+  image?: string;
+  /** Alt text for the per-strength vial photo. */
+  imageAlt?: string;
 }
 
 export type DosageScheduleColumn =
@@ -289,11 +293,15 @@ export const products: Product[] = [
         vialTotalMg: "1,000 mg",
         concentration: "200 mg/mL",
         ml: "5 mL",
+        image: "/images/products/testosterone-cypionate.webp",
+        imageAlt: "Logos RX Testosterone Cypionate 200 mg/mL, 5 mL vial",
       },
       {
         vialTotalMg: "100 mg",
         concentration: "50 mg/mL",
         ml: "2 mL",
+        image: "/images/products/testosterone-cypionate-50mg.webp",
+        imageAlt: "Logos RX Testosterone Cypionate 50 mg/mL, 2 mL vial",
       },
     ],
     variantColumns: ["vialTotalMg", "concentration", "ml"],
@@ -659,11 +667,11 @@ export const products: Product[] = [
     ],
     howToTake: SUBQ_HOW_TO_TAKE,
     variants: [
-      { vialTotalMg: "2.5 mg", concentration: "2.5 mg / 20 mg/mL", ml: "1 mL" },
-      { vialTotalMg: "5 mg", concentration: "2.5 mg / 20 mg/mL", ml: "2 mL" },
-      { vialTotalMg: "7.5 mg", concentration: "2.5 mg / 20 mg/mL", ml: "3 mL" },
-      { vialTotalMg: "10 mg", concentration: "5 mg / 20 mg/mL", ml: "2 mL" },
-      { vialTotalMg: "12.5 mg", concentration: "2.5 mg / 20 mg/mL", ml: "5 mL" },
+      { vialTotalMg: "2.5 mg", concentration: "2.5 mg / 20 mg/mL", ml: "1 mL", image: "/images/products/semaglutide-glycine.webp", imageAlt: "Logos RX Semaglutide and Glycine 2.5 mg/mL, 1 mL vial" },
+      { vialTotalMg: "5 mg", concentration: "2.5 mg / 20 mg/mL", ml: "2 mL", image: "/images/products/semaglutide-5mg.webp", imageAlt: "Logos RX Semaglutide and Glycine 2.5 mg/mL, 2 mL vial" },
+      { vialTotalMg: "7.5 mg", concentration: "2.5 mg / 20 mg/mL", ml: "3 mL", image: "/images/products/semaglutide-7-5mg.webp", imageAlt: "Logos RX Semaglutide and Glycine 2.5 mg/mL, 3 mL vial" },
+      { vialTotalMg: "10 mg", concentration: "5 mg / 20 mg/mL", ml: "2 mL", image: "/images/products/semaglutide-10mg.webp", imageAlt: "Logos RX Semaglutide and Glycine 5 mg/mL, 2 mL vial" },
+      { vialTotalMg: "12.5 mg", concentration: "2.5 mg / 20 mg/mL", ml: "5 mL", image: "/images/products/semaglutide-12-5mg.webp", imageAlt: "Logos RX Semaglutide and Glycine 2.5 mg/mL, 5 mL vial" },
     ],
     variantColumns: ["vialTotalMg", "concentration", "ml"],
     dosageSchedule: {
@@ -751,11 +759,11 @@ export const products: Product[] = [
     ],
     howToTake: SUBQ_HOW_TO_TAKE,
     variants: [
-      { vialTotalMg: "10 mg", concentration: "10 mg / 20 mg/mL", ml: "1 mL" },
-      { vialTotalMg: "20 mg", concentration: "10 mg / 20 mg/mL", ml: "2 mL" },
-      { vialTotalMg: "30 mg", concentration: "10 mg / 20 mg/mL", ml: "3 mL" },
-      { vialTotalMg: "40 mg", concentration: "10 mg / 20 mg/mL", ml: "4 mL" },
-      { vialTotalMg: "60 mg", concentration: "30 mg / 20 mg/mL", ml: "2 mL" },
+      { vialTotalMg: "10 mg", concentration: "10 mg / 20 mg/mL", ml: "1 mL", image: "/images/products/tirzepatide-glycine.webp", imageAlt: "Logos RX Tirzepatide and Glycine 10 mg/mL, 1 mL vial" },
+      { vialTotalMg: "20 mg", concentration: "10 mg / 20 mg/mL", ml: "2 mL", image: "/images/products/tirzepatide-20mg.webp", imageAlt: "Logos RX Tirzepatide and Glycine 10 mg/mL, 2 mL vial" },
+      { vialTotalMg: "30 mg", concentration: "10 mg / 20 mg/mL", ml: "3 mL", image: "/images/products/tirzepatide-30mg.webp", imageAlt: "Logos RX Tirzepatide and Glycine 10 mg/mL, 3 mL vial" },
+      { vialTotalMg: "40 mg", concentration: "10 mg / 20 mg/mL", ml: "4 mL", image: "/images/products/tirzepatide-40mg.webp", imageAlt: "Logos RX Tirzepatide and Glycine 10 mg/mL, 4 mL vial" },
+      { vialTotalMg: "60 mg", concentration: "30 mg / 20 mg/mL", ml: "2 mL", image: "/images/products/tirzepatide-60mg.webp", imageAlt: "Logos RX Tirzepatide and Glycine 30 mg/mL, 2 mL vial" },
     ],
     variantColumns: ["vialTotalMg", "concentration", "ml"],
     dosageSchedule: {
@@ -1567,6 +1575,8 @@ export const products: Product[] = [
     ],
     description:
       "Low-dose oral minoxidil to stimulate hair regrowth and slow hair loss.",
+    image: "/images/products/minoxidil.webp",
+    imageAlt: "Logos RX Minoxidil oral tablets",
     concentration: "2.5 mg",
     form: "Oral Tablets",
     size: "As prescribed",
@@ -1648,6 +1658,8 @@ export const products: Product[] = [
     ],
     description:
       "5-alpha-reductase inhibitor that slows hair loss and preserves follicles by lowering DHT.",
+    image: "/images/products/finasteride.webp",
+    imageAlt: "Logos RX Finasteride 1 mg oral tablets",
     concentration: "1 mg",
     form: "Oral Tablets",
     size: "As prescribed",
