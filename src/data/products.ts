@@ -908,6 +908,8 @@ export const products: Product[] = [
     ],
     description:
       "Selective 5-HT₃ receptor antagonist for nausea and vomiting (generic Zofran).",
+    image: "/images/products/ondansetron.webp",
+    imageAlt: "Logos RX Ondansetron 4 mg oral tablets",
     concentration: "4 mg",
     form: "Oral Tablets",
     size: "As prescribed",
