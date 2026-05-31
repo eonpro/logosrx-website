@@ -8,8 +8,23 @@ import {
 
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 const isAdminSignInRoute = createRouteMatcher(["/admin/sign-in(.*)"]);
+// Authenticated clinic portal: the intake wizard and the profile dashboard.
+const isClinicRoute = createRouteMatcher(["/onboarding(.*)", "/dashboard(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
+  // Clinic portal: require a signed-in user; bounce anonymous visitors to the
+  // public sign-in, preserving the intended destination.
+  if (isClinicRoute(req)) {
+    const session = await auth();
+    if (!session.userId) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/sign-in";
+      url.searchParams.set("redirect_url", req.nextUrl.pathname);
+      return NextResponse.redirect(url);
+    }
+    return;
+  }
+
   if (!isAdminRoute(req) || isAdminSignInRoute(req)) {
     return;
   }

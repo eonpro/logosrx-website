@@ -22,8 +22,6 @@ export default function PatientRefill() {
 
             <a
               href={SITE.onboarding}
-              target="_blank"
-              rel="noopener noreferrer"
               className="inline-flex items-center gap-3 rounded-full bg-magenta px-8 py-4 text-sm font-semibold uppercase tracking-wide text-white hover:bg-magenta-dark transition-all duration-300 hover:scale-[1.02]"
             >
               Refill Your Medication

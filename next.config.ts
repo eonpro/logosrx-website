@@ -182,6 +182,17 @@ const nextConfig: NextConfig = {
       "@radix-ui/react-dialog",
     ],
   },
+  async redirects() {
+    return [
+      // The standalone clinic lead form was replaced by the provider intake
+      // flow. Permanently send the old path to account creation.
+      {
+        source: "/clinic-signup",
+        destination: "/sign-up",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

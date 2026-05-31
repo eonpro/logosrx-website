@@ -33,8 +33,6 @@ export default function Hero() {
 
           <a
             href={SITE.onboarding}
-            target="_blank"
-            rel="noopener noreferrer"
             className="inline-flex items-center gap-3 rounded-full bg-magenta px-6 sm:px-8 py-3.5 sm:py-4 text-sm font-semibold uppercase tracking-wide text-white hover:bg-magenta-dark transition-all duration-300 active:scale-95 sm:hover:scale-[1.02]"
           >
             New Provider

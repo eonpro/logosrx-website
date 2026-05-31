@@ -57,12 +57,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.6,
     })),
     ...productPages,
-    {
-      url: `${SITE.url}/clinic-signup`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
     ...productInserts.map((insert) => ({
       url: `${SITE.url}/product-insert/${insert.slug}`,
       lastModified: new Date(),

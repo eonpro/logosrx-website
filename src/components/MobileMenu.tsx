@@ -140,8 +140,6 @@ export default function MobileMenu({ open, onClose }: MobileMenuProps) {
               <div className="px-6 pb-8 space-y-3">
                 <a
                   href={SITE.onboarding}
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 w-full py-3.5 rounded-full bg-magenta text-white text-sm font-semibold hover:bg-magenta-dark transition-colors"
                 >
                   NEW PROVIDER

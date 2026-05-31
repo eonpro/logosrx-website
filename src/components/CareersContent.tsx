@@ -586,8 +586,6 @@ function CtaBanner() {
         </div>
         <a
           href={SITE.onboarding}
-          target="_blank"
-          rel="noopener noreferrer"
           className="inline-flex items-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-magenta hover:bg-white/90 transition-colors"
         >
           New Provider

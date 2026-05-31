@@ -33,8 +33,6 @@ export default function ProductPrescribeCTA({ productName }: ProductPrescribeCTA
               <div className="lg:col-span-5 flex flex-col gap-3 lg:items-end">
                 <a
                   href={SITE.onboarding}
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-magenta px-8 py-4 text-sm font-semibold text-white hover:bg-magenta-dark transition-colors"
                 >
                   Prescribe via Onboarding Portal

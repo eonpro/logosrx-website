@@ -144,8 +144,6 @@ export default function ProductHero({ product }: ProductHeroProps) {
             <div className="mt-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
               <a
                 href={SITE.onboarding}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-magenta px-8 py-4 text-sm font-semibold text-white hover:bg-magenta-dark transition-colors"
               >
                 Prescribe via Onboarding Portal

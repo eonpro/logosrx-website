@@ -137,8 +137,6 @@ export default async function ProductInsertPage({
             </a>
             <a
               href={SITE.onboarding}
-              target="_blank"
-              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-full border-2 border-white/15 px-7 py-3.5 text-sm font-semibold text-white/70 hover:border-magenta hover:text-white transition-colors"
             >
               New Provider

@@ -4,7 +4,9 @@ export const SITE = {
   description:
     "Logos RX is a multi-state licensed 503A compounding pharmacy with sterile and non-sterile compounding labs, dedicated to improving patient outcomes through personalized compounding.",
   url: "https://www.logosrx.com",
-  onboarding: "https://onboarding.logosrx.com/",
+  // Internal provider intake. "New Provider" CTAs point here; new visitors
+  // create a Clerk account, then complete the onboarding wizard at /onboarding.
+  onboarding: "/sign-up",
 } as const;
 
 export const CONTACT = {

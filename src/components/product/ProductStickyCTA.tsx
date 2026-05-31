@@ -32,8 +32,6 @@ export default function ProductStickyCTA({ productName }: ProductStickyCTAProps)
         </div>
         <a
           href={SITE.onboarding}
-          target="_blank"
-          rel="noopener noreferrer"
           className="inline-flex min-h-12 shrink-0 items-center justify-center gap-1.5 rounded-full bg-magenta px-6 text-sm font-semibold text-white transition-transform duration-100 active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta focus-visible:ring-offset-2"
         >
           Prescribe
