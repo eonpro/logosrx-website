@@ -816,6 +816,8 @@ export const products: Product[] = [
     ],
     description:
       "First-line oral therapy that improves insulin sensitivity and supports metabolic health.",
+    image: "/images/products/metformin.webp",
+    imageAlt: "Logos RX Metformin oral tablets",
     concentration: "500 mg / 850 mg / 1,000 mg",
     form: "Oral Tablets",
     size: "As prescribed",
@@ -1490,6 +1492,8 @@ export const products: Product[] = [
     ],
     description:
       "Compounded low-dose naltrexone for immune balance, inflammation modulation, and well-being.",
+    image: "/images/products/low-dose-naltrexone.webp",
+    imageAlt: "Logos RX Low-Dose Naltrexone oral capsules",
     concentration: "1.5 mg / 3.0 mg / 4.5 mg",
     form: "Oral Capsules",
     size: "As prescribed",
