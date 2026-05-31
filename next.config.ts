@@ -12,11 +12,40 @@ const isProd = process.env.NODE_ENV === "production";
  *   - Vercel Blob    → private resume downloads (proxied through /api/admin)
  */
 const TYPEKIT = ["https://use.typekit.net", "https://p.typekit.net"];
+
+/**
+ * Production Clerk instances serve their Frontend API from a custom domain on
+ * the app's own root (e.g. `clerk.logosrx.com`), NOT from `*.clerk.com`. That
+ * host is encoded (base64) inside the publishable key, so we decode it here and
+ * add it to the CSP allow-list. Without this the browser blocks `clerk.browser.js`
+ * in production and the `<SignIn>` / `<SignUp>` forms silently never mount.
+ *
+ * Development / keyless mode uses `*.clerk.accounts.dev`, which the static
+ * wildcard below already covers, so this is a no-op locally.
+ */
+function clerkFrontendApiOrigin(): string | null {
+  const pk = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  if (!pk) return null;
+  const encoded = pk.replace(/^pk_(test|live)_/, "");
+  try {
+    const host = Buffer.from(encoded, "base64")
+      .toString("utf8")
+      .replace(/\$+$/, "")
+      .trim();
+    return host.includes(".") ? `https://${host}` : null;
+  } catch {
+    return null;
+  }
+}
+
+const clerkFapiOrigin = clerkFrontendApiOrigin();
+
 const CLERK = [
   "https://*.clerk.com",
   "https://*.clerk.accounts.dev",
   "https://*.clerk.services",
   "https://challenges.cloudflare.com",
+  ...(clerkFapiOrigin ? [clerkFapiOrigin] : []),
 ];
 const VERCEL = [
   "https://*.public.blob.vercel-storage.com",
@@ -41,7 +70,7 @@ const styleSrc = [
   ...TYPEKIT,
 ];
 const fontSrc = ["'self'", "data:", ...TYPEKIT];
-const imgSrc = ["'self'", "data:", "blob:", ...VERCEL];
+const imgSrc = ["'self'", "data:", "blob:", "https://img.clerk.com", ...VERCEL];
 const frameSrc = ["'self'", ...CLERK];
 const workerSrc = ["'self'", "blob:"];
 // Marketing video assets are self-hosted under /public/videos (P1d). Explicit
