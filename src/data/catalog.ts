@@ -424,7 +424,7 @@ export const catalogProducts: CatalogProduct[] = [
     strength: "1,000 mcg/mL",
     form: "Injectable",
     unit: "Each",
-    pricing: { retail: 250, provider: 225, volume: null },
+    pricing: { retail: 35, provider: 30, volume: null },
     productFamily: ["Vitamins"],
     brand: "Logos RX",
     therapeuticAreas: ["Vitamins"],
