@@ -116,17 +116,7 @@ export async function rateLimit(
   bucket: LimiterKey,
   req: NextRequest,
 ): Promise<RateLimitResult> {
-  return rateLimitKey(bucket, getClientKey(req));
-}
-
-/**
- * Limits against a caller-supplied identity key. Useful from contexts without a
- * `NextRequest` (e.g. server actions, where the key is derived from `headers()`).
- */
-export async function rateLimitKey(
-  bucket: LimiterKey,
-  key: string,
-): Promise<RateLimitResult> {
+  const key = getClientKey(req);
   const limiter = limiters[bucket];
 
   if (limiter) {
@@ -140,20 +130,6 @@ export async function rateLimitKey(
 
   const cfg = memoryConfig[bucket];
   return memoryLimit(`${bucket}:${key}`, cfg.limit, cfg.windowMs);
-}
-
-/** Derives a best-effort client identity from a `Headers`-like object. */
-export function clientKeyFromHeaders(h: {
-  get(name: string): string | null;
-}): string {
-  const xff = h.get("x-forwarded-for");
-  if (xff) {
-    const first = xff.split(",")[0]?.trim();
-    if (first) return first;
-  }
-  const realIp = h.get("x-real-ip");
-  if (realIp) return realIp.trim();
-  return h.get("host") ?? "unknown";
 }
 
 /**

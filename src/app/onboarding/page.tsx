@@ -13,20 +13,13 @@ export const dynamic = "force-dynamic";
 
 export default async function OnboardingPage() {
   const { userId } = await auth();
+  if (!userId) redirect("/sign-in?redirect_url=/onboarding");
 
-  // Anonymous visitors: this flow creates their account from the intake data.
-  if (!userId) {
-    return <OnboardingWizard mode="signup" />;
-  }
-
-  // Already signed in: finished clinics go straight to their dashboard;
-  // otherwise let them finish intake without minting a second account.
   const profile = await getClinicProfile(userId);
   if (profile.onboardingCompleted) redirect("/dashboard");
 
   return (
     <OnboardingWizard
-      mode="authenticated"
       initialState={profile.state}
       initialStep={profile.onboardingStep}
     />
