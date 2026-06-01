@@ -8,13 +8,14 @@ import {
 
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 const isAdminSignInRoute = createRouteMatcher(["/admin/sign-in(.*)"]);
-// Authenticated clinic portal: the intake wizard and the profile dashboard.
-const isClinicRoute = createRouteMatcher(["/onboarding(.*)", "/dashboard(.*)"]);
+// The clinic dashboard requires a signed-in user. `/onboarding` is public:
+// it is the account-creation flow itself, so anonymous visitors must reach it.
+const isDashboardRoute = createRouteMatcher(["/dashboard(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
-  // Clinic portal: require a signed-in user; bounce anonymous visitors to the
-  // public sign-in, preserving the intended destination.
-  if (isClinicRoute(req)) {
+  // Profile dashboard: require a signed-in user; bounce anonymous visitors to
+  // the public sign-in, preserving the intended destination.
+  if (isDashboardRoute(req)) {
     const session = await auth();
     if (!session.userId) {
       const url = req.nextUrl.clone();

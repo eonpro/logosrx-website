@@ -10,13 +10,13 @@ export default function SignInPage() {
       footerLink={{
         text: "Don\u2019t have an account?",
         label: "Sign up",
-        href: "/sign-up",
+        href: "/onboarding",
       }}
     >
       <SignIn
         routing="path"
         path="/sign-in"
-        signUpUrl="/sign-up"
+        signUpUrl="/onboarding"
         fallbackRedirectUrl="/dashboard"
         appearance={clerkDarkAppearance}
       />

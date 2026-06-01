@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useSignIn } from "@clerk/nextjs/legacy";
 import { AnimatePresence, motion } from "framer-motion";
 import OnboardingShell from "./OnboardingShell";
 import SignaturePad from "./SignaturePad";
@@ -33,19 +34,32 @@ import { STATES_SERVED } from "@/lib/constants";
 import type { ClinicProvider } from "@/lib/db/schema";
 import {
   completeOnboarding,
+  createAccountAndComplete,
   saveProgress,
 } from "@/app/onboarding/actions";
 
 const STATE_OPTIONS = STATES_SERVED.map((s) => ({ value: s, label: s }));
 
+const MIN_PASSWORD_LENGTH = 8;
+
+export type OnboardingMode = "signup" | "authenticated";
+
 export default function OnboardingWizard({
+  mode = "authenticated",
   initialState,
   initialStep,
 }: {
+  /**
+   * "signup" (anonymous): the final submit creates the Clerk account from the
+   * intake and signs the clinic in. "authenticated": an already signed-in user
+   * is finishing or editing their intake (autosave + completeOnboarding).
+   */
+  mode?: OnboardingMode;
   initialState?: OnboardingFormState;
   initialStep?: number;
 }) {
   const router = useRouter();
+  const { isLoaded: signInLoaded, signIn, setActive } = useSignIn();
   const [state, setState] = useState<OnboardingFormState>(
     initialState ?? initialFormState(),
   );
@@ -54,8 +68,14 @@ export default function OnboardingWizard({
   );
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  // Credentials live only in component state for signup mode; never persisted
+  // to the clinic profile (Clerk owns them).
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
   const stateRef = useRef(state);
   stateRef.current = state;
+  const passwordRef = useRef(password);
+  passwordRef.current = password;
 
   const stepId = STEP_IDS[index];
   const progress = ((index + 1) / STEP_IDS.length) * 100;
@@ -88,24 +108,84 @@ export default function OnboardingWizard({
       return;
     }
 
+    // Signup mode collects login credentials alongside the contact email.
+    if (stepId === "contact" && mode === "signup") {
+      if (password.length < MIN_PASSWORD_LENGTH) {
+        setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+        return;
+      }
+      if (password !== passwordConfirm) {
+        setError("Passwords do not match.");
+        return;
+      }
+    }
+
     // Final step -> submit and route to the dashboard.
     if (stepId === "providerAgreement") {
       setBusy(true);
-      const res = await completeOnboarding(stateRef.current);
+      const ok =
+        mode === "signup" ? await submitSignup() : await submitAuthenticated();
       setBusy(false);
-      if (!res.ok) {
-        setError(res.error ?? "Something went wrong.");
-        return;
+      if (ok) {
+        router.push("/dashboard");
+        router.refresh();
       }
-      router.push("/dashboard");
-      router.refresh();
       return;
     }
 
     const nextIndex = index + 1;
     goTo(nextIndex);
-    // Autosave in the background; never blocks navigation.
-    void saveProgress(stateRef.current, nextIndex);
+    // Authenticated users autosave progress; anonymous signup keeps everything
+    // client-side until the account is created on submit.
+    if (mode === "authenticated") {
+      void saveProgress(stateRef.current, nextIndex);
+    }
+  }
+
+  /** Existing signed-in user finishing intake. */
+  async function submitAuthenticated(): Promise<boolean> {
+    const res = await completeOnboarding(stateRef.current);
+    if (!res.ok) {
+      setError(res.error ?? "Something went wrong.");
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Anonymous signup: create the account + profile, then establish the session
+   * with the returned one-time ticket. Falls back to /sign-in if the ticket is
+   * unavailable (account still exists).
+   */
+  async function submitSignup(): Promise<boolean> {
+    const res = await createAccountAndComplete(
+      stateRef.current,
+      passwordRef.current,
+    );
+    if (!res.ok) {
+      setError(res.error ?? "Something went wrong.");
+      return false;
+    }
+
+    if (res.ticket && signInLoaded && signIn && setActive) {
+      try {
+        const attempt = await signIn.create({
+          strategy: "ticket",
+          ticket: res.ticket,
+        });
+        if (attempt.status === "complete" && attempt.createdSessionId) {
+          await setActive({ session: attempt.createdSessionId });
+          return true;
+        }
+      } catch {
+        // Fall through to the sign-in fallback below.
+      }
+    }
+
+    // Account exists but we couldn't auto-sign-in: send them to sign in.
+    const email = encodeURIComponent(stateRef.current.contactEmail.trim());
+    router.push(`/sign-in?redirect_url=/dashboard&email=${email}`);
+    return false;
   }
 
   // The transitional "saving" screen auto-advances.
@@ -348,6 +428,30 @@ export default function OnboardingWizard({
                 autoComplete="email"
                 onChange={(e) => set("contactEmail", e.target.value)}
               />
+              {mode === "signup" && (
+                <>
+                  <p className="-mb-1 mt-1 text-xs text-navy/55">
+                    This email and password will be your login for the Logos RX
+                    provider portal.
+                  </p>
+                  <TextField
+                    label="Create password"
+                    type="password"
+                    placeholder="Create a password (min. 8 characters)"
+                    value={password}
+                    autoComplete="new-password"
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <TextField
+                    label="Confirm password"
+                    type="password"
+                    placeholder="Confirm password"
+                    value={passwordConfirm}
+                    autoComplete="new-password"
+                    onChange={(e) => setPasswordConfirm(e.target.value)}
+                  />
+                </>
+              )}
               <ConsentCheckbox
                 checked={state.privacyAccepted}
                 onChange={(c) => set("privacyAccepted", c)}
