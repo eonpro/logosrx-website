@@ -13,7 +13,11 @@ export default function DrivenByExcellence() {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          video.play();
+          // play() returns a promise; if the element scrolls back out and
+          // pause() fires before it resolves the browser rejects with an
+          // AbortError. Swallow it — it's expected and harmless.
+          const played = video.play();
+          if (played !== undefined) played.catch(() => {});
         } else {
           video.pause();
         }
