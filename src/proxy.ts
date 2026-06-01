@@ -1,10 +1,5 @@
-import {
-  clerkClient,
-  clerkMiddleware,
-  createRouteMatcher,
-} from "@clerk/nextjs/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { roleForEmail } from "@/lib/auth/admin";
 
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 const isAdminSignInRoute = createRouteMatcher(["/admin/sign-in(.*)"]);
@@ -40,22 +35,9 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.redirect(url);
   }
 
-  // Signed in but not on the admin email allowlist → 403.
-  let email: string | null = null;
-  try {
-    const client = await clerkClient();
-    const user = await client.users.getUser(session.userId);
-    const primary =
-      user.emailAddresses.find((e) => e.id === user.primaryEmailAddressId) ??
-      user.emailAddresses[0];
-    email = primary?.emailAddress ?? null;
-  } catch {
-    email = null;
-  }
-
-  if (!roleForEmail(email)) {
-    return new NextResponse("Forbidden", { status: 403 });
-  }
+  // The email-allowlist check requires Clerk's backend client + env vars, which
+  // are only reliable in the Node runtime — so it's enforced server-side via
+  // `requireAdmin()` in the admin layout/pages, not here in edge middleware.
 });
 
 export const config = {
