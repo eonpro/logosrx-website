@@ -1,21 +1,42 @@
 import "server-only";
+import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
 import { log } from "@/lib/observability/logger";
 
 /**
- * Minimal transactional email sender built on Resend's HTTP API.
+ * Transactional email sender built on AWS SES (v2).
+ *
+ * SES lives in a different AWS account than the app's Vercel OIDC role (which is
+ * scoped to RDS), so we authenticate with a dedicated, send-only IAM access key
+ * rather than the OIDC role.
  *
  * Configure:
- *   - `RESEND_API_KEY`   (required to actually send)
- *   - `EMAIL_FROM`       (e.g. "Logos RX <noreply@logosrx.com>"; the domain must
- *                         be verified in Resend)
+ *   - `SES_ACCESS_KEY_ID`, `SES_SECRET_ACCESS_KEY`  (IAM user with ses:SendEmail)
+ *   - `SES_REGION`  (defaults to us-east-1)
+ *   - `EMAIL_FROM`  (e.g. "Logos RX <noreply@logosrx.com>"; the address/domain
+ *                    must be a verified SES identity)
  *
- * When `RESEND_API_KEY` is unset the helper no-ops with a single warning so the
- * surrounding flow (e.g. clinic approval) never fails because email isn't wired
- * up yet. No SDK dependency — we POST to the REST endpoint directly.
+ * When the SES credentials aren't configured the helper no-ops with a single
+ * warning so the surrounding flow (e.g. clinic approval) never fails because
+ * email isn't wired up yet.
  */
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const EMAIL_FROM = process.env.EMAIL_FROM ?? "Logos RX <noreply@logosrx.com>";
+
+let _client: SESv2Client | null = null;
+
+function getClient(): SESv2Client | null {
+  const region = process.env.SES_REGION ?? "us-east-1";
+  const accessKeyId = process.env.SES_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.SES_SECRET_ACCESS_KEY;
+  if (!accessKeyId || !secretAccessKey) return null;
+  if (!_client) {
+    _client = new SESv2Client({
+      region,
+      credentials: { accessKeyId, secretAccessKey },
+    });
+  }
+  return _client;
+}
 
 interface SendEmailArgs {
   to: string;
@@ -26,32 +47,32 @@ interface SendEmailArgs {
 
 export async function sendEmail(args: SendEmailArgs): Promise<boolean> {
   if (!args.to) return false;
-  if (!RESEND_API_KEY) {
-    log.warn("email send skipped: RESEND_API_KEY not set", {
+  const client = getClient();
+  if (!client) {
+    log.warn("email send skipped: SES credentials not set", {
       subject: args.subject,
     });
     return false;
   }
 
   try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: EMAIL_FROM,
-        to: [args.to],
-        subject: args.subject,
-        html: args.html,
-        text: args.text,
+    await client.send(
+      new SendEmailCommand({
+        FromEmailAddress: EMAIL_FROM,
+        Destination: { ToAddresses: [args.to] },
+        Content: {
+          Simple: {
+            Subject: { Data: args.subject, Charset: "UTF-8" },
+            Body: {
+              Html: { Data: args.html, Charset: "UTF-8" },
+              ...(args.text
+                ? { Text: { Data: args.text, Charset: "UTF-8" } }
+                : {}),
+            },
+          },
+        },
       }),
-    });
-    if (!res.ok) {
-      log.warn("email send failed", { status: res.status });
-      return false;
-    }
+    );
     return true;
   } catch (err) {
     log.warn("email send threw", {

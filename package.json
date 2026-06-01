@@ -19,6 +19,7 @@
     "db:setup": "tsx src/lib/db/setup.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-sesv2": "^3.1057.0",
     "@aws-sdk/rds-signer": "^3.1019.0",
     "@clerk/nextjs": "^7.0.7",
     "@radix-ui/react-dialog": "^1.1.15",
