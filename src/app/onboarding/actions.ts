@@ -267,15 +267,20 @@ export async function createAccountAndComplete(
   }
 
   const requestHeaders = await headers();
-  const limit = await rateLimitKey(
-    "form",
-    `onboarding-signup:${clientKeyFromHeaders(requestHeaders)}`,
-  );
-  if (!limit.success) {
-    return {
-      ok: false,
-      error: "Too many attempts. Please wait a minute and try again.",
-    };
+  try {
+    const limit = await rateLimitKey(
+      "form",
+      `onboarding-signup:${clientKeyFromHeaders(requestHeaders)}`,
+    );
+    if (!limit.success) {
+      return {
+        ok: false,
+        error: "Too many attempts. Please wait a minute and try again.",
+      };
+    }
+  } catch {
+    // Fail open: never let a rate-limiter backend issue block account creation.
+    console.error("[onboarding] rate-limit check failed; allowing request");
   }
 
   for (const id of STEP_IDS) {
@@ -315,7 +320,13 @@ export async function createAccountAndComplete(
     });
     newUserId = user.id;
   } catch (err) {
-    console.error("[onboarding] createUser failed");
+    const detail =
+      err && typeof err === "object" && "errors" in err
+        ? JSON.stringify(
+            (err as { errors?: unknown }).errors ?? err,
+          )
+        : String(err);
+    console.error("[onboarding] createUser failed:", detail);
     return { ok: false, error: clerkErrorMessage(err) };
   }
 

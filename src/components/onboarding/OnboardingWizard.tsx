@@ -76,6 +76,16 @@ export default function OnboardingWizard({
   stateRef.current = state;
   const passwordRef = useRef(password);
   passwordRef.current = password;
+  const errorRef = useRef<HTMLParagraphElement>(null);
+
+  // Surface errors that would otherwise render below the fold (e.g. at the
+  // bottom of the long agreement step) so the user actually sees why submit
+  // didn't proceed.
+  useEffect(() => {
+    if (error) {
+      errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [error]);
 
   const stepId = STEP_IDS[index];
   const progress = ((index + 1) / STEP_IDS.length) * 100;
@@ -123,12 +133,22 @@ export default function OnboardingWizard({
     // Final step -> submit and route to the dashboard.
     if (stepId === "providerAgreement") {
       setBusy(true);
-      const ok =
-        mode === "signup" ? await submitSignup() : await submitAuthenticated();
-      setBusy(false);
-      if (ok) {
-        router.push("/dashboard");
-        router.refresh();
+      try {
+        const ok =
+          mode === "signup"
+            ? await submitSignup()
+            : await submitAuthenticated();
+        if (ok) {
+          router.push("/dashboard");
+          router.refresh();
+        }
+      } catch {
+        // Never leave the button stuck spinning on an unexpected failure.
+        setError(
+          "Something went wrong creating your account. Please try again, or contact us if it keeps happening.",
+        );
+      } finally {
+        setBusy(false);
       }
       return;
     }
@@ -208,6 +228,7 @@ export default function OnboardingWizard({
           {renderStep(stepId)}
           {error && stepId !== "saving" && (
             <p
+              ref={errorRef}
               role="alert"
               className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700"
             >
