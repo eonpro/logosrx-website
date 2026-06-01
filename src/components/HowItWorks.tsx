@@ -17,7 +17,7 @@ const steps = [
     title: "We Compound",
     description:
       "Our pharmacists craft your medication in our state-of-the-art sterile and non-sterile labs.",
-    image: "/images/how-it-works/compound.png",
+    image: "/images/how-it-works/compound-v2.png",
     imageAlt: "Pharmacist compounding medication",
   },
   {
@@ -25,7 +25,7 @@ const steps = [
     title: "We Ship It to Patient",
     description:
       "Your personalized medication is shipped directly to your patient.",
-    image: "/images/how-it-works/delivery.png",
+    image: "/images/how-it-works/delivery-v2.png",
     imageAlt: "FedEx courier holding a LogosRx delivery box",
   },
 ];
