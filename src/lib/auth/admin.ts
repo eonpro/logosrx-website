@@ -1,56 +1,84 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 
 /**
- * Slug of the Clerk Organization that gates admin access.
+ * Admin access is gated by an email allowlist (no Clerk Organizations required).
  *
- * Create this Organization in the Clerk dashboard:
- *   - Name: "Logos Admin"
- *   - Slug: "logos-admin"
- *   - Default roles: `org:admin` (full access) and `org:member` (read-only "viewer")
+ * Configure via env vars (comma- or whitespace-separated, case-insensitive):
+ *   - `ADMIN_EMAILS`        → full admins (can approve/reject clinics, etc.)
+ *   - `ADMIN_VIEWER_EMAILS` → read-only "viewers" (optional)
  *
- * The slug can be overridden via env var if you rename the org.
+ * A user signs in at `/admin/sign-in` with their normal Clerk account; if their
+ * primary email is on the allowlist, they're let into `/admin`.
  */
-export const ADMIN_ORG_SLUG =
-  process.env.NEXT_PUBLIC_CLERK_ADMIN_ORG_SLUG ?? "logos-admin";
 
-/** Clerk's default org roles. We treat `org:member` as the read-only "viewer". */
-export const ADMIN_ROLE = "org:admin" as const;
-export const VIEWER_ROLE = "org:member" as const;
+/** Logical roles kept for API compatibility with existing call sites. */
+export const ADMIN_ROLE = "admin" as const;
+export const VIEWER_ROLE = "viewer" as const;
 
 export type AdminRole = typeof ADMIN_ROLE | typeof VIEWER_ROLE;
 
 export interface AdminContext {
   userId: string;
-  orgId: string;
-  orgSlug: string;
+  email: string;
   role: AdminRole;
+}
+
+function parseEmails(raw: string | undefined): Set<string> {
+  return new Set(
+    (raw ?? "")
+      .split(/[,\s]+/)
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean),
+  );
+}
+
+const ADMIN_EMAILS = parseEmails(process.env.ADMIN_EMAILS);
+const VIEWER_EMAILS = parseEmails(process.env.ADMIN_VIEWER_EMAILS);
+
+/** Returns the role for an email if allowlisted, else `null`. */
+export function roleForEmail(email: string | null | undefined): AdminRole | null {
+  if (!email) return null;
+  const e = email.trim().toLowerCase();
+  if (ADMIN_EMAILS.has(e)) return ADMIN_ROLE;
+  if (VIEWER_EMAILS.has(e)) return VIEWER_ROLE;
+  return null;
+}
+
+/** Fetches the user's primary email address from Clerk. */
+export async function getPrimaryEmail(userId: string): Promise<string | null> {
+  try {
+    const client = await clerkClient();
+    const user = await client.users.getUser(userId);
+    const primary =
+      user.emailAddresses.find((e) => e.id === user.primaryEmailAddressId) ??
+      user.emailAddresses[0];
+    return primary?.emailAddress ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /**
  * Returns the admin context if the current request belongs to an authenticated
- * user inside the Logos admin org. Returns `null` otherwise.
+ * user whose email is on the allowlist. Returns `null` otherwise.
  *
  * Read-only check; safe to call inside `loading.tsx` / server components.
  */
 export async function getAdminContext(): Promise<AdminContext | null> {
-  const session = await auth();
-  const { userId, orgId, orgSlug, orgRole } = session;
+  const { userId } = await auth();
+  if (!userId) return null;
 
-  if (!userId || !orgId || orgSlug !== ADMIN_ORG_SLUG) return null;
-  if (orgRole !== ADMIN_ROLE && orgRole !== VIEWER_ROLE) return null;
+  const email = await getPrimaryEmail(userId);
+  const role = roleForEmail(email);
+  if (!email || !role) return null;
 
-  return {
-    userId,
-    orgId,
-    orgSlug,
-    role: orgRole as AdminRole,
-  };
+  return { userId, email, role };
 }
 
 /**
  * Strict variant for server actions, route handlers, and admin-only mutations.
- * Throws `ForbiddenError` if the caller is not inside the admin org. The
- * thrown error message is intentionally generic so it can be safely surfaced.
+ * Throws `ForbiddenError` if the caller is not an allowlisted admin. The thrown
+ * error message is intentionally generic so it can be safely surfaced.
  */
 export async function requireAdmin(
   options: { minRole?: AdminRole } = {},

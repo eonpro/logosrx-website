@@ -1,10 +1,10 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
 import {
-  ADMIN_ORG_SLUG,
-  ADMIN_ROLE,
-  VIEWER_ROLE,
-} from "@/lib/auth/admin";
+  clerkClient,
+  clerkMiddleware,
+  createRouteMatcher,
+} from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import { roleForEmail } from "@/lib/auth/admin";
 
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 const isAdminSignInRoute = createRouteMatcher(["/admin/sign-in(.*)"]);
@@ -40,12 +40,20 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.redirect(url);
   }
 
-  // Signed in but not in the admin org with an allowed role → 403.
-  const isInAdminOrg = session.orgSlug === ADMIN_ORG_SLUG;
-  const hasAdminRole =
-    session.orgRole === ADMIN_ROLE || session.orgRole === VIEWER_ROLE;
+  // Signed in but not on the admin email allowlist → 403.
+  let email: string | null = null;
+  try {
+    const client = await clerkClient();
+    const user = await client.users.getUser(session.userId);
+    const primary =
+      user.emailAddresses.find((e) => e.id === user.primaryEmailAddressId) ??
+      user.emailAddresses[0];
+    email = primary?.emailAddress ?? null;
+  } catch {
+    email = null;
+  }
 
-  if (!isInAdminOrg || !hasAdminRole) {
+  if (!roleForEmail(email)) {
     return new NextResponse("Forbidden", { status: 403 });
   }
 });
