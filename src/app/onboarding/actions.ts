@@ -40,6 +40,34 @@ export interface CreateAccountResult extends ActionResult {
 
 const MIN_PASSWORD_LENGTH = 8;
 
+/**
+ * Best-effort E.164 normalization for US-style phone numbers. Clerk requires
+ * phone numbers in E.164 when the instance treats phone as a required field.
+ */
+function toE164(raw: string): string | undefined {
+  const trimmed = raw.trim();
+  if (trimmed.startsWith("+")) {
+    const digits = trimmed.slice(1).replace(/\D/g, "");
+    return digits ? `+${digits}` : undefined;
+  }
+  const digits = trimmed.replace(/\D/g, "");
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+  return digits ? `+${digits}` : undefined;
+}
+
+/**
+ * Derives a unique, valid Clerk username from the email local-part. The random
+ * suffix avoids collisions; sign-in still uses email + password, so this value
+ * is never surfaced to the clinic.
+ */
+function deriveUsername(email: string): string {
+  const local = email.split("@")[0]?.toLowerCase().replace(/[^a-z0-9_]/g, "") ?? "";
+  const base = (local.length >= 3 ? local : `clinic${local}`).slice(0, 40);
+  const suffix = Math.random().toString(36).slice(2, 8);
+  return `${base}_${suffix}`;
+}
+
 const PRODUCT_LABELS: Record<string, string> = {
   weight_loss: "Weight Loss",
   peptides: "Peptides",
@@ -272,8 +300,14 @@ export async function createAccountAndComplete(
   // 1. Create the Clerk account from the intake data.
   let newUserId: string;
   try {
+    const phoneNumber = toE164(state.contactPhone);
     const user = await client.users.createUser({
       emailAddress: [email],
+      // Some Clerk instances require username/phone on every user. We supply a
+      // derived username and the contact phone so creation succeeds; clinics
+      // still sign in with email + password.
+      username: deriveUsername(email),
+      phoneNumber: phoneNumber ? [phoneNumber] : undefined,
       password,
       firstName: firstName || undefined,
       lastName: lastName || undefined,
