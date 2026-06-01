@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { Clinic } from "@/lib/db/schema";
 import {
   ORDER_VOLUME_OPTIONS,
@@ -118,6 +119,15 @@ export function ClinicsTable({ clinics }: { clinics: ClinicRow[] }) {
                 {expandedId === c.id && (
                   <tr key={`${c.id}-detail`}>
                     <td colSpan={6} className="px-6 py-5 bg-cream/30">
+                      <div className="mb-4 flex justify-end">
+                        <Link
+                          href={`/admin/clinics/${c.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="rounded-full bg-navy px-4 py-1.5 text-xs font-semibold text-white hover:bg-navy/90 transition-colors"
+                        >
+                          Open full record →
+                        </Link>
+                      </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-5">
                         <Field
                           label="Email"

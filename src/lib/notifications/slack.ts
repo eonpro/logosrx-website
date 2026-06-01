@@ -94,6 +94,22 @@ const VOLUME_LABELS: Record<string, string> = {
   "50000_plus": "$50k+/mo",
 };
 
+/** Posts to Slack when an admin approves (verifies) a clinic. */
+export async function notifyClinicApproved(args: {
+  clinicName: string;
+  contactEmail: string;
+  approvedBy: string;
+}): Promise<void> {
+  await postToSlack({
+    header: "✅ Clinic approved",
+    fields: [
+      { label: "Clinic", value: args.clinicName || "—" },
+      { label: "Contact", value: args.contactEmail || "—" },
+      { label: "Approved by", value: args.approvedBy || "—" },
+    ],
+  });
+}
+
 /** Notifies admins that a clinic finished onboarding and needs verification. */
 export async function notifyNewClinic(
   n: NewClinicNotification,

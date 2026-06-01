@@ -53,6 +53,13 @@ export const verificationStatusEnum = pgEnum("verification_status", [
   "rejected",
 ]);
 
+/** CRM pricing tier assigned to a clinic by an admin. */
+export const pricingTierEnum = pgEnum("pricing_tier", [
+  "standard",
+  "preferred",
+  "vip",
+]);
+
 export const employmentApplications = pgTable("employment_applications", {
   id: serial("id").primaryKey(),
   firstName: varchar("first_name", { length: 100 }).notNull(),
@@ -178,6 +185,13 @@ export const clinics = pgTable("clinics", {
   verifiedBy: varchar("verified_by", { length: 64 }),
   verificationNotes: text("verification_notes"),
 
+  // --- CRM: custom pricing ---
+  // A tier label plus an optional flat discount (whole %, 0-100) applied on top
+  // of standard pricing. Per-product overrides live in `clinic_pricing`.
+  pricingTier: pricingTierEnum("pricing_tier").default("standard").notNull(),
+  pricingDiscountPct: integer("pricing_discount_pct").default(0).notNull(),
+  pricingNotes: text("pricing_notes"),
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -205,6 +219,50 @@ export const clinicPayments = pgTable("clinic_payments", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+/**
+ * CRM timeline notes an admin writes about a clinic. Append-only; each note
+ * records who wrote it and when.
+ */
+export const clinicNotes = pgTable("clinic_notes", {
+  id: serial("id").primaryKey(),
+  clinicId: integer("clinic_id")
+    .notNull()
+    .references(() => clinics.id, { onDelete: "cascade" }),
+  authorUserId: varchar("author_user_id", { length: 64 }).notNull(),
+  authorEmail: varchar("author_email", { length: 255 }),
+  body: text("body").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/**
+ * Per-product custom pricing overrides for a clinic. Prices are stored as
+ * integer cents to avoid floating-point drift.
+ */
+export const clinicPricing = pgTable("clinic_pricing", {
+  id: serial("id").primaryKey(),
+  clinicId: integer("clinic_id")
+    .notNull()
+    .references(() => clinics.id, { onDelete: "cascade" }),
+  productName: varchar("product_name", { length: 200 }).notNull(),
+  priceCents: integer("price_cents").notNull(),
+  unit: varchar("unit", { length: 60 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+/**
+ * Audit trail for sensitive card reveals. Written every time an admin decrypts
+ * and views a clinic's full card details (gated by password re-verification).
+ */
+export const cardAccessLog = pgTable("card_access_log", {
+  id: serial("id").primaryKey(),
+  clinicId: integer("clinic_id").notNull(),
+  adminUserId: varchar("admin_user_id", { length: 64 }).notNull(),
+  adminEmail: varchar("admin_email", { length: 255 }),
+  action: varchar("action", { length: 30 }).default("reveal").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export interface ProviderLicense {
   license: string;
   state: string;
@@ -229,5 +287,10 @@ export type EmailSignup = typeof emailSignups.$inferSelect;
 export type NewEmailSignup = typeof emailSignups.$inferInsert;
 export type Clinic = typeof clinics.$inferSelect;
 export type NewClinic = typeof clinics.$inferInsert;
+export type ClinicNote = typeof clinicNotes.$inferSelect;
+export type NewClinicNote = typeof clinicNotes.$inferInsert;
+export type ClinicPriceItem = typeof clinicPricing.$inferSelect;
+export type NewClinicPriceItem = typeof clinicPricing.$inferInsert;
+export type CardAccessLogEntry = typeof cardAccessLog.$inferSelect;
 export type ClinicPayment = typeof clinicPayments.$inferSelect;
 export type NewClinicPayment = typeof clinicPayments.$inferInsert;
