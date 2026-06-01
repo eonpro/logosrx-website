@@ -17,7 +17,7 @@ const steps = [
     title: "We Compound",
     description:
       "Our pharmacists craft your medication in our state-of-the-art sterile and non-sterile labs.",
-    image: "/images/how-it-works/compound-v2.png",
+    image: "/images/how-it-works/compound-v3.png",
     imageAlt: "Pharmacist compounding medication",
   },
   {
