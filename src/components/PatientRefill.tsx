@@ -43,7 +43,7 @@ export default function PatientRefill() {
               alt="Logos RX product box"
               width={600}
               height={600}
-              className="w-full max-w-md h-auto object-contain"
+              className="w-full max-w-[260px] sm:max-w-xs h-auto object-contain mx-auto"
             />
           </motion.div>
         </div>
