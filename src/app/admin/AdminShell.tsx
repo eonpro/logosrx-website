@@ -28,6 +28,16 @@ const navItems = [
     ),
   },
   {
+    label: "Clinics",
+    href: "/admin/clinics",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M4 17V5a1 1 0 011-1h10a1 1 0 011 1v12" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M2 17h16M10 4V2m-1.5 5h3M8.5 10h3M8.5 13h3" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
     label: "Clinic Sign-ups",
     href: "/admin/clinic-signups",
     icon: (

@@ -23,6 +23,7 @@ export default async function DashboardPage() {
     <DashboardEditor
       initialState={profile.state}
       cardLast4={profile.cardLast4}
+      verificationStatus={profile.verificationStatus}
     />
   );
 }

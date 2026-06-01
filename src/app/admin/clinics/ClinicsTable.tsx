@@ -1,0 +1,261 @@
+"use client";
+
+import { useState } from "react";
+import type { Clinic } from "@/lib/db/schema";
+import {
+  ORDER_VOLUME_OPTIONS,
+  PRACTICE_TYPE_OPTIONS,
+  PRODUCT_OPTIONS,
+  REFERRAL_OPTIONS,
+  SHIPPING_METHOD_OPTIONS,
+  SPECIALTY_OPTIONS,
+  type Option,
+} from "@/lib/onboarding/steps";
+import { setClinicVerification } from "./actions";
+
+type ClinicRow = Clinic & { cardLast4: string | null };
+
+const statusStyles: Record<string, string> = {
+  pending: "bg-amber-100 text-amber-700",
+  verified: "bg-green-100 text-green-700",
+  rejected: "bg-red-100 text-red-700",
+};
+
+const VERIFICATION_OPTIONS = ["verified", "rejected", "pending"] as const;
+
+function optionLabel(
+  options: Option[],
+  value: string | null | undefined,
+): string {
+  if (!value) return "—";
+  return options.find((o) => o.value === value)?.label ?? value;
+}
+
+function Field({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-navy/65 text-xs uppercase tracking-wider mb-1">
+        {label}
+      </p>
+      <p className="text-navy">{value || "—"}</p>
+    </div>
+  );
+}
+
+export function ClinicsTable({ clinics }: { clinics: ClinicRow[] }) {
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+
+  return (
+    <div className="rounded-2xl bg-white border border-beige overflow-hidden">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-beige bg-cream/50">
+            {["Clinic", "Contact", "Products", "Submitted", "Status", ""].map(
+              (h, i) => (
+                <th
+                  key={i}
+                  className="text-left px-6 py-3.5 font-semibold text-navy/60 text-xs uppercase tracking-wider"
+                >
+                  {h}
+                </th>
+              ),
+            )}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-beige">
+          {clinics.map((c) => {
+            const products = (c.productsOfInterest ?? [])
+              .map((p) => optionLabel(PRODUCT_OPTIONS, p))
+              .join(", ");
+            return (
+              <>
+                <tr
+                  key={c.id}
+                  className="hover:bg-cream/30 transition-colors cursor-pointer"
+                  onClick={() =>
+                    setExpandedId(expandedId === c.id ? null : c.id)
+                  }
+                >
+                  <td className="px-6 py-4 font-medium text-navy">
+                    {c.clinicName || c.practiceLegalName || "—"}
+                  </td>
+                  <td className="px-6 py-4 text-navy/60">
+                    {c.contactName || "—"}
+                  </td>
+                  <td className="px-6 py-4 text-navy/60">{products || "—"}</td>
+                  <td className="px-6 py-4 text-navy/65">
+                    {new Date(c.createdAt).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${statusStyles[c.verificationStatus]}`}
+                    >
+                      {c.verificationStatus}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      className={`text-navy/65 transition-transform ${expandedId === c.id ? "rotate-180" : ""}`}
+                    >
+                      <path
+                        d="M4 6l4 4 4-4"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </td>
+                </tr>
+                {expandedId === c.id && (
+                  <tr key={`${c.id}-detail`}>
+                    <td colSpan={6} className="px-6 py-5 bg-cream/30">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-5">
+                        <Field
+                          label="Email"
+                          value={
+                            c.contactEmail ? (
+                              <a
+                                href={`mailto:${c.contactEmail}`}
+                                className="text-navy hover:text-magenta"
+                              >
+                                {c.contactEmail}
+                              </a>
+                            ) : null
+                          }
+                        />
+                        <Field
+                          label="Phone"
+                          value={
+                            c.contactPhone ? (
+                              <a
+                                href={`tel:${c.contactPhone}`}
+                                className="text-navy hover:text-magenta"
+                              >
+                                {c.contactPhone}
+                              </a>
+                            ) : null
+                          }
+                        />
+                        <Field
+                          label="Order Volume"
+                          value={optionLabel(ORDER_VOLUME_OPTIONS, c.orderVolume)}
+                        />
+                        <Field
+                          label="Referral"
+                          value={optionLabel(REFERRAL_OPTIONS, c.referralSource)}
+                        />
+                        <Field label="Legal Name" value={c.practiceLegalName} />
+                        <Field label="d/b/a" value={c.practiceDba} />
+                        <Field label="EIN" value={c.ein} />
+                        <Field
+                          label="Practice Type"
+                          value={optionLabel(PRACTICE_TYPE_OPTIONS, c.practiceType)}
+                        />
+                        <Field
+                          label="Address"
+                          value={[c.addressLine1, c.addressSuite]
+                            .filter(Boolean)
+                            .join(", ")}
+                        />
+                        <Field label="Practice Phone" value={c.practicePhone} />
+                        <Field
+                          label="Website"
+                          value={
+                            c.website ? (
+                              <a
+                                href={
+                                  c.website.startsWith("http")
+                                    ? c.website
+                                    : `https://${c.website}`
+                                }
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-navy hover:text-magenta"
+                              >
+                                {c.website}
+                              </a>
+                            ) : null
+                          }
+                        />
+                        <Field
+                          label="Shipping"
+                          value={optionLabel(SHIPPING_METHOD_OPTIONS, c.shippingMethod)}
+                        />
+                        <Field
+                          label="Card on File"
+                          value={c.cardLast4 ? `•••• ${c.cardLast4}` : null}
+                        />
+                      </div>
+
+                      <div className="mb-5">
+                        <p className="text-navy/65 text-xs uppercase tracking-wider mb-2">
+                          Providers ({c.providers?.length ?? 0})
+                        </p>
+                        <div className="flex flex-col gap-2">
+                          {(c.providers ?? []).map((p, i) => (
+                            <div
+                              key={i}
+                              className="rounded-lg bg-white border border-beige px-3 py-2 text-sm text-navy/80"
+                            >
+                              <span className="font-medium text-navy">
+                                {p.firstName} {p.lastName}
+                              </span>
+                              {" — "}
+                              {optionLabel(SPECIALTY_OPTIONS, p.specialty)}
+                              <span className="text-navy/55">
+                                {" "}
+                                · NPI {p.npi || "—"} · Lic {p.medicalLicense || "—"}
+                                {p.licenseState ? ` (${p.licenseState})` : ""}
+                                {p.dea ? ` · DEA ${p.dea}` : ""}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-navy/65 text-xs uppercase tracking-wider mr-1">
+                          Set status
+                        </span>
+                        {VERIFICATION_OPTIONS.map((status) => (
+                          <button
+                            key={status}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              await setClinicVerification(c.id, status);
+                            }}
+                            disabled={c.verificationStatus === status}
+                            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold capitalize transition-colors ${
+                              c.verificationStatus === status
+                                ? "bg-navy/10 text-navy/65 cursor-not-allowed"
+                                : status === "verified"
+                                  ? "bg-white border border-green-200 text-green-700 hover:bg-green-50"
+                                  : status === "rejected"
+                                    ? "bg-white border border-red-200 text-red-700 hover:bg-red-50"
+                                    : "bg-white border border-beige hover:border-magenta hover:text-magenta text-navy/60"
+                            }`}
+                          >
+                            {status}
+                          </button>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}

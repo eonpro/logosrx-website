@@ -20,9 +20,42 @@ import {
 } from "@/lib/onboarding/steps";
 import { STATES_SERVED } from "@/lib/constants";
 import type { ClinicProvider } from "@/lib/db/schema";
+import type { VerificationStatus } from "@/lib/onboarding/data";
 import { updateClinicProfile } from "@/app/onboarding/actions";
 
 const STATE_OPTIONS = STATES_SERVED.map((s) => ({ value: s, label: s }));
+
+function VerificationBanner({ status }: { status: VerificationStatus }) {
+  if (status === "verified") {
+    return (
+      <div className="mb-6 flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+        <span className="text-base">✓</span>
+        <span>
+          Your account is <strong>verified</strong>. You&rsquo;re all set.
+        </span>
+      </div>
+    );
+  }
+  if (status === "rejected") {
+    return (
+      <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        We were unable to verify your account. Please contact{" "}
+        <a href="mailto:support@logosrx.com" className="font-semibold underline">
+          support@logosrx.com
+        </a>{" "}
+        so we can help resolve this.
+      </div>
+    );
+  }
+  return (
+    <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+      <strong>Account pending verification.</strong> Our team is reviewing your
+      practice and provider information. You can keep your profile up to date
+      below in the meantime — we&rsquo;ll be in touch once your account is
+      approved.
+    </div>
+  );
+}
 
 function Section({
   title,
@@ -42,9 +75,11 @@ function Section({
 export default function DashboardEditor({
   initialState,
   cardLast4,
+  verificationStatus,
 }: {
   initialState: OnboardingFormState;
   cardLast4: string | null;
+  verificationStatus: VerificationStatus;
 }) {
   const [state, setState] = useState<OnboardingFormState>(initialState);
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">(
@@ -99,9 +134,11 @@ export default function DashboardEditor({
 
       <main className="mx-auto max-w-3xl px-6 py-10">
         <h1 className="mb-1 text-2xl font-bold text-navy">Your clinic profile</h1>
-        <p className="mb-8 text-sm text-navy/60">
+        <p className="mb-6 text-sm text-navy/60">
           Keep your practice and provider information up to date.
         </p>
+
+        <VerificationBanner status={verificationStatus} />
 
         <div className="flex flex-col gap-5">
           <Section title="Products &amp; Volume">

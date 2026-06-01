@@ -1,8 +1,13 @@
 export const dynamic = "force-dynamic";
 
 import { db } from "@/lib/db";
-import { employmentApplications, clinicSignups, emailSignups } from "@/lib/db/schema";
-import { count, eq } from "drizzle-orm";
+import {
+  employmentApplications,
+  clinicSignups,
+  clinics,
+  emailSignups,
+} from "@/lib/db/schema";
+import { and, count, eq } from "drizzle-orm";
 import { requireAdmin } from "@/lib/auth/admin";
 
 async function getStats() {
@@ -20,18 +25,37 @@ async function getStats() {
     .select({ count: count() })
     .from(clinicSignups)
     .where(eq(clinicSignups.status, "new"));
+  const [accountTotal] = await db
+    .select({ count: count() })
+    .from(clinics)
+    .where(eq(clinics.onboardingCompleted, true));
+  const [accountPending] = await db
+    .select({ count: count() })
+    .from(clinics)
+    .where(
+      and(
+        eq(clinics.onboardingCompleted, true),
+        eq(clinics.verificationStatus, "pending"),
+      ),
+    );
   const [emailTotal] = await db
     .select({ count: count() })
     .from(emailSignups);
 
   return {
     applications: { total: appTotal.count, new: appNew.count },
+    accounts: { total: accountTotal.count, pending: accountPending.count },
     clinics: { total: clinicTotal.count, new: clinicNew.count },
     emails: { total: emailTotal.count },
   };
 }
 
 const cards = [
+  {
+    label: "Clinics",
+    href: "/admin/clinics",
+    color: "bg-green-500",
+  },
   {
     label: "Employment Applications",
     href: "/admin/applications",
@@ -54,9 +78,34 @@ export default async function AdminOverview() {
   const stats = await getStats();
 
   const data = [
-    { ...cards[0], total: stats.applications.total, badge: stats.applications.new },
-    { ...cards[1], total: stats.clinics.total, badge: stats.clinics.new },
-    { ...cards[2], total: stats.emails.total, badge: 0 },
+    {
+      ...cards[0],
+      total: stats.accounts.total,
+      badge: stats.accounts.pending,
+      badgeLabel: "pending",
+      badgeClass: "bg-amber-100 text-amber-700",
+    },
+    {
+      ...cards[1],
+      total: stats.applications.total,
+      badge: stats.applications.new,
+      badgeLabel: "new",
+      badgeClass: "bg-magenta/10 text-magenta",
+    },
+    {
+      ...cards[2],
+      total: stats.clinics.total,
+      badge: stats.clinics.new,
+      badgeLabel: "new",
+      badgeClass: "bg-magenta/10 text-magenta",
+    },
+    {
+      ...cards[3],
+      total: stats.emails.total,
+      badge: 0,
+      badgeLabel: "new",
+      badgeClass: "bg-magenta/10 text-magenta",
+    },
   ];
 
   return (
@@ -68,7 +117,7 @@ export default async function AdminOverview() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {data.map((card) => (
           <a
             key={card.href}
@@ -81,8 +130,10 @@ export default async function AdminOverview() {
             </p>
             <p className="text-3xl font-bold text-navy">{card.total}</p>
             {card.badge > 0 && (
-              <span className="mt-3 inline-flex items-center rounded-full bg-magenta/10 px-2.5 py-0.5 text-xs font-semibold text-magenta">
-                {card.badge} new
+              <span
+                className={`mt-3 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${card.badgeClass}`}
+              >
+                {card.badge} {card.badgeLabel}
               </span>
             )}
           </a>

@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { clinics, clinicPayments } from "@/lib/db/schema";
 import { encrypt } from "@/lib/onboarding/encryption";
+import { notifyNewClinic } from "@/lib/notifications/slack";
 import {
   clientKeyFromHeaders,
   rateLimitKey,
@@ -38,6 +39,28 @@ export interface CreateAccountResult extends ActionResult {
 }
 
 const MIN_PASSWORD_LENGTH = 8;
+
+const PRODUCT_LABELS: Record<string, string> = {
+  weight_loss: "Weight Loss",
+  peptides: "Peptides",
+  hormone_replacement: "Hormone Replacement",
+  other: "Other",
+};
+
+/** Builds the admin Slack notification payload from the intake state. */
+function toClinicNotification(s: OnboardingFormState) {
+  return {
+    clinicName: s.clinicName.trim() || s.practiceLegalName.trim(),
+    contactName: s.contactName.trim(),
+    contactEmail: s.contactEmail.trim().toLowerCase(),
+    contactPhone: s.contactPhone.trim(),
+    practiceType: s.practiceType.replace(/_/g, " "),
+    products: s.productsOfInterest.map((p) => PRODUCT_LABELS[p] ?? p),
+    orderVolume: s.orderVolume,
+    providerCount: s.providers.length,
+    state: s.providers[0]?.licenseState ?? "",
+  };
+}
 
 /** Extracts a user-facing message from a Clerk Backend API error. */
 function clerkErrorMessage(err: unknown): string {
@@ -184,6 +207,7 @@ export async function completeOnboarding(
       onboardingCompleted: true,
     });
     await upsertPayment(userId, state);
+    await notifyNewClinic(toClinicNotification(state));
     return { ok: true };
   } catch {
     console.error("[onboarding] completeOnboarding failed");
@@ -281,6 +305,9 @@ export async function createAccountAndComplete(
       error: "Could not save your application. Please try again.",
     };
   }
+
+  // Notify admins (resilient: never throws / never blocks the response).
+  await notifyNewClinic(toClinicNotification(state));
 
   // 3. Mint a one-time sign-in ticket for immediate, password-less session setup.
   try {

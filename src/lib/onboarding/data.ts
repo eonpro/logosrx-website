@@ -7,10 +7,14 @@ import {
   type OnboardingFormState,
 } from "@/lib/onboarding/steps";
 
+export type VerificationStatus = "pending" | "verified" | "rejected";
+
 export interface ClinicProfile {
   exists: boolean;
   onboardingStep: number;
   onboardingCompleted: boolean;
+  /** Admin review state for the completed intake. */
+  verificationStatus: VerificationStatus;
   /** Last 4 of the card on file, if any (full number is never returned). */
   cardLast4: string | null;
   state: OnboardingFormState;
@@ -42,6 +46,7 @@ export async function getClinicProfile(
       exists: false,
       onboardingStep: 0,
       onboardingCompleted: false,
+      verificationStatus: "pending",
       cardLast4: payment?.cardLast4 ?? null,
       state: base,
     };
@@ -80,6 +85,7 @@ export async function getClinicProfile(
     exists: true,
     onboardingStep: row.onboardingStep,
     onboardingCompleted: row.onboardingCompleted,
+    verificationStatus: row.verificationStatus,
     cardLast4: payment?.cardLast4 ?? null,
     state,
   };

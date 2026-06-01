@@ -42,6 +42,17 @@ export const shippingMethodEnum = pgEnum("shipping_method", [
   "ship_to_practice",
 ]);
 
+/**
+ * Admin review state for a completed clinic onboarding. New completed intakes
+ * start as `pending`; an admin moves them to `verified` or `rejected` from the
+ * `/admin/clinics` review queue.
+ */
+export const verificationStatusEnum = pgEnum("verification_status", [
+  "pending",
+  "verified",
+  "rejected",
+]);
+
 export const employmentApplications = pgTable("employment_applications", {
   id: serial("id").primaryKey(),
   firstName: varchar("first_name", { length: 100 }).notNull(),
@@ -157,6 +168,15 @@ export const clinics = pgTable("clinics", {
   onboardingCompleted: boolean("onboarding_completed")
     .default(false)
     .notNull(),
+
+  // --- Admin verification ---
+  verificationStatus: verificationStatusEnum("verification_status")
+    .default("pending")
+    .notNull(),
+  verifiedAt: timestamp("verified_at"),
+  // Clerk user id of the admin who set the current verification state.
+  verifiedBy: varchar("verified_by", { length: 64 }),
+  verificationNotes: text("verification_notes"),
 
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
