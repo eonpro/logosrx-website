@@ -39,7 +39,7 @@ export default function PatientRefill() {
             className="relative flex items-center justify-center"
           >
             <Image
-              src="/images/patient-refill-box.webp"
+              src="/images/patient-refill-box-v2.png"
               alt="Logos RX product box"
               width={600}
               height={600}
