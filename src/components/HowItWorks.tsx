@@ -17,7 +17,7 @@ const steps = [
     title: "We Compound",
     description:
       "Our pharmacists craft your medication in our state-of-the-art sterile and non-sterile labs.",
-    image: "/images/how-it-works/compound-v3.png",
+    image: "/images/how-it-works/compound-v4.png",
     imageAlt: "Pharmacist compounding medication",
   },
   {
@@ -39,12 +39,9 @@ export default function HowItWorks() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-16"
+          className="text-center mb-12 sm:mb-16"
         >
-          <p className="text-xs sm:text-sm font-semibold tracking-[0.2em] uppercase text-magenta mb-3">
-            Simple Process
-          </p>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-navy">
+          <h2 className="text-4xl sm:text-5xl font-bold text-navy">
             How It Works
           </h2>
         </motion.div>
@@ -57,10 +54,10 @@ export default function HowItWorks() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-80px" }}
               transition={{ duration: 0.5, delay: i * 0.15 }}
-              className="group relative flex flex-col overflow-hidden rounded-3xl bg-beige shadow-sm ring-1 ring-navy/5 transition-shadow hover:shadow-lg hover:shadow-navy/5"
+              className="group relative flex flex-col overflow-hidden rounded-3xl bg-[#f2eee5] shadow-sm ring-1 ring-navy/5 transition-shadow hover:shadow-lg hover:shadow-navy/5"
             >
               <div className="flex flex-col items-center px-6 pt-8 text-center">
-                <span className="mb-5 flex h-9 w-9 items-center justify-center rounded-full bg-navy/80 text-sm font-bold text-white">
+                <span className="mb-5 flex h-9 w-9 items-center justify-center rounded-full bg-[#9795a3] text-sm font-bold text-white">
                   {step.number}
                 </span>
                 <h3 className="text-xl font-bold text-navy mb-3">
@@ -71,7 +68,7 @@ export default function HowItWorks() {
                 </p>
               </div>
 
-              <div className="relative mt-6 flex h-64 items-end justify-center">
+              <div className="relative mt-6 flex h-72 items-end justify-center">
                 <Image
                   src={step.image}
                   alt={step.imageAlt}
