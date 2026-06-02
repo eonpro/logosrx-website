@@ -1,10 +1,19 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import { and, asc, desc, eq, isNull, lte, gte, or } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { promotions, featuredProducts } from "@/lib/db/schema";
 import type { Promotion, FeaturedProduct } from "@/lib/db/schema";
 
 export type PricingTier = "standard" | "preferred" | "vip";
+
+/**
+ * Cache tag for storefront merchandising reads. Admin mutations call
+ * `revalidateTag(MERCHANDISING_TAG)` so edits show up immediately; the short
+ * `revalidate` window below also lets time-boxed promotions (startsAt/endsAt)
+ * roll over without an explicit invalidation.
+ */
+export const MERCHANDISING_TAG = "merchandising";
 
 /** A promotion/news item shaped for the clinic-facing banner. */
 export interface StorefrontPromotion {
@@ -26,7 +35,7 @@ export interface StorefrontPromotion {
  * then by `sortOrder`. Filters on the active flag, the optional time window,
  * and audience tier (null audience = everyone).
  */
-export async function getActivePromotions(
+async function queryActivePromotions(
   tier: PricingTier,
 ): Promise<StorefrontPromotion[]> {
   const now = new Date();
@@ -58,11 +67,18 @@ export async function getActivePromotions(
   }));
 }
 
-/**
- * Ordered list of featured catalog SKU ids (+ optional badge label). The
- * storefront resolves these against its priced product list.
- */
-export async function getFeaturedProductIds(): Promise<
+export async function getActivePromotions(
+  tier: PricingTier,
+): Promise<StorefrontPromotion[]> {
+  const cached = unstable_cache(
+    () => queryActivePromotions(tier),
+    ["active-promotions", tier],
+    { tags: [MERCHANDISING_TAG], revalidate: 60 },
+  );
+  return cached();
+}
+
+async function queryFeaturedProductIds(): Promise<
   { productId: string; label: string | null }[]
 > {
   const rows = await db
@@ -75,6 +91,16 @@ export async function getFeaturedProductIds(): Promise<
     .orderBy(asc(featuredProducts.sortOrder), asc(featuredProducts.productId));
   return rows;
 }
+
+/**
+ * Ordered list of featured catalog SKU ids (+ optional badge label). The
+ * storefront resolves these against its priced product list.
+ */
+export const getFeaturedProductIds = unstable_cache(
+  queryFeaturedProductIds,
+  ["featured-product-ids"],
+  { tags: [MERCHANDISING_TAG], revalidate: 60 },
+);
 
 /* ─────────────── Admin reads (full lists, unfiltered) ─────────────── */
 

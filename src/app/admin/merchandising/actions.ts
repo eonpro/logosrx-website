@@ -1,11 +1,26 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { promotions, featuredProducts } from "@/lib/db/schema";
 import { ADMIN_ROLE, requireAdmin } from "@/lib/auth/admin";
+import { MERCHANDISING_TAG } from "@/lib/portal/merchandising";
 import { catalogProducts } from "@/data/catalog";
+
+/**
+ * Invalidate every storefront surface that renders merchandising. Clears the
+ * tag-cached reads (`getActivePromotions` / `getFeaturedProductIds`) and the
+ * pages that embed them.
+ */
+function revalidateMerchandising() {
+  // Next 16: the second arg is required. "max" marks the tag stale and serves
+  // stale-while-revalidate on the next visit. The path revalidations below keep
+  // the admin + dashboard surfaces consistent.
+  revalidateTag(MERCHANDISING_TAG, "max");
+  revalidatePath("/admin/merchandising");
+  revalidatePath("/dashboard");
+}
 
 type PromotionKind = "promo" | "news";
 type PromotionLayout = "card" | "hero" | "tile";
@@ -90,8 +105,7 @@ export async function createPromotion(input: PromotionInput) {
   await requireAdmin({ minRole: ADMIN_ROLE });
   const values = sanitize(input);
   await db.insert(promotions).values(values);
-  revalidatePath("/admin/merchandising");
-  revalidatePath("/dashboard");
+  revalidateMerchandising();
 }
 
 export async function updatePromotion(id: number, input: PromotionInput) {
@@ -102,16 +116,14 @@ export async function updatePromotion(id: number, input: PromotionInput) {
     .update(promotions)
     .set({ ...values, updatedAt: new Date() })
     .where(eq(promotions.id, id));
-  revalidatePath("/admin/merchandising");
-  revalidatePath("/dashboard");
+  revalidateMerchandising();
 }
 
 export async function deletePromotion(id: number) {
   await requireAdmin({ minRole: ADMIN_ROLE });
   assertId(id);
   await db.delete(promotions).where(eq(promotions.id, id));
-  revalidatePath("/admin/merchandising");
-  revalidatePath("/dashboard");
+  revalidateMerchandising();
 }
 
 /** Toggle a promotion's active flag without opening the full editor. */
@@ -122,8 +134,7 @@ export async function setPromotionActive(id: number, active: boolean) {
     .update(promotions)
     .set({ active: Boolean(active), updatedAt: new Date() })
     .where(eq(promotions.id, id));
-  revalidatePath("/admin/merchandising");
-  revalidatePath("/dashboard");
+  revalidateMerchandising();
 }
 
 /* ─────────────── Featured products ─────────────── */
@@ -152,14 +163,12 @@ export async function addFeatured(
       },
     });
 
-  revalidatePath("/admin/merchandising");
-  revalidatePath("/dashboard");
+  revalidateMerchandising();
 }
 
 export async function removeFeatured(id: number) {
   await requireAdmin({ minRole: ADMIN_ROLE });
   assertId(id);
   await db.delete(featuredProducts).where(eq(featuredProducts.id, id));
-  revalidatePath("/admin/merchandising");
-  revalidatePath("/dashboard");
+  revalidateMerchandising();
 }

@@ -44,8 +44,36 @@ export function roleForEmail(email: string | null | undefined): AdminRole | null
   return null;
 }
 
-/** Fetches the user's primary email address from Clerk. */
-export async function getPrimaryEmail(userId: string): Promise<string | null> {
+/**
+ * Pulls an email address out of the session JWT claims when present. Clerk
+ * instances commonly expose `email` (or a custom `primary_email`) as a claim;
+ * when they do, we avoid a Backend API round-trip entirely. Returns `null` if
+ * no email-shaped claim is found.
+ */
+function emailFromClaims(claims: unknown): string | null {
+  if (!claims || typeof claims !== "object") return null;
+  const c = claims as Record<string, unknown>;
+  const candidate =
+    c.email ??
+    c.primary_email ??
+    c.email_address ??
+    (c.user as Record<string, unknown> | undefined)?.email;
+  return typeof candidate === "string" && candidate.includes("@")
+    ? candidate
+    : null;
+}
+
+/**
+ * Fetches the user's primary email. Prefers the session claims (no network);
+ * falls back to the Clerk Backend API only when the claim is absent.
+ */
+export async function getPrimaryEmail(
+  userId: string,
+  sessionClaims?: unknown,
+): Promise<string | null> {
+  const fromClaims = emailFromClaims(sessionClaims);
+  if (fromClaims) return fromClaims;
+
   try {
     const client = await clerkClient();
     const user = await client.users.getUser(userId);
@@ -65,10 +93,10 @@ export async function getPrimaryEmail(userId: string): Promise<string | null> {
  * Read-only check; safe to call inside `loading.tsx` / server components.
  */
 export async function getAdminContext(): Promise<AdminContext | null> {
-  const { userId } = await auth();
+  const { userId, sessionClaims } = await auth();
   if (!userId) return null;
 
-  const email = await getPrimaryEmail(userId);
+  const email = await getPrimaryEmail(userId, sessionClaims);
   const role = roleForEmail(email);
   if (!email || !role) return null;
 

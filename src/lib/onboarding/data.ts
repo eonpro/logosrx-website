@@ -28,17 +28,19 @@ export interface ClinicProfile {
 export async function getClinicProfile(
   clerkUserId: string,
 ): Promise<ClinicProfile> {
-  const [row] = await db
-    .select()
-    .from(clinics)
-    .where(eq(clinics.clerkUserId, clerkUserId))
-    .limit(1);
-
-  const [payment] = await db
-    .select({ cardLast4: clinicPayments.cardLast4 })
-    .from(clinicPayments)
-    .where(eq(clinicPayments.clerkUserId, clerkUserId))
-    .limit(1);
+  // Independent reads — issue them together rather than in series.
+  const [[row], [payment]] = await Promise.all([
+    db
+      .select()
+      .from(clinics)
+      .where(eq(clinics.clerkUserId, clerkUserId))
+      .limit(1),
+    db
+      .select({ cardLast4: clinicPayments.cardLast4 })
+      .from(clinicPayments)
+      .where(eq(clinicPayments.clerkUserId, clerkUserId))
+      .limit(1),
+  ]);
 
   const base = initialFormState();
   if (!row) {

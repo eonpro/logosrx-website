@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const { userId } = await auth();
+  const { userId, sessionClaims } = await auth();
   if (!userId) redirect("/sign-in?redirect_url=/dashboard");
 
   const profile = await getClinicProfile(userId);
@@ -29,7 +29,7 @@ export default async function DashboardPage() {
   // don't have a clinic profile — never trap them in the clinic account-setup
   // wizard; route them to the admin console instead.
   if (!profile.onboardingCompleted) {
-    const email = await getPrimaryEmail(userId);
+    const email = await getPrimaryEmail(userId, sessionClaims);
     if (roleForEmail(email)) redirect("/admin");
     redirect("/onboarding");
   }

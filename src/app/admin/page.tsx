@@ -9,57 +9,68 @@ import {
   promotions,
   featuredProducts,
 } from "@/lib/db/schema";
-import { and, count, eq } from "drizzle-orm";
+import { count, sql } from "drizzle-orm";
 import { requireAdmin } from "@/lib/auth/admin";
 
+/**
+ * One aggregate query per table (5 total), all issued in parallel. This
+ * replaces 9 sequential round-trips: each table now returns its total and any
+ * filtered sub-count in a single pass using conditional aggregation.
+ */
 async function getStats() {
-  const [appTotal] = await db
-    .select({ count: count() })
-    .from(employmentApplications);
-  const [appNew] = await db
-    .select({ count: count() })
-    .from(employmentApplications)
-    .where(eq(employmentApplications.status, "new"));
-  const [clinicTotal] = await db
-    .select({ count: count() })
-    .from(clinicSignups);
-  const [clinicNew] = await db
-    .select({ count: count() })
-    .from(clinicSignups)
-    .where(eq(clinicSignups.status, "new"));
-  const [accountTotal] = await db
-    .select({ count: count() })
-    .from(clinics)
-    .where(eq(clinics.onboardingCompleted, true));
-  const [accountPending] = await db
-    .select({ count: count() })
-    .from(clinics)
-    .where(
-      and(
-        eq(clinics.onboardingCompleted, true),
-        eq(clinics.verificationStatus, "pending"),
-      ),
-    );
-  const [emailTotal] = await db
-    .select({ count: count() })
-    .from(emailSignups);
-  const [promoActive] = await db
-    .select({ count: count() })
-    .from(promotions)
-    .where(eq(promotions.active, true));
-  const [featuredActive] = await db
-    .select({ count: count() })
-    .from(featuredProducts)
-    .where(eq(featuredProducts.active, true));
+  const [apps, clinicLeads, accounts, emails, merch, featured] =
+    await Promise.all([
+    db
+      .select({
+        total: count(),
+        new: sql<number>`count(*) filter (where ${employmentApplications.status} = 'new')`.mapWith(
+          Number,
+        ),
+      })
+      .from(employmentApplications),
+    db
+      .select({
+        total: count(),
+        new: sql<number>`count(*) filter (where ${clinicSignups.status} = 'new')`.mapWith(
+          Number,
+        ),
+      })
+      .from(clinicSignups),
+    db
+      .select({
+        total: sql<number>`count(*) filter (where ${clinics.onboardingCompleted})`.mapWith(
+          Number,
+        ),
+        pending: sql<number>`count(*) filter (where ${clinics.onboardingCompleted} and ${clinics.verificationStatus} = 'pending')`.mapWith(
+          Number,
+        ),
+      })
+      .from(clinics),
+    db.select({ total: count() }).from(emailSignups),
+    db
+      .select({
+        promoActive: sql<number>`count(*) filter (where ${promotions.active})`.mapWith(
+          Number,
+        ),
+      })
+      .from(promotions),
+    db
+      .select({
+        featuredActive: sql<number>`count(*) filter (where ${featuredProducts.active})`.mapWith(
+          Number,
+        ),
+      })
+      .from(featuredProducts),
+  ]);
 
   return {
-    applications: { total: appTotal.count, new: appNew.count },
-    accounts: { total: accountTotal.count, pending: accountPending.count },
-    clinics: { total: clinicTotal.count, new: clinicNew.count },
-    emails: { total: emailTotal.count },
+    applications: { total: apps[0].total, new: apps[0].new },
+    accounts: { total: accounts[0].total, pending: accounts[0].pending },
+    clinics: { total: clinicLeads[0].total, new: clinicLeads[0].new },
+    emails: { total: emails[0].total },
     merchandising: {
-      total: promoActive.count,
-      featured: featuredActive.count,
+      total: merch[0].promoActive,
+      featured: featured[0].featuredActive,
     },
   };
 }

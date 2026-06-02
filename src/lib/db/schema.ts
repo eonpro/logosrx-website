@@ -9,6 +9,7 @@ import {
   varchar,
   pgEnum,
   uniqueIndex,
+  index,
 } from "drizzle-orm/pg-core";
 
 export const applicationStatusEnum = pgEnum("application_status", [
@@ -80,7 +81,11 @@ export const employmentApplications = pgTable("employment_applications", {
   resumeUrl: text("resume_url"),
   status: applicationStatusEnum("status").default("new").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (t) => [
+  // Admin list filters by status and orders by createdAt (newest first).
+  index("employment_applications_status_idx").on(t.status),
+  index("employment_applications_created_at_idx").on(t.createdAt),
+]);
 
 export const clinicSignups = pgTable("clinic_signups", {
   id: serial("id").primaryKey(),
@@ -94,7 +99,10 @@ export const clinicSignups = pgTable("clinic_signups", {
   message: text("message"),
   status: clinicStatusEnum("status").default("new").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (t) => [
+  index("clinic_signups_status_idx").on(t.status),
+  index("clinic_signups_created_at_idx").on(t.createdAt),
+]);
 
 export const emailSignups = pgTable("email_signups", {
   id: serial("id").primaryKey(),
@@ -195,7 +203,15 @@ export const clinics = pgTable("clinics", {
 
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (t) => [
+  // The admin verification queue filters on completed intakes (often together
+  // with verification status) and orders by createdAt.
+  index("clinics_onboarding_verification_idx").on(
+    t.onboardingCompleted,
+    t.verificationStatus,
+  ),
+  index("clinics_created_at_idx").on(t.createdAt),
+]);
 
 /**
  * Card details collected during the Payment step. ISOLATED from `clinics` so
@@ -233,7 +249,10 @@ export const clinicNotes = pgTable("clinic_notes", {
   authorEmail: varchar("author_email", { length: 255 }),
   body: text("body").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (t) => [
+  // Notes are always read by clinic, newest first.
+  index("clinic_notes_clinic_id_created_at_idx").on(t.clinicId, t.createdAt),
+]);
 
 /**
  * Per-clinic pricing overrides. The full catalog + its standard provider price
@@ -315,7 +334,10 @@ export const promotions = pgTable("promotions", {
   endsAt: timestamp("ends_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (t) => [
+  // Storefront reads only active rows, ordered by pinned/sortOrder.
+  index("promotions_active_sort_idx").on(t.active, t.sortOrder),
+]);
 
 /**
  * Catalog SKUs an admin has flagged to feature in the storefront. The catalog
@@ -331,7 +353,9 @@ export const featuredProducts = pgTable("featured_products", {
   active: boolean("active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (t) => [
+  index("featured_products_active_sort_idx").on(t.active, t.sortOrder),
+]);
 
 /**
  * Audit trail for sensitive card reveals. Written every time an admin decrypts
