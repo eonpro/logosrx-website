@@ -414,11 +414,14 @@ function PricingCard({
                 refresh();
               })
             }
-            className="rounded-full bg-magenta px-4 py-1.5 text-xs font-semibold text-white hover:bg-magenta/90 disabled:opacity-60"
+            className={`rounded-full px-4 py-1.5 text-xs font-semibold text-white transition-colors disabled:opacity-60 ${
+              saved
+                ? "bg-green-600 hover:bg-green-700"
+                : "bg-magenta hover:bg-magenta/90"
+            }`}
           >
-            Save pricing
+            {saved ? "Saved ✓" : "Save pricing"}
           </button>
-          {saved && <span className="text-xs text-green-600">Saved</span>}
         </div>
 
         {/* Catalog pricing sheet — every SKU at its standard price, override per clinic. */}
@@ -572,6 +575,7 @@ function CatalogPriceRow({
   const initial =
     row.overrideCents !== null ? (row.overrideCents / 100).toFixed(2) : "";
   const [value, setValue] = useState(initial);
+  const [saved, setSaved] = useState(false);
 
   const standardLabel =
     row.standardCents !== null ? fmtMoney(row.standardCents) : "—";
@@ -609,7 +613,7 @@ function CatalogPriceRow({
       </td>
       <td className="whitespace-nowrap px-3 py-2 text-right">
         <button
-          disabled={!canSave}
+          disabled={!canSave && !saved}
           onClick={() =>
             run(async () => {
               await setProductPrice(
@@ -619,12 +623,18 @@ function CatalogPriceRow({
                 Number(trimmed) || 0,
                 row.unit,
               );
+              setSaved(true);
+              setTimeout(() => setSaved(false), 2000);
               refresh();
             })
           }
-          className="rounded-full bg-navy px-3 py-1 text-xs font-semibold text-white hover:bg-navy/90 disabled:opacity-40"
+          className={`rounded-full px-3 py-1 text-xs font-semibold text-white transition-colors disabled:opacity-40 ${
+            saved
+              ? "bg-green-600 hover:bg-green-700"
+              : "bg-navy hover:bg-navy/90"
+          }`}
         >
-          Save
+          {saved ? "Saved ✓" : "Save"}
         </button>
         {hasOverride && (
           <button

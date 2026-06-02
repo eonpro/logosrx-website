@@ -10,6 +10,7 @@ import {
   getActivePromotions,
   getFeaturedProductIds,
 } from "@/lib/portal/merchandising";
+import { getPrimaryEmail, roleForEmail } from "@/lib/auth/admin";
 import { SITE } from "@/lib/constants";
 
 export const metadata: Metadata = {
@@ -24,8 +25,14 @@ export default async function DashboardPage() {
   if (!userId) redirect("/sign-in?redirect_url=/dashboard");
 
   const profile = await getClinicProfile(userId);
-  // Gate: incomplete intake must finish onboarding first.
-  if (!profile.onboardingCompleted) redirect("/onboarding");
+  // Gate: incomplete intake must finish onboarding first. Allowlisted admins
+  // don't have a clinic profile — never trap them in the clinic account-setup
+  // wizard; route them to the admin console instead.
+  if (!profile.onboardingCompleted) {
+    const email = await getPrimaryEmail(userId);
+    if (roleForEmail(email)) redirect("/admin");
+    redirect("/onboarding");
+  }
 
   // Pricing + storefront are reserved for verified clinics. Pending/rejected
   // accounts see their status and a prompt to review their details.

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Clinic } from "@/lib/db/schema";
 import {
@@ -44,9 +45,27 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 export function ClinicsTable({ clinics }: { clinics: ClinicRow[] }) {
+  const router = useRouter();
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [pending, startTransition] = useTransition();
+  // The clinic currently awaiting a "verify" confirmation, if any.
+  const [confirming, setConfirming] = useState<ClinicRow | null>(null);
+
+  function applyStatus(
+    id: number,
+    status: (typeof VERIFICATION_OPTIONS)[number],
+  ) {
+    startTransition(async () => {
+      await setClinicVerification(id, status);
+      router.refresh();
+    });
+  }
+
+  const confirmName =
+    confirming?.clinicName || confirming?.practiceLegalName || "this clinic";
 
   return (
+    <>
     <div className="rounded-2xl bg-white border border-beige overflow-hidden">
       <table className="w-full text-sm">
         <thead>
@@ -239,11 +258,15 @@ export function ClinicsTable({ clinics }: { clinics: ClinicRow[] }) {
                         {VERIFICATION_OPTIONS.map((status) => (
                           <button
                             key={status}
-                            onClick={async (e) => {
+                            onClick={(e) => {
                               e.stopPropagation();
-                              await setClinicVerification(c.id, status);
+                              if (status === "verified") {
+                                setConfirming(c);
+                                return;
+                              }
+                              applyStatus(c.id, status);
                             }}
-                            disabled={c.verificationStatus === status}
+                            disabled={pending || c.verificationStatus === status}
                             className={`rounded-full px-3.5 py-1.5 text-xs font-semibold capitalize transition-colors ${
                               c.verificationStatus === status
                                 ? "bg-navy/10 text-navy/65 cursor-not-allowed"
@@ -267,5 +290,47 @@ export function ClinicsTable({ clinics }: { clinics: ClinicRow[] }) {
         </tbody>
       </table>
     </div>
+
+      {confirming && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-navy/40 px-4"
+          onClick={() => !pending && setConfirming(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-navy">Verify clinic</h3>
+            <p className="mt-2 text-sm text-navy/70">
+              Are you sure you want to verify{" "}
+              <span className="font-semibold text-navy">{confirmName}</span>?
+              Approving emails the clinic their approval and posts to Slack.
+            </p>
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                onClick={() => setConfirming(null)}
+                disabled={pending}
+                className="rounded-full border border-beige bg-white px-4 py-1.5 text-xs font-semibold text-navy/60 transition-colors hover:border-navy/30 disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const id = confirming.id;
+                  setConfirming(null);
+                  applyStatus(id, "verified");
+                }}
+                disabled={pending}
+                className="rounded-full bg-green-600 px-4 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-green-700 disabled:opacity-60"
+              >
+                {pending ? "Verifying…" : "Yes, verify"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
