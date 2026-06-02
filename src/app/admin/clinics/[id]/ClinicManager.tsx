@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { Fragment, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   addClinicNote,
   addPriceItem,
   deletePriceItem,
+  resetProductPrice,
   revealCard,
   setClinicPricing,
   setClinicVerification,
+  setProductPrice,
   type RevealCardResult,
 } from "../actions";
 
@@ -27,6 +29,16 @@ interface PriceItemView {
   productName: string;
   priceCents: number;
   unit: string | null;
+}
+
+interface CatalogRow {
+  productId: string;
+  name: string;
+  strength: string | null;
+  unit: string;
+  family: string;
+  standardCents: number | null;
+  overrideCents: number | null;
 }
 
 const STATUS_OPTIONS: Status[] = ["verified", "rejected", "pending"];
@@ -73,7 +85,8 @@ export default function ClinicManager({
   hasCard,
   cardLast4,
   pricing,
-  priceItems,
+  catalog,
+  customItems,
   notes,
 }: {
   clinicId: number;
@@ -81,7 +94,8 @@ export default function ClinicManager({
   hasCard: boolean;
   cardLast4: string | null;
   pricing: { tier: Tier; discountPct: number; notes: string };
-  priceItems: PriceItemView[];
+  catalog: CatalogRow[];
+  customItems: PriceItemView[];
   notes: NoteView[];
 }) {
   const router = useRouter();
@@ -100,7 +114,8 @@ export default function ClinicManager({
       <PricingCard
         clinicId={clinicId}
         pricing={pricing}
-        priceItems={priceItems}
+        catalog={catalog}
+        customItems={customItems}
         pending={pending}
         run={(fn) => startTransition(fn)}
         refresh={() => router.refresh()}
@@ -303,14 +318,16 @@ function Detail({
 function PricingCard({
   clinicId,
   pricing,
-  priceItems,
+  catalog,
+  customItems,
   pending,
   run,
   refresh,
 }: {
   clinicId: number;
   pricing: { tier: Tier; discountPct: number; notes: string };
-  priceItems: PriceItemView[];
+  catalog: CatalogRow[];
+  customItems: PriceItemView[];
   pending: boolean;
   run: (fn: () => void) => void;
   refresh: () => void;
@@ -320,10 +337,20 @@ function PricingCard({
   const [notes, setNotes] = useState(pricing.notes);
   const [saved, setSaved] = useState(false);
 
-  // New price-item form.
+  // Ad-hoc custom line-item form (for products not in the catalog).
   const [product, setProduct] = useState("");
   const [price, setPrice] = useState("");
   const [unit, setUnit] = useState("");
+
+  const overrideCount = catalog.filter((c) => c.overrideCents !== null).length;
+
+  // Group catalog rows by their first product family (contiguous in the data).
+  const groups: { family: string; rows: CatalogRow[] }[] = [];
+  for (const row of catalog) {
+    const last = groups[groups.length - 1];
+    if (last && last.family === row.family) last.rows.push(row);
+    else groups.push({ family: row.family, rows: [row] });
+  }
 
   return (
     <Section title="Custom pricing">
@@ -394,13 +421,67 @@ function PricingCard({
           {saved && <span className="text-xs text-green-600">Saved</span>}
         </div>
 
+        {/* Catalog pricing sheet — every SKU at its standard price, override per clinic. */}
+        <div className="border-t border-beige pt-4">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-xs uppercase tracking-wider text-navy/55">
+              Catalog pricing
+            </p>
+            <p className="text-xs text-navy/45">
+              {overrideCount > 0 ? `${overrideCount} custom` : "All standard"} ·{" "}
+              {catalog.length} products
+            </p>
+          </div>
+          <div className="max-h-[28rem] overflow-y-auto rounded-xl border border-beige">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 z-10 bg-cream/90 backdrop-blur">
+                <tr className="text-left text-[11px] uppercase tracking-wider text-navy/50">
+                  <th className="px-3 py-2 font-semibold">Product</th>
+                  <th className="px-3 py-2 font-semibold">Standard</th>
+                  <th className="px-3 py-2 font-semibold">Clinic price</th>
+                  <th className="px-3 py-2" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-beige">
+                {groups.map((g) => (
+                  <Fragment key={g.family}>
+                    <tr className="bg-cream/40">
+                      <td
+                        colSpan={4}
+                        className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-navy/45"
+                      >
+                        {g.family}
+                      </td>
+                    </tr>
+                    {g.rows.map((row) => (
+                      <CatalogPriceRow
+                        key={`${row.productId}:${row.overrideCents ?? "std"}`}
+                        clinicId={clinicId}
+                        row={row}
+                        pending={pending}
+                        run={run}
+                        refresh={refresh}
+                      />
+                    ))}
+                  </Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-2 text-xs text-navy/45">
+            Blank = clinic pays the standard catalog price. Enter a price to
+            override; Reset reverts to standard.
+          </p>
+        </div>
+
+        {/* Ad-hoc line items not in the catalog. */}
         <div className="border-t border-beige pt-4">
           <p className="mb-3 text-xs uppercase tracking-wider text-navy/55">
-            Per-product prices
+            Other line items
           </p>
-          {priceItems.length > 0 && (
+          {customItems.length > 0 && (
             <div className="mb-3 flex flex-col gap-2">
-              {priceItems.map((it) => (
+              {customItems.map((it) => (
                 <div
                   key={it.id}
                   className="flex items-center justify-between rounded-lg border border-beige bg-cream/30 px-3 py-2 text-sm"
@@ -472,6 +553,95 @@ function PricingCard({
         </div>
       </div>
     </Section>
+  );
+}
+
+function CatalogPriceRow({
+  clinicId,
+  row,
+  pending,
+  run,
+  refresh,
+}: {
+  clinicId: number;
+  row: CatalogRow;
+  pending: boolean;
+  run: (fn: () => void) => void;
+  refresh: () => void;
+}) {
+  const initial =
+    row.overrideCents !== null ? (row.overrideCents / 100).toFixed(2) : "";
+  const [value, setValue] = useState(initial);
+
+  const standardLabel =
+    row.standardCents !== null ? fmtMoney(row.standardCents) : "—";
+  const placeholder =
+    row.standardCents !== null ? (row.standardCents / 100).toFixed(2) : "0.00";
+  const hasOverride = row.overrideCents !== null;
+  const trimmed = value.trim();
+  const canSave = trimmed !== "" && trimmed !== initial && !pending;
+
+  return (
+    <tr className="text-navy">
+      <td className="px-3 py-2">
+        <div className="font-medium leading-tight">{row.name}</div>
+        <div className="text-xs text-navy/45">
+          {row.strength ? `${row.strength} · ` : ""}
+          {row.unit}
+        </div>
+      </td>
+      <td className="whitespace-nowrap px-3 py-2 text-navy/55">
+        {standardLabel}
+      </td>
+      <td className="px-3 py-2">
+        <div className="flex items-center gap-1">
+          <span className="text-navy/40">$</span>
+          <input
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            inputMode="decimal"
+            placeholder={placeholder}
+            className={`w-20 rounded-lg border bg-white px-2 py-1 text-sm text-navy outline-none focus:border-magenta ${
+              hasOverride ? "border-magenta/50" : "border-beige-dark"
+            }`}
+          />
+        </div>
+      </td>
+      <td className="whitespace-nowrap px-3 py-2 text-right">
+        <button
+          disabled={!canSave}
+          onClick={() =>
+            run(async () => {
+              await setProductPrice(
+                clinicId,
+                row.productId,
+                row.name,
+                Number(trimmed) || 0,
+                row.unit,
+              );
+              refresh();
+            })
+          }
+          className="rounded-full bg-navy px-3 py-1 text-xs font-semibold text-white hover:bg-navy/90 disabled:opacity-40"
+        >
+          Save
+        </button>
+        {hasOverride && (
+          <button
+            disabled={pending}
+            onClick={() =>
+              run(async () => {
+                await resetProductPrice(clinicId, row.productId);
+                refresh();
+              })
+            }
+            className="ml-2 text-xs font-medium text-navy/40 hover:text-red-600"
+          >
+            Reset
+          </button>
+        )}
+      </td>
+    </tr>
   );
 }
 

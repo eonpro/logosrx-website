@@ -21,6 +21,7 @@ import {
   SPECIALTY_OPTIONS,
   type Option,
 } from "@/lib/onboarding/steps";
+import { catalogProducts, standardCatalogPrice } from "@/data/catalog";
 import ClinicManager from "./ClinicManager";
 
 const statusStyles: Record<string, string> = {
@@ -92,6 +93,42 @@ export default async function ClinicDetailPage({
       .orderBy(desc(cardAccessLog.createdAt))
       .limit(10),
   ]);
+
+  // Split clinic pricing rows into catalog overrides (keyed by SKU) and ad-hoc
+  // custom line items (no productId).
+  const overrideByProduct = new Map<string, number>();
+  const customItems: {
+    id: number;
+    productName: string;
+    priceCents: number;
+    unit: string | null;
+  }[] = [];
+  for (const row of priceItems) {
+    if (row.productId) {
+      overrideByProduct.set(row.productId, row.priceCents);
+    } else {
+      customItems.push({
+        id: row.id,
+        productName: row.productName,
+        priceCents: row.priceCents,
+        unit: row.unit,
+      });
+    }
+  }
+
+  // Full catalog with standard price + this clinic's override (if any).
+  const catalog = catalogProducts.map((p) => {
+    const std = standardCatalogPrice(p);
+    return {
+      productId: p.id,
+      name: p.name,
+      strength: p.strength ?? null,
+      unit: p.unit ?? "Each",
+      family: p.productFamily?.[0] ?? "Other",
+      standardCents: std === null ? null : Math.round(std * 100),
+      overrideCents: overrideByProduct.get(p.id) ?? null,
+    };
+  });
 
   const name = clinic.clinicName || clinic.practiceLegalName || "Clinic";
 
@@ -246,12 +283,8 @@ export default async function ClinicDetailPage({
             discountPct: clinic.pricingDiscountPct,
             notes: clinic.pricingNotes ?? "",
           }}
-          priceItems={priceItems.map((p) => ({
-            id: p.id,
-            productName: p.productName,
-            priceCents: p.priceCents,
-            unit: p.unit,
-          }))}
+          catalog={catalog}
+          customItems={customItems}
           notes={notes.map((n) => ({
             id: n.id,
             body: n.body,

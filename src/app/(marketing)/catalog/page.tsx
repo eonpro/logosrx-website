@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
+import { getClinicProfile } from "@/lib/onboarding/data";
 import {
   CATALOG_CONFIG,
   catalogProducts,
@@ -46,6 +49,18 @@ interface CatalogPageProps {
  * search input, the sort + tier selects, and the mobile filter drawer.
  */
 export default async function CatalogPage({ searchParams }: CatalogPageProps) {
+  // The full catalog (SKUs + provider pricing) is private. Only clinics that
+  // have created an account AND been approved by an admin may view it.
+  //   - anonymous            → account creation (`/onboarding`)
+  //   - signed-in, no intake → finish account creation
+  //   - pending / rejected   → dashboard (shows verification status banner)
+  const { userId } = await auth();
+  if (!userId) redirect("/onboarding");
+
+  const profile = await getClinicProfile(userId);
+  if (!profile.onboardingCompleted) redirect("/onboarding");
+  if (profile.verificationStatus !== "verified") redirect("/dashboard");
+
   const params = await searchParams;
   const filters = parseCatalogSearchParams(params);
 

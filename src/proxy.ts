@@ -6,6 +6,10 @@ const isAdminSignInRoute = createRouteMatcher(["/admin/sign-in(.*)"]);
 // The clinic dashboard requires a signed-in user. `/onboarding` is public:
 // it is the account-creation flow itself, so anonymous visitors must reach it.
 const isDashboardRoute = createRouteMatcher(["/dashboard(.*)"]);
+// The full catalog is gated behind an approved clinic account. The per-account
+// verification check lives in the page (it needs the DB); here we only do the
+// edge fast-path: bounce anonymous visitors into account creation.
+const isCatalogRoute = createRouteMatcher(["/catalog(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
   // Profile dashboard: require a signed-in user; bounce anonymous visitors to
@@ -16,6 +20,18 @@ export default clerkMiddleware(async (auth, req) => {
       const url = req.nextUrl.clone();
       url.pathname = "/sign-in";
       url.searchParams.set("redirect_url", req.nextUrl.pathname);
+      return NextResponse.redirect(url);
+    }
+    return;
+  }
+
+  // Full catalog: anonymous visitors must create an account first. Approval is
+  // enforced in the catalog page itself for signed-in users.
+  if (isCatalogRoute(req)) {
+    const session = await auth();
+    if (!session.userId) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/onboarding";
       return NextResponse.redirect(url);
     }
     return;

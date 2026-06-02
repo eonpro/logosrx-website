@@ -1762,3 +1762,22 @@ export function getProductsByCategory(category: Category): Product[] {
   if (category === "All Products") return products;
   return products.filter((p) => p.category === category);
 }
+
+/**
+ * Slugs surfaced to the *public* (signed-out) homepage. The full catalog is
+ * gated behind an approved clinic account, so anonymous visitors only see a
+ * curated teaser of three flagship products plus a "view full catalog" CTA
+ * that routes them into account creation. Order here drives display order.
+ */
+export const PUBLIC_FEATURED_SLUGS = [
+  "enclomiphene-citrate",
+  "nad-plus",
+  "sermorelin",
+] as const;
+
+/** Resolves `PUBLIC_FEATURED_SLUGS` to full products, preserving order. */
+export function getPublicFeaturedProducts(): Product[] {
+  return PUBLIC_FEATURED_SLUGS.map(getProductBySlug).filter(
+    (p): p is Product => Boolean(p),
+  );
+}

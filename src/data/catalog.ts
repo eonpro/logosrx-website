@@ -726,6 +726,18 @@ const PRICE_FORMATTER = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 2,
 });
 
+/**
+ * The "standard" price a clinic pays for a SKU: the provider tier, falling back
+ * to retail when provider isn't set. Returns `null` when neither is a number
+ * (e.g. priced as "Not Available"). Used to seed per-clinic pricing sheets.
+ */
+export function standardCatalogPrice(p: CatalogProduct): number | null {
+  const { provider, retail } = p.pricing;
+  if (typeof provider === "number") return provider;
+  if (typeof retail === "number") return retail;
+  return null;
+}
+
 /** Format a price cell. `null` → "Not Available", `undefined` → "—". */
 export function formatPrice(value: number | null | undefined): string {
   if (value === undefined) return "—";

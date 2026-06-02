@@ -8,6 +8,7 @@ import {
   timestamp,
   varchar,
   pgEnum,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 export const applicationStatusEnum = pgEnum("application_status", [
@@ -235,20 +236,38 @@ export const clinicNotes = pgTable("clinic_notes", {
 });
 
 /**
- * Per-product custom pricing overrides for a clinic. Prices are stored as
- * integer cents to avoid floating-point drift.
+ * Per-clinic pricing overrides. The full catalog + its standard provider price
+ * is the source of truth (see `src/data/catalog.ts`); this table stores ONLY the
+ * rows where an admin set a clinic-specific price, so the catalog stays the
+ * baseline and overrides are sparse.
+ *
+ *   - `productId` = catalog SKU id (e.g. "semaglutide-glycine-2.5mg-1ml") for a
+ *     standard-catalog override. NULL for ad-hoc/custom line items not in the
+ *     catalog. The unique index keeps at most one override per (clinic, SKU);
+ *     Postgres treats NULLs as distinct, so multiple ad-hoc rows are allowed.
+ *   - Prices are integer cents to avoid floating-point drift.
  */
-export const clinicPricing = pgTable("clinic_pricing", {
-  id: serial("id").primaryKey(),
-  clinicId: integer("clinic_id")
-    .notNull()
-    .references(() => clinics.id, { onDelete: "cascade" }),
-  productName: varchar("product_name", { length: 200 }).notNull(),
-  priceCents: integer("price_cents").notNull(),
-  unit: varchar("unit", { length: 60 }),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const clinicPricing = pgTable(
+  "clinic_pricing",
+  {
+    id: serial("id").primaryKey(),
+    clinicId: integer("clinic_id")
+      .notNull()
+      .references(() => clinics.id, { onDelete: "cascade" }),
+    productId: varchar("product_id", { length: 120 }),
+    productName: varchar("product_name", { length: 200 }).notNull(),
+    priceCents: integer("price_cents").notNull(),
+    unit: varchar("unit", { length: 60 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("clinic_pricing_clinic_product_uniq").on(
+      t.clinicId,
+      t.productId,
+    ),
+  ],
+);
 
 /**
  * Audit trail for sensitive card reveals. Written every time an admin decrypts

@@ -14,36 +14,30 @@ export interface JobPosition {
 export const benefits: Benefit[] = [
   {
     number: 1,
-    title: "Health, Vision & Dental",
-    description:
-      "Healthy employees are happy employees. Our team members receive comprehensive health, vision, and dental coverage.",
-  },
-  {
-    number: 2,
     title: "Paid Time Off",
     description:
       "We offer generous paid time off so our employees can always feel recharged and refreshed.",
   },
   {
-    number: 3,
+    number: 2,
     title: "Training & Certifications",
     description:
       "We offer training and certification programs to help our employees further their expertise in compounding pharmacy.",
   },
   {
-    number: 4,
+    number: 3,
     title: "Growth Opportunity",
     description:
       "We want our employees to grow and flourish. That's why we never stop learning and developing new skills.",
   },
   {
-    number: 5,
+    number: 4,
     title: "Free Medications",
     description:
       "The health of our team members is paramount. We offer free medication to our employees to keep them feeling their best.",
   },
   {
-    number: 6,
+    number: 5,
     title: "Supportive Culture",
     description:
       "We foster a collaborative environment where every team member feels valued, supported, and empowered to do their best work.",

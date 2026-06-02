@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   cardAccessLog,
@@ -231,7 +231,67 @@ export async function setClinicPricing(
   revalidatePath(`/admin/clinics/${clinicId}`);
 }
 
-/** Adds a per-product custom price (cents) for a clinic. */
+/**
+ * Sets (or updates) a clinic's override price for a catalog SKU. Upserts on
+ * (clinicId, productId) so re-saving the same product replaces the override.
+ */
+export async function setProductPrice(
+  clinicId: number,
+  productId: string,
+  productName: string,
+  priceDollars: number,
+  unit: string,
+) {
+  await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(clinicId, "clinicId");
+  const pid = productId.trim();
+  if (!pid) throw new Error("productId required");
+  const name = productName.trim() || pid;
+  if (!Number.isFinite(priceDollars) || priceDollars < 0) {
+    throw new Error("invalid price");
+  }
+  const cents = Math.round(priceDollars * 100);
+  const cleanUnit = unit.trim() || null;
+
+  await db
+    .insert(clinicPricing)
+    .values({
+      clinicId,
+      productId: pid,
+      productName: name,
+      priceCents: cents,
+      unit: cleanUnit,
+    })
+    .onConflictDoUpdate({
+      target: [clinicPricing.clinicId, clinicPricing.productId],
+      set: {
+        priceCents: cents,
+        productName: name,
+        unit: cleanUnit,
+        updatedAt: new Date(),
+      },
+    });
+
+  revalidatePath(`/admin/clinics/${clinicId}`);
+}
+
+/** Clears a clinic's override for a catalog SKU, reverting it to standard pricing. */
+export async function resetProductPrice(clinicId: number, productId: string) {
+  await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(clinicId, "clinicId");
+  const pid = productId.trim();
+  if (!pid) throw new Error("productId required");
+
+  await db
+    .delete(clinicPricing)
+    .where(
+      and(eq(clinicPricing.clinicId, clinicId), eq(clinicPricing.productId, pid)),
+    );
+
+  revalidatePath(`/admin/clinics/${clinicId}`);
+}
+
+/** Adds an ad-hoc custom line item (not tied to a catalog SKU). */
 export async function addPriceItem(
   clinicId: number,
   productName: string,
