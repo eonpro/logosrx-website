@@ -149,7 +149,7 @@ export default function MobileMenu({ open, onClose }: MobileMenuProps) {
                 </a>
 
                 <a
-                  href="https://host4.lifefile.net/logospharmacy/doctor"
+                  href={SITE.lifefilePortal}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 w-full py-3.5 rounded-full border-2 border-magenta text-magenta text-sm font-semibold hover:bg-magenta hover:text-white transition-colors"

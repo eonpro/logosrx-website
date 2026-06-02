@@ -38,6 +38,15 @@ const navItems = [
     ),
   },
   {
+    label: "Merchandising",
+    href: "/admin/merchandising",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M3 7l1.5-3h11L17 7M3 7v9a1 1 0 001 1h12a1 1 0 001-1V7M3 7h14M8 11h4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
     label: "Clinic Sign-ups",
     href: "/admin/clinic-signups",
     icon: (

@@ -7,6 +7,10 @@ export const SITE = {
   // Internal provider intake. "New Provider" CTAs point here. The wizard itself
   // creates the clinic's account from the submitted info on the final step.
   onboarding: "/onboarding",
+  // External LifeFile provider portal. "Prescribe" actions in the clinic
+  // storefront and the "Existing Provider" CTA hand off to this login — Logos
+  // RX processes all prescriptions through LifeFile.
+  lifefilePortal: "https://host4.lifefile.net/logospharmacy/doctor",
 } as const;
 
 export const CONTACT = {

@@ -1,0 +1,165 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { promotions, featuredProducts } from "@/lib/db/schema";
+import { ADMIN_ROLE, requireAdmin } from "@/lib/auth/admin";
+import { catalogProducts } from "@/data/catalog";
+
+type PromotionKind = "promo" | "news";
+type PromotionLayout = "card" | "hero" | "tile";
+type AudienceTier = "" | "standard" | "preferred" | "vip";
+
+export interface PromotionInput {
+  kind: PromotionKind;
+  layout: PromotionLayout;
+  title: string;
+  body: string;
+  imageUrl: string;
+  bgColor: string;
+  badge: string;
+  ctaLabel: string;
+  ctaHref: string;
+  productId: string;
+  audienceTier: AudienceTier;
+  pinned: boolean;
+  active: boolean;
+  sortOrder: number;
+  /** ISO date string (`YYYY-MM-DD`) or empty. */
+  startsAt: string;
+  endsAt: string;
+}
+
+const VALID_KIND = new Set<PromotionKind>(["promo", "news"]);
+const VALID_LAYOUT = new Set<PromotionLayout>(["card", "hero", "tile"]);
+const VALID_TIER = new Set<AudienceTier>(["", "standard", "preferred", "vip"]);
+const HEX_COLOR = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+const CATALOG_IDS = new Set(catalogProducts.map((p) => p.id));
+
+function assertId(id: number, label = "id") {
+  if (!Number.isFinite(id) || id <= 0) throw new Error(`invalid ${label}`);
+}
+
+function parseDate(value: string): Date | null {
+  const v = value.trim();
+  if (!v) return null;
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function sanitize(input: PromotionInput) {
+  const kind: PromotionKind = VALID_KIND.has(input.kind) ? input.kind : "promo";
+  const layout: PromotionLayout = VALID_LAYOUT.has(input.layout)
+    ? input.layout
+    : "card";
+  const title = input.title.trim();
+  if (!title) throw new Error("title required");
+  if (title.length > 200) throw new Error("title too long");
+
+  const tier = VALID_TIER.has(input.audienceTier) ? input.audienceTier : "";
+  const productId = input.productId.trim();
+  // Only persist a product link when it maps to a real catalog SKU.
+  const linkedProduct = productId && CATALOG_IDS.has(productId) ? productId : null;
+  const bg = input.bgColor.trim();
+  const bgColor = HEX_COLOR.test(bg) ? bg : null;
+
+  return {
+    kind,
+    layout,
+    title,
+    body: input.body.trim() || null,
+    imageUrl: input.imageUrl.trim() || null,
+    bgColor,
+    badge: input.badge.trim().slice(0, 40) || null,
+    ctaLabel: input.ctaLabel.trim().slice(0, 60) || null,
+    ctaHref: input.ctaHref.trim().slice(0, 500) || null,
+    productId: linkedProduct,
+    audienceTier: tier === "" ? null : tier,
+    pinned: Boolean(input.pinned),
+    active: Boolean(input.active),
+    sortOrder: Number.isFinite(input.sortOrder)
+      ? Math.trunc(input.sortOrder)
+      : 0,
+    startsAt: parseDate(input.startsAt),
+    endsAt: parseDate(input.endsAt),
+  };
+}
+
+export async function createPromotion(input: PromotionInput) {
+  await requireAdmin({ minRole: ADMIN_ROLE });
+  const values = sanitize(input);
+  await db.insert(promotions).values(values);
+  revalidatePath("/admin/merchandising");
+  revalidatePath("/dashboard");
+}
+
+export async function updatePromotion(id: number, input: PromotionInput) {
+  await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(id);
+  const values = sanitize(input);
+  await db
+    .update(promotions)
+    .set({ ...values, updatedAt: new Date() })
+    .where(eq(promotions.id, id));
+  revalidatePath("/admin/merchandising");
+  revalidatePath("/dashboard");
+}
+
+export async function deletePromotion(id: number) {
+  await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(id);
+  await db.delete(promotions).where(eq(promotions.id, id));
+  revalidatePath("/admin/merchandising");
+  revalidatePath("/dashboard");
+}
+
+/** Toggle a promotion's active flag without opening the full editor. */
+export async function setPromotionActive(id: number, active: boolean) {
+  await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(id);
+  await db
+    .update(promotions)
+    .set({ active: Boolean(active), updatedAt: new Date() })
+    .where(eq(promotions.id, id));
+  revalidatePath("/admin/merchandising");
+  revalidatePath("/dashboard");
+}
+
+/* ─────────────── Featured products ─────────────── */
+
+export async function addFeatured(
+  productId: string,
+  label: string,
+  sortOrder: number,
+) {
+  await requireAdmin({ minRole: ADMIN_ROLE });
+  const pid = productId.trim();
+  if (!pid || !CATALOG_IDS.has(pid)) throw new Error("unknown product");
+  const cleanLabel = label.trim().slice(0, 40) || null;
+  const order = Number.isFinite(sortOrder) ? Math.trunc(sortOrder) : 0;
+
+  await db
+    .insert(featuredProducts)
+    .values({ productId: pid, label: cleanLabel, sortOrder: order, active: true })
+    .onConflictDoUpdate({
+      target: featuredProducts.productId,
+      set: {
+        label: cleanLabel,
+        sortOrder: order,
+        active: true,
+        updatedAt: new Date(),
+      },
+    });
+
+  revalidatePath("/admin/merchandising");
+  revalidatePath("/dashboard");
+}
+
+export async function removeFeatured(id: number) {
+  await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(id);
+  await db.delete(featuredProducts).where(eq(featuredProducts.id, id));
+  revalidatePath("/admin/merchandising");
+  revalidatePath("/dashboard");
+}

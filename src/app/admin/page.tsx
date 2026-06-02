@@ -6,6 +6,8 @@ import {
   clinicSignups,
   clinics,
   emailSignups,
+  promotions,
+  featuredProducts,
 } from "@/lib/db/schema";
 import { and, count, eq } from "drizzle-orm";
 import { requireAdmin } from "@/lib/auth/admin";
@@ -41,12 +43,24 @@ async function getStats() {
   const [emailTotal] = await db
     .select({ count: count() })
     .from(emailSignups);
+  const [promoActive] = await db
+    .select({ count: count() })
+    .from(promotions)
+    .where(eq(promotions.active, true));
+  const [featuredActive] = await db
+    .select({ count: count() })
+    .from(featuredProducts)
+    .where(eq(featuredProducts.active, true));
 
   return {
     applications: { total: appTotal.count, new: appNew.count },
     accounts: { total: accountTotal.count, pending: accountPending.count },
     clinics: { total: clinicTotal.count, new: clinicNew.count },
     emails: { total: emailTotal.count },
+    merchandising: {
+      total: promoActive.count,
+      featured: featuredActive.count,
+    },
   };
 }
 
@@ -70,6 +84,11 @@ const cards = [
     label: "Email Subscribers",
     href: "/admin/email-signups",
     color: "bg-sky",
+  },
+  {
+    label: "Merchandising",
+    href: "/admin/merchandising",
+    color: "bg-amber-500",
   },
 ];
 
@@ -105,6 +124,13 @@ export default async function AdminOverview() {
       badge: 0,
       badgeLabel: "new",
       badgeClass: "bg-magenta/10 text-magenta",
+    },
+    {
+      ...cards[4],
+      total: stats.merchandising.total,
+      badge: stats.merchandising.featured,
+      badgeLabel: "featured",
+      badgeClass: "bg-amber-100 text-amber-700",
     },
   ];
 

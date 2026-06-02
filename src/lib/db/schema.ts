@@ -269,6 +269,70 @@ export const clinicPricing = pgTable(
   ],
 );
 
+/** Distinguishes a merchandising entry: a promotion vs. a news/announcement. */
+export const promotionKindEnum = pgEnum("promotion_kind", ["promo", "news"]);
+
+/**
+ * How a merchandising entry renders in the storefront:
+ *   - `card` — compact promo/news card in the feed (default).
+ *   - `hero` — large spotlight banner across the top of the storefront.
+ *   - `tile` — a category tile in the row beneath the hero.
+ */
+export const promotionLayoutEnum = pgEnum("promotion_layout", [
+  "card",
+  "hero",
+  "tile",
+]);
+
+/**
+ * Admin-managed merchandising for the clinic storefront: promotions and special
+ * news/announcements. Surfaced at the top of `/dashboard` to verified clinics.
+ * A row is shown when `active` is true and "now" falls within the optional
+ * [`startsAt`, `endsAt`] window. `audienceTier` (null = all tiers) lets a promo
+ * target a specific pricing tier. `productId` optionally deep-links to a SKU.
+ */
+export const promotions = pgTable("promotions", {
+  id: serial("id").primaryKey(),
+  kind: promotionKindEnum("kind").default("promo").notNull(),
+  // Storefront render style (see `promotionLayoutEnum`).
+  layout: promotionLayoutEnum("layout").default("card").notNull(),
+  title: varchar("title", { length: 200 }).notNull(),
+  body: text("body"),
+  imageUrl: varchar("image_url", { length: 500 }),
+  // Background base color (hex) for hero/tile gradients.
+  bgColor: varchar("bg_color", { length: 20 }),
+  badge: varchar("badge", { length: 40 }),
+  ctaLabel: varchar("cta_label", { length: 60 }),
+  ctaHref: varchar("cta_href", { length: 500 }),
+  // Optional catalog SKU id this promo points at.
+  productId: varchar("product_id", { length: 120 }),
+  // null = visible to every tier; otherwise restrict to a single pricing tier.
+  audienceTier: pricingTierEnum("audience_tier"),
+  pinned: boolean("pinned").default(false).notNull(),
+  active: boolean("active").default(true).notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  startsAt: timestamp("starts_at"),
+  endsAt: timestamp("ends_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+/**
+ * Catalog SKUs an admin has flagged to feature in the storefront. The catalog
+ * itself (`src/data/catalog.ts`) is the source of truth for product data; this
+ * table only records which SKUs are featured, an optional badge label, and the
+ * display order. One row per SKU.
+ */
+export const featuredProducts = pgTable("featured_products", {
+  id: serial("id").primaryKey(),
+  productId: varchar("product_id", { length: 120 }).notNull().unique(),
+  label: varchar("label", { length: 40 }),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  active: boolean("active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 /**
  * Audit trail for sensitive card reveals. Written every time an admin decrypts
  * and views a clinic's full card details (gated by password re-verification).
@@ -313,3 +377,7 @@ export type NewClinicPriceItem = typeof clinicPricing.$inferInsert;
 export type CardAccessLogEntry = typeof cardAccessLog.$inferSelect;
 export type ClinicPayment = typeof clinicPayments.$inferSelect;
 export type NewClinicPayment = typeof clinicPayments.$inferInsert;
+export type Promotion = typeof promotions.$inferSelect;
+export type NewPromotion = typeof promotions.$inferInsert;
+export type FeaturedProduct = typeof featuredProducts.$inferSelect;
+export type NewFeaturedProduct = typeof featuredProducts.$inferInsert;
