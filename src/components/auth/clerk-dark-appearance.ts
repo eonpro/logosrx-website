@@ -1,4 +1,25 @@
 export const clerkDarkAppearance = {
+  // Dark theme palette via Clerk's supported `variables` API. This replaces the
+  // previous hand-written CSS that forced colors on Clerk's internal hashed
+  // classes (e.g. `.cl-internal-b3fm6y`, `[class*="cl-internal"]`) — selectors
+  // Clerk explicitly warns can break on component updates. Both legacy and new
+  // (@clerk/ui v1) variable names are included; unknown keys are ignored.
+  variables: {
+    colorPrimary: "#C62E88",
+    colorText: "#ffffff",
+    colorForeground: "#ffffff",
+    colorTextSecondary: "rgba(255,255,255,0.6)",
+    colorMutedForeground: "rgba(255,255,255,0.6)",
+    colorTextOnPrimaryBackground: "#ffffff",
+    colorPrimaryForeground: "#ffffff",
+    colorBackground: "transparent",
+    colorInputText: "#ffffff",
+    colorInputForeground: "#ffffff",
+    colorInputBackground: "rgba(255,255,255,0.05)",
+    colorInput: "rgba(255,255,255,0.05)",
+    colorNeutral: "#ffffff",
+    colorDanger: "#fca5a5",
+  },
   elements: {
     rootBox: "w-full clerk-dark-form",
     cardBox: "!shadow-none w-full !border-0 !bg-transparent !rounded-none",
@@ -39,8 +60,13 @@ export const clerkDarkAppearance = {
     backLink: "!text-magenta-light hover:!text-magenta",
     phoneInputBox: "!border-white/10 !bg-white/5 !rounded-xl",
     formFieldInputGroup: "!border-white/10 !bg-white/5 !rounded-xl",
+    formFieldInput__phoneNumber:
+      "!text-white !border-white/10 !bg-transparent placeholder:!text-white/25",
     selectButton: "!text-white/70 !border-white/10 hover:!bg-white/10",
+    selectButton__phoneCode: "!text-white/70",
     selectButtonIcon: "!text-white/50",
+    alternativeMethodsBlockButton:
+      "!text-white/60 !border-white/10 hover:!bg-white/5 hover:!text-white",
     selectSearchInput:
       "!text-white !bg-white/5 !border-white/10 placeholder:!text-white/30",
     selectOptionsContainer: "!bg-[#1a1750] !border-white/10 !rounded-xl",

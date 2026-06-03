@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
 function GradientOrb({
   className,
@@ -11,14 +12,26 @@ function GradientOrb({
   className: string;
   delay?: number;
 }) {
+  const prefersReducedMotion = usePrefersReducedMotion();
+
   return (
     <motion.div
-      className={`absolute rounded-full blur-[120px] opacity-30 ${className}`}
-      animate={{
-        scale: [1, 1.2, 1],
-        x: [0, 30, -20, 0],
-        y: [0, -25, 15, 0],
-      }}
+      aria-hidden
+      // `transform-gpu` + `will-change-transform` keep the blurred layer on
+      // its own compositor layer so the heavy `blur(120px)` is rasterized once
+      // instead of every animation frame. Without this, Safari re-rasterizes
+      // the blur each tick, which pins the main thread and can drop pointer
+      // events on the form (the field looks normal but won't accept clicks).
+      className={`pointer-events-none absolute transform-gpu rounded-full opacity-30 blur-[120px] will-change-transform ${className}`}
+      animate={
+        prefersReducedMotion
+          ? undefined
+          : {
+              scale: [1, 1.2, 1],
+              x: [0, 30, -20, 0],
+              y: [0, -25, 15, 0],
+            }
+      }
       transition={{
         duration: 20,
         repeat: Infinity,
@@ -40,7 +53,7 @@ export default function AuthShell({
 }) {
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0c0a1d]">
-      <div className="absolute inset-0">
+      <div className="pointer-events-none absolute inset-0" aria-hidden>
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,#1a1750_0%,#0c0a1d_70%)]" />
         <GradientOrb
           className="w-[600px] h-[600px] bg-magenta/60 -top-48 -right-48"
@@ -57,7 +70,8 @@ export default function AuthShell({
       </div>
 
       <div
-        className="absolute inset-0 opacity-[0.03]"
+        className="pointer-events-none absolute inset-0 opacity-[0.03]"
+        aria-hidden
         style={{
           backgroundImage:
             "linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)",
