@@ -15,6 +15,7 @@ import { ADMIN_ROLE, requireAdmin } from "@/lib/auth/admin";
 import { decrypt } from "@/lib/onboarding/encryption";
 import { sendClinicApprovedEmail } from "@/lib/notifications/email";
 import { notifyClinicApproved } from "@/lib/notifications/slack";
+import { runAfterResponse } from "@/lib/runtime/after";
 
 type VerificationStatus = "pending" | "verified" | "rejected";
 type PricingTier = "standard" | "preferred" | "vip";
@@ -82,36 +83,43 @@ export async function setClinicVerification(
     .where(eq(clinics.id, id));
 
   if (status === "verified") {
-    const [clinic] = await db
-      .select()
-      .from(clinics)
-      .where(eq(clinics.id, id))
-      .limit(1);
-    if (clinic) {
-      const clinicName =
-        clinic.clinicName || clinic.practiceLegalName || "your clinic";
-      // Best-effort; never throw out of the status change.
-      try {
-        if (clinic.contactEmail) {
-          // A one-time link the clinic uses to set their own password. Critical
-          // for rep-onboarded clinics who never chose one during intake.
-          const activateUrl = await buildClinicActivateUrl(clinic.clerkUserId);
-          await sendClinicApprovedEmail({
-            to: clinic.contactEmail,
-            contactName: clinic.contactName ?? "",
+    // Notifications (and the Clerk activation-link mint) are best-effort and
+    // can be slow — run them after the response so the admin's approval click
+    // returns as soon as the status write commits.
+    runAfterResponse(
+      (async () => {
+        const [clinic] = await db
+          .select()
+          .from(clinics)
+          .where(eq(clinics.id, id))
+          .limit(1);
+        if (!clinic) return;
+        const clinicName =
+          clinic.clinicName || clinic.practiceLegalName || "your clinic";
+        try {
+          if (clinic.contactEmail) {
+            // A one-time link the clinic uses to set their own password.
+            // Critical for rep-onboarded clinics who never chose one.
+            const activateUrl = await buildClinicActivateUrl(
+              clinic.clerkUserId,
+            );
+            await sendClinicApprovedEmail({
+              to: clinic.contactEmail,
+              contactName: clinic.contactName ?? "",
+              clinicName,
+              activateUrl: activateUrl ?? undefined,
+            });
+          }
+          await notifyClinicApproved({
             clinicName,
-            activateUrl: activateUrl ?? undefined,
+            contactEmail: clinic.contactEmail ?? "",
+            approvedBy: ctx.email,
           });
+        } catch {
+          // swallow — notifications are non-critical
         }
-        await notifyClinicApproved({
-          clinicName,
-          contactEmail: clinic.contactEmail ?? "",
-          approvedBy: ctx.email,
-        });
-      } catch {
-        // swallow — notifications are non-critical
-      }
-    }
+      })(),
+    );
   }
 
   revalidatePath("/admin/clinics");

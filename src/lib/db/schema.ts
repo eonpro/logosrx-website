@@ -211,6 +211,14 @@ export const clinics = pgTable("clinics", {
     t.verificationStatus,
   ),
   index("clinics_created_at_idx").on(t.createdAt),
+  // The admin clinics list filters onboardingCompleted=true and orders by
+  // createdAt DESC. This composite serves both the filter and the sort in one
+  // index scan (Postgres reads a btree backward for DESC). A plain
+  // single-column createdAt index can't satisfy the filter at the same time.
+  index("clinics_completed_created_at_idx").on(
+    t.onboardingCompleted,
+    t.createdAt,
+  ),
 ]);
 
 /**

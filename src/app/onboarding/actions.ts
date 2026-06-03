@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { clinics, clinicPayments } from "@/lib/db/schema";
 import { encrypt } from "@/lib/onboarding/encryption";
 import { notifyNewClinic } from "@/lib/notifications/slack";
+import { runAfterResponse } from "@/lib/runtime/after";
 import {
   clientKeyFromHeaders,
   rateLimitKey,
@@ -235,7 +236,8 @@ export async function completeOnboarding(
       onboardingCompleted: true,
     });
     await upsertPayment(userId, state);
-    await notifyNewClinic(toClinicNotification(state));
+    // Admin Slack ping is non-critical: don't make the clinic wait on it.
+    runAfterResponse(notifyNewClinic(toClinicNotification(state)));
     return { ok: true };
   } catch {
     console.error("[onboarding] completeOnboarding failed");
@@ -352,7 +354,7 @@ export async function createAccountAndComplete(
   }
 
   // Notify admins (resilient: never throws / never blocks the response).
-  await notifyNewClinic(toClinicNotification(state));
+  runAfterResponse(notifyNewClinic(toClinicNotification(state)));
 
   // 3. Mint a one-time sign-in ticket for immediate, password-less session setup.
   try {

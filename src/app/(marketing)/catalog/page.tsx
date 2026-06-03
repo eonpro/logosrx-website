@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
-import { getClinicProfile } from "@/lib/onboarding/data";
+import { getClinicGate } from "@/lib/onboarding/data";
 import {
   CATALOG_CONFIG,
   catalogProducts,
@@ -57,9 +57,9 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
   const { userId } = await auth();
   if (!userId) redirect("/onboarding");
 
-  const profile = await getClinicProfile(userId);
-  if (!profile.onboardingCompleted) redirect("/onboarding");
-  if (profile.verificationStatus !== "verified") redirect("/dashboard");
+  const gate = await getClinicGate(userId);
+  if (!gate.onboardingCompleted) redirect("/onboarding");
+  if (gate.verificationStatus !== "verified") redirect("/dashboard");
 
   const params = await searchParams;
   const filters = parseCatalogSearchParams(params);

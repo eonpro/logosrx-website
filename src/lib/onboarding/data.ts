@@ -93,6 +93,57 @@ export async function getClinicProfile(
   };
 }
 
+/**
+ * Lightweight gate read for the hot authed paths (`/catalog`, `/dashboard`).
+ *
+ * Unlike `getClinicProfile`, this selects only the columns needed to make the
+ * access decision plus the clinic's pricing inputs. Crucially it never pulls the
+ * large signature blobs (`*_signature`) or the `providers` JSONB, so the gate
+ * query stays small on every request. Callers that also render the storefront
+ * can hand `clinicId`/`pricingTier`/`discountPct` straight to
+ * `getClinicStorefrontFor` to avoid re-querying the same row.
+ */
+export interface ClinicGate {
+  /** Row id, or null when the user has no clinic profile yet. */
+  clinicId: number | null;
+  onboardingCompleted: boolean;
+  verificationStatus: VerificationStatus;
+  pricingTier: "standard" | "preferred" | "vip";
+  discountPct: number;
+}
+
+export async function getClinicGate(clerkUserId: string): Promise<ClinicGate> {
+  const [row] = await db
+    .select({
+      id: clinics.id,
+      onboardingCompleted: clinics.onboardingCompleted,
+      verificationStatus: clinics.verificationStatus,
+      pricingTier: clinics.pricingTier,
+      pricingDiscountPct: clinics.pricingDiscountPct,
+    })
+    .from(clinics)
+    .where(eq(clinics.clerkUserId, clerkUserId))
+    .limit(1);
+
+  if (!row) {
+    return {
+      clinicId: null,
+      onboardingCompleted: false,
+      verificationStatus: "pending",
+      pricingTier: "standard",
+      discountPct: 0,
+    };
+  }
+
+  return {
+    clinicId: row.id,
+    onboardingCompleted: row.onboardingCompleted,
+    verificationStatus: row.verificationStatus,
+    pricingTier: row.pricingTier,
+    discountPct: row.pricingDiscountPct,
+  };
+}
+
 /** True when the user has finished the intake. Used to gate `/dashboard`. */
 export async function hasCompletedOnboarding(
   clerkUserId: string,

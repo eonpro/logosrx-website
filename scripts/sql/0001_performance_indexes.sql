@@ -29,6 +29,11 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS clinics_onboarding_verification_idx
 CREATE INDEX CONCURRENTLY IF NOT EXISTS clinics_created_at_idx
   ON clinics (created_at);
 
+-- Admin clinics list: WHERE onboarding_completed = true ORDER BY created_at DESC.
+-- Composite serves the filter + sort in a single (backward) index scan.
+CREATE INDEX CONCURRENTLY IF NOT EXISTS clinics_completed_created_at_idx
+  ON clinics (onboarding_completed, created_at);
+
 CREATE INDEX CONCURRENTLY IF NOT EXISTS clinic_notes_clinic_id_created_at_idx
   ON clinic_notes (clinic_id, created_at);
 

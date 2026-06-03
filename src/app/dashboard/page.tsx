@@ -4,8 +4,8 @@ import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import Storefront from "@/components/dashboard/Storefront";
 import VerificationBanner from "@/components/dashboard/VerificationBanner";
-import { getClinicProfile } from "@/lib/onboarding/data";
-import { getClinicStorefront } from "@/lib/portal/storefront";
+import { getClinicGate } from "@/lib/onboarding/data";
+import { getClinicStorefrontFor } from "@/lib/portal/storefront";
 import {
   getActivePromotions,
   getFeaturedProductIds,
@@ -24,11 +24,11 @@ export default async function DashboardPage() {
   const { userId, sessionClaims } = await auth();
   if (!userId) redirect("/sign-in?redirect_url=/dashboard");
 
-  const profile = await getClinicProfile(userId);
+  const gate = await getClinicGate(userId);
   // Gate: incomplete intake must finish onboarding first. Allowlisted admins
   // don't have a clinic profile — never trap them in the clinic account-setup
   // wizard; route them to the admin console instead.
-  if (!profile.onboardingCompleted) {
+  if (!gate.onboardingCompleted) {
     const email = await getPrimaryEmail(userId, sessionClaims);
     if (roleForEmail(email)) redirect("/admin");
     redirect("/onboarding");
@@ -36,14 +36,14 @@ export default async function DashboardPage() {
 
   // Pricing + storefront are reserved for verified clinics. Pending/rejected
   // accounts see their status and a prompt to review their details.
-  if (profile.verificationStatus !== "verified") {
+  if (gate.verificationStatus !== "verified") {
     return (
       <main className="mx-auto max-w-3xl px-6 py-10">
         <h1 className="mb-1 text-2xl font-bold text-navy">Storefront</h1>
         <p className="mb-6 text-sm text-navy/60">
           Your catalog and pricing unlock once your account is approved.
         </p>
-        <VerificationBanner status={profile.verificationStatus} />
+        <VerificationBanner status={gate.verificationStatus} />
         <div className="rounded-2xl border border-dashed border-beige-dark bg-white px-6 py-16 text-center">
           <p className="mx-auto max-w-md text-sm text-navy/60">
             We&rsquo;re reviewing your account. You&rsquo;ll get full access to
@@ -60,7 +60,11 @@ export default async function DashboardPage() {
     );
   }
 
-  const storefront = await getClinicStorefront(userId);
+  const storefront = await getClinicStorefrontFor({
+    clinicId: gate.clinicId,
+    pricingTier: gate.pricingTier,
+    discountPct: gate.discountPct,
+  });
   // Merchandising is supplementary — never let it take down the clinic's main
   // page (e.g. before the merchandising tables are migrated). Degrade to empty.
   const [promotions, featuredIds] = await Promise.all([

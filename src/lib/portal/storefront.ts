@@ -52,8 +52,6 @@ function standardCents(p: CatalogProduct): number | null {
 export async function getClinicStorefront(
   clerkUserId: string,
 ): Promise<ClinicStorefront> {
-  const detailSlugs = products.map((p) => p.slug);
-
   const [clinic] = await db
     .select({
       id: clinics.id,
@@ -64,12 +62,29 @@ export async function getClinicStorefront(
     .where(eq(clinics.clerkUserId, clerkUserId))
     .limit(1);
 
-  const discountPct = clinic?.pricingDiscountPct ?? 0;
-  const pricingTier = clinic?.pricingTier ?? "standard";
+  return getClinicStorefrontFor({
+    clinicId: clinic?.id ?? null,
+    pricingTier: clinic?.pricingTier ?? "standard",
+    discountPct: clinic?.pricingDiscountPct ?? 0,
+  });
+}
+
+/**
+ * Same as `getClinicStorefront` but for callers that already loaded the clinic's
+ * id + pricing inputs (e.g. via `getClinicGate`). Skips the redundant `clinics`
+ * lookup and issues only the per-SKU overrides query.
+ */
+export async function getClinicStorefrontFor(args: {
+  clinicId: number | null;
+  pricingTier: "standard" | "preferred" | "vip";
+  discountPct: number;
+}): Promise<ClinicStorefront> {
+  const { clinicId, pricingTier, discountPct } = args;
+  const detailSlugs = products.map((p) => p.slug);
 
   // Sparse per-SKU overrides keyed by catalog product id.
   const overrides = new Map<string, number>();
-  if (clinic) {
+  if (clinicId !== null) {
     const rows = await db
       .select({
         productId: clinicPricing.productId,
@@ -78,7 +93,7 @@ export async function getClinicStorefront(
       .from(clinicPricing)
       .where(
         and(
-          eq(clinicPricing.clinicId, clinic.id),
+          eq(clinicPricing.clinicId, clinicId),
           isNotNull(clinicPricing.productId),
         ),
       );

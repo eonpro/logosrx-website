@@ -18,10 +18,14 @@ export default function SmoothScroll() {
     const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (mql.matches) return;
 
+    // Keep the smoothing subtle: a long `duration` adds noticeable inertia
+    // that reads as "laggy". ~0.8s with a `lerp` gives a responsive glide that
+    // still tracks the input closely. Touch devices use native scrolling
+    // (smoothTouch off) so mobile never feels rubber-banded.
     const lenis = new Lenis({
-      duration: 1.2,
+      duration: 0.8,
+      lerp: 0.12,
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      touchMultiplier: 2,
       autoRaf: true,
     });
 
