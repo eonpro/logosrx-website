@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { clerkClient } from "@clerk/nextjs/server";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
@@ -28,6 +29,32 @@ const VALID_TIER: ReadonlySet<PricingTier> = new Set<PricingTier>([
 
 function assertId(id: number, label = "id") {
   if (!Number.isFinite(id) || id <= 0) throw new Error(`invalid ${label}`);
+}
+
+/**
+ * Mints a one-time activation link for a clinic's existing Clerk account. The
+ * link carries a short-lived sign-in ticket; the `/activate` page consumes it
+ * to sign the clinic in and let them set their own password + verify email.
+ *
+ * Returns `null` (and never throws) if the clinic has no Clerk account or the
+ * ticket can't be minted, so approval/notification flow is never blocked.
+ */
+async function buildClinicActivateUrl(
+  clerkUserId: string | null,
+): Promise<string | null> {
+  if (!clerkUserId) return null;
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.logosrx.com";
+  try {
+    const client = await clerkClient();
+    const token = await client.signInTokens.createSignInToken({
+      userId: clerkUserId,
+      // 7 days — long enough for a clinic to act on the approval email.
+      expiresInSeconds: 604800,
+    });
+    return `${base}/activate?ticket=${encodeURIComponent(token.token)}`;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -66,10 +93,14 @@ export async function setClinicVerification(
       // Best-effort; never throw out of the status change.
       try {
         if (clinic.contactEmail) {
+          // A one-time link the clinic uses to set their own password. Critical
+          // for rep-onboarded clinics who never chose one during intake.
+          const activateUrl = await buildClinicActivateUrl(clinic.clerkUserId);
           await sendClinicApprovedEmail({
             to: clinic.contactEmail,
             contactName: clinic.contactName ?? "",
             clinicName,
+            activateUrl: activateUrl ?? undefined,
           });
         }
         await notifyClinicApproved({
@@ -86,6 +117,63 @@ export async function setClinicVerification(
   revalidatePath("/admin/clinics");
   revalidatePath(`/admin/clinics/${id}`);
   revalidatePath("/admin");
+}
+
+export interface ResendActivationResult {
+  ok: boolean;
+  error?: string;
+}
+
+/**
+ * Re-sends the account-activation email to a clinic without changing their
+ * verification status. Mints a fresh one-time sign-in ticket so the link is
+ * always valid. Useful when the original approval email was missed, the link
+ * expired, or the clinic was onboarded by a rep and never set a password.
+ */
+export async function resendClinicActivation(
+  id: number,
+): Promise<ResendActivationResult> {
+  await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(id);
+
+  const [clinic] = await db
+    .select()
+    .from(clinics)
+    .where(eq(clinics.id, id))
+    .limit(1);
+  if (!clinic) return { ok: false, error: "Clinic not found." };
+  if (!clinic.contactEmail) {
+    return { ok: false, error: "This clinic has no contact email on file." };
+  }
+  if (!clinic.clerkUserId) {
+    return { ok: false, error: "This clinic has no account to activate." };
+  }
+
+  const activateUrl = await buildClinicActivateUrl(clinic.clerkUserId);
+  if (!activateUrl) {
+    return {
+      ok: false,
+      error: "Could not generate an activation link. Please try again.",
+    };
+  }
+
+  const clinicName =
+    clinic.clinicName || clinic.practiceLegalName || "your clinic";
+  const sent = await sendClinicApprovedEmail({
+    to: clinic.contactEmail,
+    contactName: clinic.contactName ?? "",
+    clinicName,
+    activateUrl,
+  });
+  if (!sent) {
+    return {
+      ok: false,
+      error:
+        "The activation email could not be sent. Check email configuration and try again.",
+    };
+  }
+
+  return { ok: true };
 }
 
 export interface RevealCardResult {

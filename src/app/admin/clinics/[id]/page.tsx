@@ -276,6 +276,7 @@ export default async function ClinicDetailPage({
         <ClinicManager
           clinicId={clinic.id}
           status={clinic.verificationStatus}
+          canActivate={Boolean(clinic.clerkUserId && clinic.contactEmail)}
           hasCard={Boolean(payment?.cardLast4)}
           cardLast4={payment?.cardLast4 ?? null}
           pricing={{

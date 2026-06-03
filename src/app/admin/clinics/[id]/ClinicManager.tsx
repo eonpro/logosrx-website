@@ -6,6 +6,7 @@ import {
   addClinicNote,
   addPriceItem,
   deletePriceItem,
+  resendClinicActivation,
   resetProductPrice,
   revealCard,
   setClinicPricing,
@@ -82,6 +83,7 @@ function fmtDate(iso: string): string {
 export default function ClinicManager({
   clinicId,
   status,
+  canActivate,
   hasCard,
   cardLast4,
   pricing,
@@ -91,6 +93,8 @@ export default function ClinicManager({
 }: {
   clinicId: number;
   status: Status;
+  /** True when the clinic has both an account and a contact email to email. */
+  canActivate: boolean;
   hasCard: boolean;
   cardLast4: string | null;
   pricing: { tier: Tier; discountPct: number; notes: string };
@@ -106,6 +110,7 @@ export default function ClinicManager({
       <VerificationCard
         clinicId={clinicId}
         status={status}
+        canActivate={canActivate}
         pending={pending}
         run={(fn) => startTransition(fn)}
         refresh={() => router.refresh()}
@@ -134,12 +139,14 @@ export default function ClinicManager({
 function VerificationCard({
   clinicId,
   status,
+  canActivate,
   pending,
   run,
   refresh,
 }: {
   clinicId: number;
   status: Status;
+  canActivate: boolean;
   pending: boolean;
   run: (fn: () => void) => void;
   refresh: () => void;
@@ -174,7 +181,64 @@ function VerificationCard({
       <p className="mt-3 text-xs text-navy/55">
         Approving a clinic emails them their approval and posts to Slack.
       </p>
+      <ResendActivation clinicId={clinicId} canActivate={canActivate} />
     </Section>
+  );
+}
+
+function ResendActivation({
+  clinicId,
+  canActivate,
+}: {
+  clinicId: number;
+  canActivate: boolean;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  async function send() {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await resendClinicActivation(clinicId);
+      setMsg(
+        res.ok
+          ? { ok: true, text: "Activation email sent." }
+          : { ok: false, text: res.error ?? "Could not send activation email." },
+      );
+    } catch {
+      setMsg({ ok: false, text: "Something went wrong." });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-4 border-t border-beige pt-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          disabled={busy || !canActivate}
+          onClick={send}
+          className="rounded-full border border-navy/20 bg-white px-4 py-1.5 text-xs font-semibold text-navy transition-colors hover:border-magenta hover:text-magenta disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {busy ? "Sending…" : "Resend activation link"}
+        </button>
+        {msg && (
+          <span
+            className={`text-xs font-medium ${
+              msg.ok ? "text-green-600" : "text-red-600"
+            }`}
+          >
+            {msg.text}
+          </span>
+        )}
+      </div>
+      <p className="mt-2 text-xs text-navy/50">
+        {canActivate
+          ? "Emails the clinic a fresh one-time link to set their password and sign in. Doesn't change verification status."
+          : "Needs a contact email and an account on file to send an activation link."}
+      </p>
+    </div>
   );
 }
 

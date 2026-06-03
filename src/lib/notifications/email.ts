@@ -82,28 +82,51 @@ export async function sendEmail(args: SendEmailArgs): Promise<boolean> {
   }
 }
 
-/** Approval email sent to a clinic when an admin verifies their account. */
+/**
+ * Approval email sent to a clinic when an admin verifies their account.
+ *
+ * When `activateUrl` is provided it points to a one-time activation link that
+ * signs the clinic in and lets them set their own password (and verifies their
+ * email). This is what makes a login usable for clinics that were onboarded by
+ * a Logos RX rep — they never chose a password during intake. When the link
+ * can't be minted we fall back to a plain sign-in link.
+ */
 export async function sendClinicApprovedEmail(args: {
   to: string;
   contactName: string;
   clinicName: string;
+  activateUrl?: string;
 }): Promise<boolean> {
   const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.logosrx.com";
   const greetingName = args.contactName?.trim() || "there";
   const clinic = args.clinicName?.trim() || "your clinic";
+  const hasActivate = Boolean(args.activateUrl);
+  const ctaUrl = args.activateUrl ?? `${base}/sign-in`;
+  const ctaLabel = hasActivate ? "Activate your account" : "Go to your portal";
+
+  const accessLine = hasActivate
+    ? "Click below to activate your login — you'll set your password and get instant access to your provider portal:"
+    : "You can sign in to your provider portal to manage your profile and start placing orders:";
+  const expiryNote = hasActivate
+    ? `<p style="color:#262262;opacity:.7;font-size:13px">This activation link is valid for 7 days. If it expires, use “Forgot password” on the <a href="${base}/sign-in" style="color:#E6007E">sign-in page</a> to set a new password.</p>`
+    : "";
 
   const html = `
   <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:560px;margin:0 auto;color:#262262">
     <h1 style="font-size:20px;color:#262262">You're approved! 🎉</h1>
     <p>Hi ${escapeHtml(greetingName)},</p>
     <p>Great news — <strong>${escapeHtml(clinic)}</strong> has been verified and approved on the Logos RX provider platform. Your account is now active.</p>
-    <p>You can sign in to your provider portal to manage your profile and start placing orders:</p>
-    <p><a href="${base}/sign-in" style="display:inline-block;background:#E6007E;color:#fff;text-decoration:none;padding:12px 20px;border-radius:9999px;font-weight:600">Go to your portal</a></p>
+    <p>${accessLine}</p>
+    <p><a href="${ctaUrl}" style="display:inline-block;background:#E6007E;color:#fff;text-decoration:none;padding:12px 20px;border-radius:9999px;font-weight:600">${ctaLabel}</a></p>
+    ${expiryNote}
     <p style="color:#262262;opacity:.7;font-size:13px">If you have any questions, just reply to this email.</p>
     <p style="color:#262262;opacity:.7;font-size:13px">— The Logos RX Team</p>
   </div>`;
 
-  const text = `You're approved!\n\nHi ${greetingName},\n\n${clinic} has been verified and approved on the Logos RX provider platform. Your account is now active.\n\nSign in to your portal: ${base}/sign-in\n\n— The Logos RX Team`;
+  const textAccess = hasActivate
+    ? `Activate your account and set your password: ${ctaUrl}\n\nThis activation link is valid for 7 days. If it expires, use "Forgot password" on ${base}/sign-in.`
+    : `Sign in to your portal: ${ctaUrl}`;
+  const text = `You're approved!\n\nHi ${greetingName},\n\n${clinic} has been verified and approved on the Logos RX provider platform. Your account is now active.\n\n${textAccess}\n\n— The Logos RX Team`;
 
   return sendEmail({
     to: args.to,
