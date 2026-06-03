@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { Clinic } from "@/lib/db/schema";
+import type { ClinicProvider } from "@/lib/db/schema";
 import {
   ORDER_VOLUME_OPTIONS,
   PRACTICE_TYPE_OPTIONS,
@@ -15,7 +15,34 @@ import {
 } from "@/lib/onboarding/steps";
 import { setClinicVerification } from "./actions";
 
-type ClinicRow = Clinic & { cardLast4: string | null };
+/**
+ * The projected clinic shape the list renders. Matches the column selection in
+ * `page.tsx` — intentionally omits the heavy `*_signature` blobs and any column
+ * the table doesn't display.
+ */
+export type ClinicRow = {
+  id: number;
+  clinicName: string | null;
+  practiceLegalName: string | null;
+  practiceDba: string | null;
+  ein: string | null;
+  practiceType: string | null;
+  contactName: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  addressLine1: string | null;
+  addressSuite: string | null;
+  practicePhone: string | null;
+  website: string | null;
+  productsOfInterest: string[];
+  orderVolume: "0_5000" | "5000_15000" | "15000_50000" | "50000_plus" | null;
+  referralSource: string | null;
+  shippingMethod: "direct_to_patient" | "ship_to_practice" | null;
+  providers: ClinicProvider[];
+  verificationStatus: "pending" | "verified" | "rejected";
+  createdAt: Date;
+  cardLast4: string | null;
+};
 
 const statusStyles: Record<string, string> = {
   pending: "bg-amber-100 text-amber-700",

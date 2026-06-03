@@ -49,6 +49,14 @@ export const LEGAL_LINKS = [
   { label: "Accessibility Statement", href: "/accessibility" },
 ] as const;
 
+/**
+ * Max rows an admin list page renders in one pass. The header still shows the
+ * true total (via a cheap COUNT), and a notice appears when the total exceeds
+ * this cap, so nothing is silently hidden. Keeps a runaway table from shipping
+ * thousands of rows of HTML to the browser.
+ */
+export const ADMIN_LIST_LIMIT = 500;
+
 export const STATES_SERVED = [
   "AZ", "CO", "DE", "FL", "GA", "HI", "ID", "IL",
   "MN", "MO", "MT", "NH", "NJ", "NM", "NY", "ND",

@@ -51,7 +51,13 @@ function getPool() {
       password: getCachedAuthToken,
       port: Number(process.env.PGPORT),
       ssl: { rejectUnauthorized: false },
-      max: 20,
+      // Pool size is PER serverless instance. Under Vercel fluid compute many
+      // instances run concurrently, so a large per-instance pool multiplies
+      // into Aurora's global connection limit (max_connections). Keep this
+      // small; a handful of connections comfortably serves the in-instance
+      // concurrency. For high scale, front Aurora with RDS Proxy / a pooler
+      // and raise this only if instance-level contention shows up in metrics.
+      max: 10,
       // Recycle idle connections so a long-lived serverless instance doesn't
       // hold Aurora connections open indefinitely, and fail fast instead of
       // hanging when the DB is unreachable.

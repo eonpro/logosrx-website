@@ -4,7 +4,7 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { clinics, clinicPayments } from "@/lib/db/schema";
+import { clinics, clinicPayments, clinicSignatures } from "@/lib/db/schema";
 import { encrypt } from "@/lib/onboarding/encryption";
 import { notifyNewClinic } from "@/lib/notifications/slack";
 import { runAfterResponse } from "@/lib/runtime/after";
@@ -137,11 +137,8 @@ function toClinicColumns(s: OnboardingFormState) {
       : null,
     signatureRequired: s.signatureRequired,
     shippingDisclosureAccepted: s.shippingDisclosureAccepted,
-    shippingSignature: s.shippingSignature || null,
     providerAgreementAccepted: s.providerAgreementAccepted,
-    providerAgreementSignature: s.providerAgreementSignature || null,
     paymentAuthAccepted: s.paymentAuthAccepted,
-    paymentSignature: s.paymentSignature || null,
   };
 }
 
@@ -163,6 +160,27 @@ async function upsertClinic(
     .onConflictDoUpdate({
       target: clinics.clerkUserId,
       set: { ...columns, ...extra, updatedAt: now },
+    });
+}
+
+/**
+ * Persists the signature blobs (base64 data-URL text from the signature pad) to
+ * the isolated `clinic_signatures` table. Kept out of `clinics` so the common
+ * clinic read paths never pull these large values incidentally.
+ */
+async function upsertSignatures(clerkUserId: string, s: OnboardingFormState) {
+  const cols = {
+    shippingSignature: s.shippingSignature || null,
+    providerAgreementSignature: s.providerAgreementSignature || null,
+    paymentSignature: s.paymentSignature || null,
+  };
+  const now = new Date();
+  await db
+    .insert(clinicSignatures)
+    .values({ clerkUserId, ...cols, updatedAt: now })
+    .onConflictDoUpdate({
+      target: clinicSignatures.clerkUserId,
+      set: { ...cols, updatedAt: now },
     });
 }
 
@@ -207,7 +225,10 @@ export async function saveProgress(
   try {
     const step = Math.max(0, Math.min(stepIndex, STEP_IDS.length - 1));
     await upsertClinic(userId, state, { onboardingStep: step });
-    await upsertPayment(userId, state);
+    await Promise.all([
+      upsertPayment(userId, state),
+      upsertSignatures(userId, state),
+    ]);
     return { ok: true };
   } catch {
     console.error("[onboarding] saveProgress failed");
@@ -235,7 +256,10 @@ export async function completeOnboarding(
       onboardingStep: STEP_IDS.length - 1,
       onboardingCompleted: true,
     });
-    await upsertPayment(userId, state);
+    await Promise.all([
+      upsertPayment(userId, state),
+      upsertSignatures(userId, state),
+    ]);
     // Admin Slack ping is non-critical: don't make the clinic wait on it.
     runAfterResponse(notifyNewClinic(toClinicNotification(state)));
     return { ok: true };
@@ -339,7 +363,10 @@ export async function createAccountAndComplete(
       onboardingStep: STEP_IDS.length - 1,
       onboardingCompleted: true,
     });
-    await upsertPayment(newUserId, state);
+    await Promise.all([
+      upsertPayment(newUserId, state),
+      upsertSignatures(newUserId, state),
+    ]);
   } catch {
     console.error("[onboarding] profile persist failed; rolling back user");
     try {
@@ -382,7 +409,10 @@ export async function updateClinicProfile(
       .update(clinics)
       .set({ ...toClinicColumns(state), updatedAt: new Date() })
       .where(eq(clinics.clerkUserId, userId));
-    await upsertPayment(userId, state);
+    await Promise.all([
+      upsertPayment(userId, state),
+      upsertSignatures(userId, state),
+    ]);
     return { ok: true };
   } catch {
     console.error("[onboarding] updateClinicProfile failed");

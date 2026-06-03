@@ -168,15 +168,14 @@ export const clinics = pgTable("clinics", {
   shippingDisclosureAccepted: boolean("shipping_disclosure_accepted")
     .default(false)
     .notNull(),
-  shippingSignature: text("shipping_signature"),
+  // Signature blobs live in `clinic_signatures` (see below). The acceptance
+  // booleans stay here; the base64 images are isolated to keep clinic reads small.
   providerAgreementAccepted: boolean("provider_agreement_accepted")
     .default(false)
     .notNull(),
-  providerAgreementSignature: text("provider_agreement_signature"),
   paymentAuthAccepted: boolean("payment_auth_accepted")
     .default(false)
     .notNull(),
-  paymentSignature: text("payment_signature"),
 
   // --- Progress ---
   // Highest wizard step index the user has reached (for resume). 0-based.
@@ -240,6 +239,25 @@ export const clinicPayments = pgTable("clinic_payments", {
   cvvEnc: text("cvv_enc"),
   billingAddress: varchar("billing_address", { length: 255 }),
   billingZip: varchar("billing_zip", { length: 20 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+/**
+ * Isolated store for a clinic's signed-agreement images (base64 data-URL text
+ * from the signature pad: shipping disclosure, provider agreement, payment
+ * authorization). Split out of `clinics` so the common clinic read paths never
+ * pull these large blobs incidentally — only the onboarding wizard / account
+ * editor, which explicitly need them, load this table.
+ *
+ * One row per Clerk user. Mirrors the `clinic_payments` isolation pattern.
+ */
+export const clinicSignatures = pgTable("clinic_signatures", {
+  id: serial("id").primaryKey(),
+  clerkUserId: varchar("clerk_user_id", { length: 64 }).notNull().unique(),
+  shippingSignature: text("shipping_signature"),
+  providerAgreementSignature: text("provider_agreement_signature"),
+  paymentSignature: text("payment_signature"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -409,6 +427,8 @@ export type NewClinicPriceItem = typeof clinicPricing.$inferInsert;
 export type CardAccessLogEntry = typeof cardAccessLog.$inferSelect;
 export type ClinicPayment = typeof clinicPayments.$inferSelect;
 export type NewClinicPayment = typeof clinicPayments.$inferInsert;
+export type ClinicSignatures = typeof clinicSignatures.$inferSelect;
+export type NewClinicSignatures = typeof clinicSignatures.$inferInsert;
 export type Promotion = typeof promotions.$inferSelect;
 export type NewPromotion = typeof promotions.$inferInsert;
 export type FeaturedProduct = typeof featuredProducts.$inferSelect;

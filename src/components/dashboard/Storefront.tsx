@@ -287,11 +287,16 @@ function HeroBanner({
       </div>
 
       {promo.imageUrl && (
+        // next/image isn't used here: promo imageUrl is free-form admin input
+        // (any host), which next/image rejects unless every host is allow-listed
+        // in remotePatterns — a runtime throw waiting to happen. `decoding=async`
+        // keeps the hero off the main thread; it stays eager as it's near the top.
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={promo.imageUrl}
           alt=""
           aria-hidden="true"
+          decoding="async"
           className="pointer-events-none absolute bottom-0 right-0 z-[5] h-full w-auto max-w-[46%] object-contain object-bottom"
         />
       )}
@@ -319,11 +324,15 @@ function CategoryTile({
         {promo.title}
       </h3>
       {promo.imageUrl && (
+        // Below the hero → lazy-load + async-decode so tiles never block the
+        // initial paint. (See HeroBanner for why next/image isn't used.)
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={promo.imageUrl}
           alt=""
           aria-hidden="true"
+          loading="lazy"
+          decoding="async"
           className="pointer-events-none absolute bottom-0 right-2 z-0 h-[115%] w-auto max-w-[48%] object-contain object-bottom"
         />
       )}

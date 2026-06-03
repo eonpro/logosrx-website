@@ -2,6 +2,7 @@ import "server-only";
 import { and, eq, isNotNull } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { clinics, clinicPricing } from "@/lib/db/schema";
+import { timed } from "@/lib/observability/timing";
 import {
   catalogProducts,
   standardCatalogPrice,
@@ -85,18 +86,20 @@ export async function getClinicStorefrontFor(args: {
   // Sparse per-SKU overrides keyed by catalog product id.
   const overrides = new Map<string, number>();
   if (clinicId !== null) {
-    const rows = await db
-      .select({
-        productId: clinicPricing.productId,
-        priceCents: clinicPricing.priceCents,
-      })
-      .from(clinicPricing)
-      .where(
-        and(
-          eq(clinicPricing.clinicId, clinicId),
-          isNotNull(clinicPricing.productId),
+    const rows = await timed("storefront.overrides", () =>
+      db
+        .select({
+          productId: clinicPricing.productId,
+          priceCents: clinicPricing.priceCents,
+        })
+        .from(clinicPricing)
+        .where(
+          and(
+            eq(clinicPricing.clinicId, clinicId),
+            isNotNull(clinicPricing.productId),
+          ),
         ),
-      );
+    );
     for (const r of rows) {
       if (r.productId) overrides.set(r.productId, r.priceCents);
     }

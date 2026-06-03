@@ -2,23 +2,35 @@ export const dynamic = "force-dynamic";
 
 import { db } from "@/lib/db";
 import { emailSignups } from "@/lib/db/schema";
-import { desc } from "drizzle-orm";
+import { count, desc } from "drizzle-orm";
 import { requireAdmin } from "@/lib/auth/admin";
+import { ADMIN_LIST_LIMIT } from "@/lib/constants";
 
 export default async function EmailSignupsPage() {
   await requireAdmin();
-  const signups = await db
-    .select()
-    .from(emailSignups)
-    .orderBy(desc(emailSignups.createdAt));
+  // Render the most recent N; header shows the true total via a separate COUNT.
+  const [signups, [{ total }]] = await Promise.all([
+    db
+      .select()
+      .from(emailSignups)
+      .orderBy(desc(emailSignups.createdAt))
+      .limit(ADMIN_LIST_LIMIT),
+    db.select({ total: count() }).from(emailSignups),
+  ]);
+  const overflow = total > signups.length;
 
   return (
     <div>
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-navy">Email Subscribers</h1>
         <p className="text-navy/70 text-sm mt-1">
-          {signups.length} total subscriber{signups.length !== 1 ? "s" : ""}
+          {total} total subscriber{total !== 1 ? "s" : ""}
         </p>
+        {overflow && (
+          <p className="mt-1 text-xs text-navy/55">
+            Showing the {signups.length} most recent of {total}.
+          </p>
+        )}
       </div>
 
       {signups.length === 0 ? (

@@ -1,7 +1,8 @@
 import "server-only";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { clinics, clinicPayments } from "@/lib/db/schema";
+import { clinics, clinicPayments, clinicSignatures } from "@/lib/db/schema";
+import { timed } from "@/lib/observability/timing";
 import {
   initialFormState,
   type OnboardingFormState,
@@ -29,18 +30,32 @@ export async function getClinicProfile(
   clerkUserId: string,
 ): Promise<ClinicProfile> {
   // Independent reads — issue them together rather than in series.
-  const [[row], [payment]] = await Promise.all([
-    db
-      .select()
-      .from(clinics)
-      .where(eq(clinics.clerkUserId, clerkUserId))
-      .limit(1),
-    db
-      .select({ cardLast4: clinicPayments.cardLast4 })
-      .from(clinicPayments)
-      .where(eq(clinicPayments.clerkUserId, clerkUserId))
-      .limit(1),
-  ]);
+  const [[row], [payment], [sig]] = await timed("clinic.profile", () =>
+    Promise.all([
+      db
+        .select()
+        .from(clinics)
+        .where(eq(clinics.clerkUserId, clerkUserId))
+        .limit(1),
+      db
+        .select({ cardLast4: clinicPayments.cardLast4 })
+        .from(clinicPayments)
+        .where(eq(clinicPayments.clerkUserId, clerkUserId))
+        .limit(1),
+      // Signatures live in their own isolated table; pulled only here where the
+      // wizard/account editor actually need them.
+      db
+        .select({
+          shippingSignature: clinicSignatures.shippingSignature,
+          providerAgreementSignature:
+            clinicSignatures.providerAgreementSignature,
+          paymentSignature: clinicSignatures.paymentSignature,
+        })
+        .from(clinicSignatures)
+        .where(eq(clinicSignatures.clerkUserId, clerkUserId))
+        .limit(1),
+    ]),
+  );
 
   const base = initialFormState();
   if (!row) {
@@ -76,11 +91,11 @@ export async function getClinicProfile(
     shippingMethod: row.shippingMethod ?? "",
     signatureRequired: row.signatureRequired,
     shippingDisclosureAccepted: row.shippingDisclosureAccepted,
-    shippingSignature: row.shippingSignature ?? "",
+    shippingSignature: sig?.shippingSignature ?? "",
     providerAgreementAccepted: row.providerAgreementAccepted,
-    providerAgreementSignature: row.providerAgreementSignature ?? "",
+    providerAgreementSignature: sig?.providerAgreementSignature ?? "",
     paymentAuthAccepted: row.paymentAuthAccepted,
-    paymentSignature: row.paymentSignature ?? "",
+    paymentSignature: sig?.paymentSignature ?? "",
   };
 
   return {
@@ -97,8 +112,8 @@ export async function getClinicProfile(
  * Lightweight gate read for the hot authed paths (`/catalog`, `/dashboard`).
  *
  * Unlike `getClinicProfile`, this selects only the columns needed to make the
- * access decision plus the clinic's pricing inputs. Crucially it never pulls the
- * large signature blobs (`*_signature`) or the `providers` JSONB, so the gate
+ * access decision plus the clinic's pricing inputs. Crucially it never joins the
+ * isolated `clinic_signatures` table or pulls the `providers` JSONB, so the gate
  * query stays small on every request. Callers that also render the storefront
  * can hand `clinicId`/`pricingTier`/`discountPct` straight to
  * `getClinicStorefrontFor` to avoid re-querying the same row.
@@ -113,17 +128,19 @@ export interface ClinicGate {
 }
 
 export async function getClinicGate(clerkUserId: string): Promise<ClinicGate> {
-  const [row] = await db
-    .select({
-      id: clinics.id,
-      onboardingCompleted: clinics.onboardingCompleted,
-      verificationStatus: clinics.verificationStatus,
-      pricingTier: clinics.pricingTier,
-      pricingDiscountPct: clinics.pricingDiscountPct,
-    })
-    .from(clinics)
-    .where(eq(clinics.clerkUserId, clerkUserId))
-    .limit(1);
+  const [row] = await timed("clinic.gate", () =>
+    db
+      .select({
+        id: clinics.id,
+        onboardingCompleted: clinics.onboardingCompleted,
+        verificationStatus: clinics.verificationStatus,
+        pricingTier: clinics.pricingTier,
+        pricingDiscountPct: clinics.pricingDiscountPct,
+      })
+      .from(clinics)
+      .where(eq(clinics.clerkUserId, clerkUserId))
+      .limit(1),
+  );
 
   if (!row) {
     return {

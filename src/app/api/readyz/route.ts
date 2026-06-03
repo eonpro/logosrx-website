@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { log } from "@/lib/observability/logger";
+import { ServerTiming } from "@/lib/observability/timing";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,7 +47,8 @@ async function checkDb(): Promise<CheckResult> {
 }
 
 export async function GET() {
-  const dbCheck = await checkDb();
+  const timing = new ServerTiming();
+  const dbCheck = await timing.measure("db", checkDb, "select 1");
 
   const overall = dbCheck.ok;
   const body = {
@@ -66,6 +68,7 @@ export async function GET() {
     headers: {
       "Cache-Control": "no-store, max-age=0",
       "X-Robots-Tag": "noindex, nofollow",
+      "Server-Timing": timing.toHeader(),
     },
   });
 }
