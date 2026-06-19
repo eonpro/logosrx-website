@@ -6,6 +6,7 @@ import {
   approvePartnerOrg,
   recordPartnerPayout,
   resendPartnerActivation,
+  setPartnerOrgCompensationModel,
   setPartnerOrgRate,
   setPartnerOrgStatus,
 } from "../actions";
@@ -13,6 +14,7 @@ import {
 interface OrgProps {
   id: number;
   status: "pending" | "active" | "suspended";
+  compensationModel: "commission" | "margin";
   ratePercent: number;
   hasAccount: boolean;
   unpaidCents: number;
@@ -154,6 +156,42 @@ export default function PartnerOrgManager({
             Save rate
           </button>
         </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-beige pt-4">
+        <span className="text-xs font-medium text-navy/60">
+          Compensation model
+        </span>
+        <div className="inline-flex rounded-full border border-beige p-0.5">
+          {(["commission", "margin"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              disabled={pending}
+              aria-pressed={org.compensationModel === m}
+              onClick={() =>
+                run(
+                  () => setPartnerOrgCompensationModel(org.id, m),
+                  m === "margin"
+                    ? "Switched to the margin (wholesale) model."
+                    : "Switched to the commission (%) model.",
+                )
+              }
+              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors disabled:opacity-60 ${
+                org.compensationModel === m
+                  ? "bg-navy text-white"
+                  : "text-navy/60 hover:text-navy"
+              }`}
+            >
+              {m === "commission" ? "Commission (%)" : "Margin (wholesale)"}
+            </button>
+          ))}
+        </div>
+        <span className="text-xs text-navy/55">
+          {org.compensationModel === "margin"
+            ? "Earns the spread above the per-product floors set below."
+            : "Earns a % of each attributed sale."}
+        </span>
       </div>
 
       <div className="mt-6 border-t border-beige pt-6">

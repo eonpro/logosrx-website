@@ -17,6 +17,7 @@ export default function TransactionEntry({
   const [clinicId, setClinicId] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [amount, setAmount] = useState("");
+  const [cost, setCost] = useState("");
   const [description, setDescription] = useState("");
   const [reference, setReference] = useState("");
   const [csvText, setCsvText] = useState("");
@@ -38,11 +39,17 @@ export default function TransactionEntry({
       setError("Enter a valid revenue amount.");
       return;
     }
+    const costDollars = cost.trim() === "" ? null : Number(cost);
+    if (costDollars != null && (!Number.isFinite(costDollars) || costDollars < 0)) {
+      setError("Enter a valid cost amount.");
+      return;
+    }
     startTransition(async () => {
       const res = await addPartnerTransaction({
         clinicId: Number(clinicId),
         dateIso: date,
         amountDollars,
+        costDollars,
         description,
         reference,
       });
@@ -51,6 +58,7 @@ export default function TransactionEntry({
         return;
       }
       setAmount("");
+      setCost("");
       setDescription("");
       setReference("");
       setNotice("Transaction recorded — commission entries generated.");
@@ -132,6 +140,20 @@ export default function TransactionEntry({
                 placeholder="1250.00"
                 className={inputClass}
                 required
+              />
+            </label>
+            <label className="flex flex-1 flex-col gap-1">
+              <span className="text-xs font-medium text-navy/60">
+                Cost ($) — margin orgs
+              </span>
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                value={cost}
+                onChange={(e) => setCost(e.target.value)}
+                placeholder="optional"
+                className={inputClass}
               />
             </label>
           </div>

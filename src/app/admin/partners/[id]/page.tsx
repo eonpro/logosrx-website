@@ -14,7 +14,10 @@ import {
 } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/auth/admin";
 import { bpsToPercent, formatBps, formatCents } from "@/lib/partners/commission";
+import { getOrgFloorMap } from "@/lib/partners/pricing";
+import { catalogProducts, standardCatalogPrice } from "@/data/catalog";
 import PartnerOrgManager from "./PartnerOrgManager";
+import OrgFloorManager from "./OrgFloorManager";
 
 export default async function AdminPartnerDetailPage({
   params,
@@ -32,6 +35,11 @@ export default async function AdminPartnerDetailPage({
     .where(eq(partnerOrgs.id, orgId))
     .limit(1);
   if (!org) notFound();
+
+  const floorMap = await getOrgFloorMap(orgId);
+  const floorRows = Array.from(floorMap.entries()).map(
+    ([productId, f]) => [productId, f.floorCents] as const,
+  );
 
   const [reps, clinicRows, links, unpaidRows, payoutRows] = await Promise.all([
     db
@@ -151,6 +159,7 @@ export default async function AdminPartnerDetailPage({
         org={{
           id: org.id,
           status: org.status,
+          compensationModel: org.compensationModel,
           ratePercent: bpsToPercent(org.commissionRateBps),
           hasAccount: Boolean(org.clerkUserId),
           unpaidCents: orgUnpaidCents,
@@ -161,6 +170,24 @@ export default async function AdminPartnerDetailPage({
           unpaidCents: repUnpaidById.get(r.id) ?? 0,
         }))}
       />
+
+      <div className="mt-8">
+        <OrgFloorManager
+          orgId={org.id}
+          active={org.compensationModel === "margin"}
+          products={catalogProducts.map((p) => {
+            const std = standardCatalogPrice(p);
+            return {
+              productId: p.id,
+              name: p.name,
+              strength: p.strength ?? null,
+              unit: p.unit ?? null,
+              standardCents: std == null ? null : Math.round(std * 100),
+            };
+          })}
+          floors={Object.fromEntries(floorRows)}
+        />
+      </div>
 
       <div className="mt-8 grid gap-8 xl:grid-cols-2">
         <section className="overflow-x-auto rounded-2xl border border-beige bg-white">

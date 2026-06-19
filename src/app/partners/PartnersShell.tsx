@@ -8,6 +8,8 @@ import SidebarShell, { type SidebarNavItem } from "@/components/portal/SidebarSh
 interface PartnerNavItem extends SidebarNavItem {
   /** Restrict the item to a partner kind (undefined = everyone). */
   only?: PartnerKind;
+  /** Only show when the org is on the margin model. */
+  marginOnly?: boolean;
 }
 
 const navItems: PartnerNavItem[] = [
@@ -66,6 +68,16 @@ const navItems: PartnerNavItem[] = [
     ),
   },
   {
+    label: "Clinic Pricing",
+    href: "/partners/pricing",
+    marginOnly: true,
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M10 2v16M6 5h6a2.5 2.5 0 010 5H6m0 0h7a2.5 2.5 0 010 5H5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
     label: "Payouts",
     href: "/partners/payouts",
     icon: (
@@ -83,11 +95,13 @@ export default function PartnersShell({
   kind,
   orgName,
   repName,
+  marginEnabled = false,
 }: {
   children: React.ReactNode;
   kind: PartnerKind | null;
   orgName: string | null;
   repName: string | null;
+  marginEnabled?: boolean;
 }) {
   const pathname = usePathname();
   const isBareLayout =
@@ -100,7 +114,10 @@ export default function PartnersShell({
     return <>{children}</>;
   }
 
-  const items = navItems.filter((i) => !i.only || i.only === kind);
+  const items = navItems.filter(
+    (i) =>
+      (!i.only || i.only === kind) && (!i.marginOnly || marginEnabled),
+  );
 
   return (
     <SidebarShell

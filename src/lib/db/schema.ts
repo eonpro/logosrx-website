@@ -86,6 +86,19 @@ export const transactionSourceEnum = pgEnum("transaction_source", [
   "lifefile",
 ]);
 
+/**
+ * How a partner org is compensated:
+ *   - `commission` — a % of each attributed sale's revenue (org rate, with an
+ *     optional rep carve-out).
+ *   - `margin` — a wholesale model: the org has a per-product floor (cost), sets
+ *     each clinic's selling price at/above that floor, and earns the spread
+ *     (revenue − cost). The rep's % then applies to that margin.
+ */
+export const partnerCompensationModelEnum = pgEnum(
+  "partner_compensation_model",
+  ["commission", "margin"],
+);
+
 export const employmentApplications = pgTable("employment_applications", {
   id: serial("id").primaryKey(),
   firstName: varchar("first_name", { length: 100 }).notNull(),
@@ -475,7 +488,13 @@ export const partnerOrgs = pgTable("partner_orgs", {
   website: varchar("website", { length: 255 }),
   notes: text("notes"),
   status: partnerStatusEnum("status").default("pending").notNull(),
+  // How the org earns: a % of revenue (`commission`) or the wholesale spread
+  // (`margin`). Drives which base the commission ledger is computed from.
+  compensationModel: partnerCompensationModelEnum("compensation_model")
+    .default("commission")
+    .notNull(),
   // Org-level commission rate in basis points (100 = 1%). Set by an admin.
+  // Used in `commission` mode. (In `margin` mode the org earns the full spread.)
   commissionRateBps: integer("commission_rate_bps").default(0).notNull(),
   approvedAt: timestamp("approved_at"),
   // Clerk user id of the admin who approved/suspended the org.
@@ -539,6 +558,34 @@ export const referralLinks = pgTable("referral_links", {
 ]);
 
 /**
+ * Per-product wholesale floor (cost) prices for a `margin`-model org. The org
+ * may set each attributed clinic's selling price at or above its floor for a
+ * SKU; the spread (sell − floor) is the org's earnings on that line. `productId`
+ * is the catalog SKU id (see `src/data/catalog.ts`). One floor per (org, SKU).
+ */
+export const partnerOrgPricing = pgTable(
+  "partner_org_pricing",
+  {
+    id: serial("id").primaryKey(),
+    orgId: integer("org_id")
+      .notNull()
+      .references(() => partnerOrgs.id, { onDelete: "cascade" }),
+    productId: varchar("product_id", { length: 120 }).notNull(),
+    productName: varchar("product_name", { length: 200 }).notNull(),
+    floorCents: integer("floor_cents").notNull(),
+    unit: varchar("unit", { length: 60 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("partner_org_pricing_org_product_uniq").on(
+      t.orgId,
+      t.productId,
+    ),
+  ],
+);
+
+/**
  * A revenue event for an attributed clinic. Orders live in LifeFile today, so
  * rows are entered by an admin (manually or via CSV import); `source` leaves
  * room for a LifeFile API sync later. Creating a transaction also writes its
@@ -554,6 +601,9 @@ export const partnerTransactions = pgTable("partner_transactions", {
   // External reference, e.g. a LifeFile order id.
   reference: varchar("reference", { length: 120 }),
   revenueCents: integer("revenue_cents").notNull(),
+  // Wholesale cost (floor total) of the sale — set for `margin`-model orgs so
+  // earnings = revenue − cost. Null for `commission`-model transactions.
+  costCents: integer("cost_cents"),
   source: transactionSourceEnum("source").default("manual").notNull(),
   // Clerk user id of the admin who recorded the row.
   createdBy: varchar("created_by", { length: 64 }).notNull(),

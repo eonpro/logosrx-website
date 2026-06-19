@@ -140,6 +140,63 @@ export function summarizeCommissionRows(
   return summary;
 }
 
+/**
+ * Computes the ledger entries for a margin-model transaction. The org earns
+ * the full spread (margin = revenue − cost); the rep's rate is carved out of
+ * that margin (rep share rounded, org gets the remainder so the two always sum
+ * to the margin exactly). `rateBps` on each entry is that payee's share of the
+ * margin in basis points.
+ */
+export function computeMarginSplit(input: {
+  marginCents: number;
+  repRateBps?: number;
+}): CommissionSplitEntry[] {
+  const { marginCents } = input;
+  const repRateBps = input.repRateBps ?? 0;
+
+  if (!Number.isInteger(marginCents) || marginCents < 0) {
+    throw new Error("marginCents must be a non-negative integer");
+  }
+  if (!Number.isInteger(repRateBps) || repRateBps < 0 || repRateBps > MAX_RATE_BPS) {
+    throw new Error("repRateBps out of range");
+  }
+
+  if (repRateBps <= 0) {
+    return [{ payee: "org", rateBps: MAX_RATE_BPS, amountCents: marginCents }];
+  }
+
+  const repCents = Math.round((marginCents * repRateBps) / MAX_RATE_BPS);
+  return [
+    {
+      payee: "org",
+      rateBps: MAX_RATE_BPS - repRateBps,
+      amountCents: marginCents - repCents,
+    },
+    { payee: "rep", rateBps: repRateBps, amountCents: repCents },
+  ];
+}
+
+/**
+ * Validates a clinic selling price against an org's wholesale floor for a SKU.
+ * Returns an error message, or null when the price is valid (≥ floor).
+ */
+export function validateSellAboveFloor(
+  sellCents: number,
+  floorCents: number | null | undefined,
+): string | null {
+  if (!Number.isInteger(sellCents) || sellCents < 0) {
+    return "Enter a valid price.";
+  }
+  if (
+    floorCents != null &&
+    Number.isInteger(floorCents) &&
+    sellCents < floorCents
+  ) {
+    return `Price can't be below your floor of ${formatCents(floorCents)}.`;
+  }
+  return null;
+}
+
 /** Formats integer cents as USD for display (e.g. 123456 → "$1,234.56"). */
 export function formatCents(cents: number): string {
   return (cents / 100).toLocaleString("en-US", {

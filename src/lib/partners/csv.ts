@@ -6,6 +6,8 @@
  *   clinic_id OR clinic_email — which clinic the revenue belongs to
  *   date                      — YYYY-MM-DD (or anything Date.parse accepts)
  *   amount                    — revenue in dollars (e.g. "1234.56")
+ *   cost        (optional)    — wholesale cost in dollars; used for margin-model
+ *                               orgs so earnings = revenue − cost
  *   description (optional)
  *   reference   (optional)    — e.g. LifeFile order id
  */
@@ -17,6 +19,8 @@ export interface CsvTransactionRow {
   clinicEmail: string | null;
   date: Date;
   revenueCents: number;
+  /** Parsed from an optional `cost` column; null when absent/blank. */
+  costCents: number | null;
   description: string | null;
   reference: string | null;
 }
@@ -90,6 +94,7 @@ export function parseTransactionsCsv(text: string): CsvParseResult {
   const emailCol = headers.indexOf("clinicemail");
   const dateCol = headers.indexOf("date");
   const amountCol = headers.findIndex((h) => h === "amount" || h === "revenue");
+  const costCol = headers.findIndex((h) => h === "cost" || h === "floor");
   const descCol = headers.indexOf("description");
   const refCol = headers.indexOf("reference");
 
@@ -136,6 +141,17 @@ export function parseTransactionsCsv(text: string): CsvParseResult {
       continue;
     }
 
+    // Cost is optional; only validate when a value is actually present.
+    let costCents: number | null = null;
+    const costRaw = costCol !== -1 ? (fields[costCol] ?? "").trim() : "";
+    if (costRaw) {
+      costCents = parseDollarsToCents(costRaw);
+      if (Number.isNaN(costCents) || costCents < 0) {
+        result.errors.push(`Line ${lineNo}: invalid cost "${costRaw}".`);
+        continue;
+      }
+    }
+
     result.rows.push({
       line: lineNo,
       clinicId:
@@ -145,6 +161,7 @@ export function parseTransactionsCsv(text: string): CsvParseResult {
       clinicEmail,
       date,
       revenueCents,
+      costCents,
       description: descCol !== -1 ? fields[descCol]?.slice(0, 300) || null : null,
       reference: refCol !== -1 ? fields[refCol]?.slice(0, 120) || null : null,
     });

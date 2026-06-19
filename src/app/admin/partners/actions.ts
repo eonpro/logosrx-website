@@ -17,6 +17,7 @@ import {
   validateOrgRateBps,
 } from "@/lib/partners/commission";
 import { parseTransactionsCsv } from "@/lib/partners/csv";
+import { deleteOrgFloor, upsertOrgFloor } from "@/lib/partners/pricing";
 import {
   buildPartnerActivateUrl,
   createPartnerClerkUser,
@@ -65,6 +66,71 @@ export async function setPartnerOrgRate(
     .returning({ id: partnerOrgs.id });
   if (updated.length === 0) return { ok: false, error: "Org not found." };
 
+  revalidateOrg(orgId);
+  return { ok: true };
+}
+
+/** Switches an org between commission (% of revenue) and margin (wholesale spread). */
+export async function setPartnerOrgCompensationModel(
+  orgId: number,
+  model: "commission" | "margin",
+): Promise<AdminPartnerResult> {
+  await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(orgId, "orgId");
+  if (model !== "commission" && model !== "margin") {
+    return { ok: false, error: "Invalid compensation model." };
+  }
+
+  const updated = await db
+    .update(partnerOrgs)
+    .set({ compensationModel: model, updatedAt: new Date() })
+    .where(eq(partnerOrgs.id, orgId))
+    .returning({ id: partnerOrgs.id });
+  if (updated.length === 0) return { ok: false, error: "Org not found." };
+
+  revalidateOrg(orgId);
+  return { ok: true };
+}
+
+/** Sets (upserts) an org's wholesale floor price for a catalog SKU. */
+export async function setOrgFloorPrice(input: {
+  orgId: number;
+  productId: string;
+  productName: string;
+  floorDollars: number;
+  unit: string;
+}): Promise<AdminPartnerResult> {
+  await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(input.orgId, "orgId");
+  const productId = input.productId.trim();
+  if (!productId) return { ok: false, error: "Product is required." };
+  if (!Number.isFinite(input.floorDollars) || input.floorDollars < 0) {
+    return { ok: false, error: "Enter a valid floor price." };
+  }
+
+  await upsertOrgFloor({
+    orgId: input.orgId,
+    productId,
+    productName: input.productName.trim() || productId,
+    floorCents: Math.round(input.floorDollars * 100),
+    unit: input.unit.trim() || null,
+  });
+
+  revalidateOrg(input.orgId);
+  return { ok: true };
+}
+
+/** Clears an org's floor for a SKU. */
+export async function resetOrgFloorPrice(
+  orgId: number,
+  productId: string,
+): Promise<AdminPartnerResult> {
+  await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(orgId, "orgId");
+  const pid = productId.trim();
+  if (!pid) return { ok: false, error: "Product is required." };
+
+  await deleteOrgFloor(orgId, pid);
   revalidateOrg(orgId);
   return { ok: true };
 }
@@ -197,6 +263,8 @@ export async function addPartnerTransaction(input: {
   clinicId: number;
   dateIso: string;
   amountDollars: number;
+  /** Wholesale cost (floor total); required for margin-model orgs. */
+  costDollars?: number | null;
   description: string;
   reference: string;
 }): Promise<AdminPartnerResult> {
@@ -210,12 +278,20 @@ export async function addPartnerTransaction(input: {
   if (!Number.isFinite(input.amountDollars) || input.amountDollars < 0) {
     return { ok: false, error: "Enter a valid revenue amount." };
   }
+  let costCents: number | null = null;
+  if (input.costDollars != null && input.costDollars !== ("" as unknown)) {
+    if (!Number.isFinite(input.costDollars) || input.costDollars < 0) {
+      return { ok: false, error: "Enter a valid cost amount." };
+    }
+    costCents = Math.round(input.costDollars * 100);
+  }
 
   try {
     await createTransactionWithCommission({
       clinicId: input.clinicId,
       date,
       revenueCents: Math.round(input.amountDollars * 100),
+      costCents,
       description: input.description.trim().slice(0, 300) || null,
       reference: input.reference.trim().slice(0, 120) || null,
       source: "manual",
@@ -279,6 +355,7 @@ export async function importPartnerTransactionsCsv(
         clinicId,
         date: row.date,
         revenueCents: row.revenueCents,
+        costCents: row.costCents,
         description: row.description,
         reference: row.reference,
         source: "csv",

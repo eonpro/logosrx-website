@@ -8,7 +8,10 @@ import {
   partnerReps,
   partnerTransactions,
 } from "@/lib/db/schema";
-import { computeCommissionSplit } from "@/lib/partners/commission";
+import {
+  computeCommissionSplit,
+  computeMarginSplit,
+} from "@/lib/partners/commission";
 
 export class TransactionError extends Error {
   constructor(message: string) {
@@ -21,6 +24,8 @@ export interface CreateTransactionInput {
   clinicId: number;
   date: Date;
   revenueCents: number;
+  /** Wholesale cost (floor total). Required for margin-model orgs. */
+  costCents?: number | null;
   description: string | null;
   reference: string | null;
   source: "manual" | "csv" | "lifefile";
@@ -62,6 +67,7 @@ export async function createTransactionWithCommission(
   const [org] = await db
     .select({
       id: partnerOrgs.id,
+      compensationModel: partnerOrgs.compensationModel,
       commissionRateBps: partnerOrgs.commissionRateBps,
     })
     .from(partnerOrgs)
@@ -79,11 +85,34 @@ export async function createTransactionWithCommission(
     repRateBps = rep?.commissionRateBps ?? 0;
   }
 
-  const split = computeCommissionSplit({
-    revenueCents: input.revenueCents,
-    orgRateBps: org.commissionRateBps,
-    repRateBps,
-  });
+  // Margin-model orgs earn the spread (revenue − cost); commission-model orgs
+  // earn a % of revenue. The rep's rate carves out of whichever base applies.
+  let costCents: number | null = null;
+  let split;
+  if (org.compensationModel === "margin") {
+    if (input.costCents == null) {
+      throw new TransactionError(
+        "This partner is on the wholesale/margin model — enter the cost (floor) for this sale.",
+      );
+    }
+    if (!Number.isInteger(input.costCents) || input.costCents < 0) {
+      throw new TransactionError("Cost must be a non-negative amount.");
+    }
+    if (input.costCents > input.revenueCents) {
+      throw new TransactionError("Cost can't exceed revenue (negative margin).");
+    }
+    costCents = input.costCents;
+    split = computeMarginSplit({
+      marginCents: input.revenueCents - costCents,
+      repRateBps,
+    });
+  } else {
+    split = computeCommissionSplit({
+      revenueCents: input.revenueCents,
+      orgRateBps: org.commissionRateBps,
+      repRateBps,
+    });
+  }
 
   return db.transaction(async (tx) => {
     const [created] = await tx
@@ -94,6 +123,7 @@ export async function createTransactionWithCommission(
         description: input.description,
         reference: input.reference,
         revenueCents: input.revenueCents,
+        costCents,
         source: input.source,
         createdBy: input.createdBy,
       })

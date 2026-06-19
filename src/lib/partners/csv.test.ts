@@ -105,6 +105,35 @@ describe("parseTransactionsCsv", () => {
     ).toMatch(/date.*amount/);
   });
 
+  it("parses an optional cost column for margin orgs", () => {
+    const { rows, errors } = parseTransactionsCsv(
+      [
+        "clinic_id,date,amount,cost",
+        "1,2026-06-01,1000,600",
+        "2,2026-06-01,500",
+      ].join("\n"),
+    );
+    expect(errors).toEqual([]);
+    expect(rows[0].costCents).toBe(60_000);
+    // Blank/absent cost stays null (commission orgs ignore it).
+    expect(rows[1].costCents).toBeNull();
+  });
+
+  it("reports an invalid cost value", () => {
+    const { rows, errors } = parseTransactionsCsv(
+      ["clinic_id,date,amount,cost", "1,2026-06-01,1000,abc"].join("\n"),
+    );
+    expect(rows).toHaveLength(0);
+    expect(errors[0]).toMatch(/invalid cost/);
+  });
+
+  it("defaults costCents to null when there is no cost column", () => {
+    const { rows } = parseTransactionsCsv(
+      ["clinic_id,date,amount", "1,2026-06-01,1000"].join("\n"),
+    );
+    expect(rows[0].costCents).toBeNull();
+  });
+
   it("skips blank lines", () => {
     const { rows, errors } = parseTransactionsCsv(
       ["clinic_id,date,amount", "", "5,2026-06-01,10", ""].join("\n"),

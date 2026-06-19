@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   bpsToPercent,
   computeCommissionSplit,
+  computeMarginSplit,
   formatBps,
   formatCents,
   percentToBps,
   summarizeCommissionRows,
   validateOrgRateBps,
   validateRepRateBps,
+  validateSellAboveFloor,
 } from "./commission";
 
 describe("rate conversions", () => {
@@ -166,6 +168,56 @@ describe("summarizeCommissionRows", () => {
       unpaidCents: 0,
       paidCents: 0,
     });
+  });
+});
+
+describe("computeMarginSplit", () => {
+  it("gives the org the full margin when there is no rep", () => {
+    expect(computeMarginSplit({ marginCents: 40_000 })).toEqual([
+      { payee: "org", rateBps: 10_000, amountCents: 40_000 },
+    ]);
+  });
+
+  it("carves the rep's share out of the margin", () => {
+    const split = computeMarginSplit({ marginCents: 40_000, repRateBps: 2500 });
+    expect(split).toEqual([
+      { payee: "org", rateBps: 7500, amountCents: 30_000 },
+      { payee: "rep", rateBps: 2500, amountCents: 10_000 },
+    ]);
+  });
+
+  it("org + rep always sum to the margin exactly (rounding)", () => {
+    const split = computeMarginSplit({ marginCents: 333, repRateBps: 2500 });
+    const total = split.reduce((s, e) => s + e.amountCents, 0);
+    expect(total).toBe(333);
+  });
+
+  it("rejects negative margin or out-of-range rep rate", () => {
+    expect(() => computeMarginSplit({ marginCents: -1 })).toThrow();
+    expect(() =>
+      computeMarginSplit({ marginCents: 100, repRateBps: 10_001 }),
+    ).toThrow();
+  });
+});
+
+describe("validateSellAboveFloor", () => {
+  it("accepts a price at or above the floor", () => {
+    expect(validateSellAboveFloor(5000, 5000)).toBeNull();
+    expect(validateSellAboveFloor(6000, 5000)).toBeNull();
+  });
+
+  it("rejects a price below the floor", () => {
+    expect(validateSellAboveFloor(4999, 5000)).toMatch(/below your floor/);
+  });
+
+  it("accepts any non-negative price when there is no floor", () => {
+    expect(validateSellAboveFloor(10, null)).toBeNull();
+    expect(validateSellAboveFloor(10, undefined)).toBeNull();
+  });
+
+  it("rejects invalid prices", () => {
+    expect(validateSellAboveFloor(-1, 100)).toBeTruthy();
+    expect(validateSellAboveFloor(1.5, 100)).toBeTruthy();
   });
 });
 
