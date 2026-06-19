@@ -89,6 +89,18 @@ export default function Header() {
               LOG IN
             </Link>
 
+            <a
+              href={SITE.lifefilePortal}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:inline-flex items-center gap-2 rounded-full bg-magenta px-4 py-1.5 text-sm font-semibold text-white transition-colors duration-300 hover:bg-magenta-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta focus-visible:ring-offset-2"
+            >
+              Provider Login
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <path d="M3 1.5L9 6L3 10.5V1.5Z" fill="currentColor" />
+              </svg>
+            </a>
+
             <button
               onClick={() => setMenuOpen(true)}
               className="lg:hidden flex flex-col items-center justify-center gap-[5px] w-10 h-10 rounded-lg hover:bg-beige/60 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta"
