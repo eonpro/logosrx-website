@@ -1,5 +1,6 @@
 import "server-only";
 import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
+import { SITE_URL } from "@/lib/constants";
 import { log } from "@/lib/observability/logger";
 
 /**
@@ -97,7 +98,7 @@ export async function sendClinicApprovedEmail(args: {
   clinicName: string;
   activateUrl?: string;
 }): Promise<boolean> {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.logosrx.com";
+  const base = SITE_URL;
   const greetingName = args.contactName?.trim() || "there";
   const clinic = args.clinicName?.trim() || "your clinic";
   const hasActivate = Boolean(args.activateUrl);
@@ -131,6 +132,112 @@ export async function sendClinicApprovedEmail(args: {
   return sendEmail({
     to: args.to,
     subject: "Your Logos RX account is approved",
+    html,
+    text,
+  });
+}
+
+/**
+ * Approval email sent to a partner org owner when an admin approves their
+ * affiliate application. The activation link signs them in and lets them set
+ * a password (the account was provisioned with a throwaway one).
+ */
+export async function sendPartnerApprovedEmail(args: {
+  to: string;
+  contactName: string;
+  orgName: string;
+  activateUrl?: string;
+}): Promise<boolean> {
+  const base = SITE_URL;
+  const greetingName = args.contactName?.trim() || "there";
+  const org = args.orgName?.trim() || "your organization";
+  const ctaUrl = args.activateUrl ?? `${base}/partners/sign-in`;
+  const ctaLabel = args.activateUrl ? "Activate your account" : "Go to the partner portal";
+
+  const html = `
+  <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:560px;margin:0 auto;color:#262262">
+    <h1 style="font-size:20px;color:#262262">Welcome to the Logos RX partner program!</h1>
+    <p>Hi ${escapeHtml(greetingName)},</p>
+    <p><strong>${escapeHtml(org)}</strong> has been approved as a Logos RX affiliate partner. From your portal you can generate referral links, invite reps, track transactions and commissions, and see your payouts.</p>
+    <p><a href="${ctaUrl}" style="display:inline-block;background:#E6007E;color:#fff;text-decoration:none;padding:12px 20px;border-radius:9999px;font-weight:600">${ctaLabel}</a></p>
+    ${args.activateUrl ? `<p style="color:#262262;opacity:.7;font-size:13px">This activation link is valid for 7 days. If it expires, use “Forgot password” on the <a href="${base}/partners/sign-in" style="color:#E6007E">sign-in page</a>.</p>` : ""}
+    <p style="color:#262262;opacity:.7;font-size:13px">— The Logos RX Team</p>
+  </div>`;
+
+  const text = `Welcome to the Logos RX partner program!\n\nHi ${greetingName},\n\n${org} has been approved as a Logos RX affiliate partner.\n\n${ctaLabel}: ${ctaUrl}\n\n— The Logos RX Team`;
+
+  return sendEmail({
+    to: args.to,
+    subject: "Your Logos RX partner account is approved",
+    html,
+    text,
+  });
+}
+
+/** Invitation email sent to a rep created by their partner org. */
+export async function sendRepInviteEmail(args: {
+  to: string;
+  repName: string;
+  orgName: string;
+  activateUrl?: string;
+}): Promise<boolean> {
+  const base = SITE_URL;
+  const greetingName = args.repName?.trim() || "there";
+  const org = args.orgName?.trim() || "your organization";
+  const ctaUrl = args.activateUrl ?? `${base}/partners/sign-in`;
+
+  const html = `
+  <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:560px;margin:0 auto;color:#262262">
+    <h1 style="font-size:20px;color:#262262">You've been invited to the Logos RX partner portal</h1>
+    <p>Hi ${escapeHtml(greetingName)},</p>
+    <p><strong>${escapeHtml(org)}</strong> has added you as a sales rep on the Logos RX affiliate program. Activate your account to get your personal referral links and track your clinic sign-ups and commissions.</p>
+    <p><a href="${ctaUrl}" style="display:inline-block;background:#E6007E;color:#fff;text-decoration:none;padding:12px 20px;border-radius:9999px;font-weight:600">Activate your account</a></p>
+    <p style="color:#262262;opacity:.7;font-size:13px">This activation link is valid for 7 days. If it expires, ask ${escapeHtml(org)} to re-send your invite, or use “Forgot password” on the <a href="${base}/partners/sign-in" style="color:#E6007E">sign-in page</a>.</p>
+    <p style="color:#262262;opacity:.7;font-size:13px">— The Logos RX Team</p>
+  </div>`;
+
+  const text = `You've been invited to the Logos RX partner portal\n\nHi ${greetingName},\n\n${org} has added you as a sales rep on the Logos RX affiliate program.\n\nActivate your account: ${ctaUrl}\n\n— The Logos RX Team`;
+
+  return sendEmail({
+    to: args.to,
+    subject: `${org} invited you to the Logos RX partner program`,
+    html,
+    text,
+  });
+}
+
+/** Confirmation email sent when an admin records a commission payout. */
+export async function sendPayoutRecordedEmail(args: {
+  to: string;
+  name: string;
+  amountLabel: string;
+  method?: string | null;
+  reference?: string | null;
+}): Promise<boolean> {
+  const base = SITE_URL;
+  const greetingName = args.name?.trim() || "there";
+  const detail = [
+    args.method ? `Method: ${escapeHtml(args.method)}` : null,
+    args.reference ? `Reference: ${escapeHtml(args.reference)}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  const html = `
+  <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:560px;margin:0 auto;color:#262262">
+    <h1 style="font-size:20px;color:#262262">Commission payout sent</h1>
+    <p>Hi ${escapeHtml(greetingName)},</p>
+    <p>A commission payout of <strong>${escapeHtml(args.amountLabel)}</strong> has been recorded for you on the Logos RX partner program.</p>
+    ${detail ? `<p style="color:#262262;opacity:.8;font-size:14px">${detail}</p>` : ""}
+    <p><a href="${base}/partners/payouts" style="display:inline-block;background:#E6007E;color:#fff;text-decoration:none;padding:12px 20px;border-radius:9999px;font-weight:600">View in your portal</a></p>
+    <p style="color:#262262;opacity:.7;font-size:13px">— The Logos RX Team</p>
+  </div>`;
+
+  const text = `Commission payout sent\n\nHi ${greetingName},\n\nA commission payout of ${args.amountLabel} has been recorded for you on the Logos RX partner program.${detail ? `\n${detail.replace(/ · /g, "\n")}` : ""}\n\nView in your portal: ${base}/partners/payouts\n\n— The Logos RX Team`;
+
+  return sendEmail({
+    to: args.to,
+    subject: `Your Logos RX commission payout: ${args.amountLabel}`,
     html,
     text,
   });

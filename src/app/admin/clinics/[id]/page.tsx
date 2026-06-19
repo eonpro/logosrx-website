@@ -10,6 +10,8 @@ import {
   clinicPayments,
   clinicPricing,
   clinics,
+  partnerOrgs,
+  partnerReps,
 } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/auth/admin";
 import {
@@ -74,6 +76,16 @@ export default async function ClinicDetailPage({
     .from(clinicPayments)
     .where(eq(clinicPayments.clerkUserId, clinic.clerkUserId))
     .limit(1);
+
+  // Affiliate attribution (who referred this clinic), when present.
+  const [attribution] = clinic.partnerOrgId
+    ? await db
+        .select({ orgName: partnerOrgs.name, repName: partnerReps.name })
+        .from(partnerOrgs)
+        .leftJoin(partnerReps, eq(partnerReps.id, clinic.partnerRepId ?? -1))
+        .where(eq(partnerOrgs.id, clinic.partnerOrgId))
+        .limit(1)
+    : [];
 
   const [notes, priceItems, accessLog] = await Promise.all([
     db
@@ -213,6 +225,20 @@ export default async function ClinicDetailPage({
               label="Referral"
               value={optionLabel(REFERRAL_OPTIONS, clinic.referralSource)}
             />
+            {attribution && (
+              <Field
+                label="Partner attribution"
+                value={
+                  <Link
+                    href={`/admin/partners/${clinic.partnerOrgId}`}
+                    className="text-navy hover:text-magenta"
+                  >
+                    {attribution.orgName}
+                    {attribution.repName ? ` · ${attribution.repName}` : ""}
+                  </Link>
+                }
+              />
+            )}
             <Field
               label="Products"
               value={(clinic.productsOfInterest ?? [])

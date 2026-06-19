@@ -1,0 +1,408 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { and, eq, inArray, sql } from "drizzle-orm";
+import { db } from "@/lib/db";
+import {
+  clinics,
+  commissionEntries,
+  partnerOrgs,
+  partnerReps,
+  payouts,
+} from "@/lib/db/schema";
+import { ADMIN_ROLE, requireAdmin } from "@/lib/auth/admin";
+import {
+  formatCents,
+  percentToBps,
+  validateOrgRateBps,
+} from "@/lib/partners/commission";
+import { parseTransactionsCsv } from "@/lib/partners/csv";
+import {
+  buildPartnerActivateUrl,
+  createPartnerClerkUser,
+  PartnerProvisionError,
+} from "@/lib/partners/provision";
+import {
+  createTransactionWithCommission,
+  TransactionError,
+} from "@/lib/partners/transactions";
+import {
+  sendPartnerApprovedEmail,
+  sendPayoutRecordedEmail,
+} from "@/lib/notifications/email";
+import { runAfterResponse } from "@/lib/runtime/after";
+
+export interface AdminPartnerResult {
+  ok: boolean;
+  error?: string;
+}
+
+function assertId(id: number, label = "id") {
+  if (!Number.isFinite(id) || id <= 0) throw new Error(`invalid ${label}`);
+}
+
+function revalidateOrg(orgId: number) {
+  revalidatePath("/admin/partners");
+  revalidatePath(`/admin/partners/${orgId}`);
+}
+
+/** Sets a partner org's commission rate (future transactions only). */
+export async function setPartnerOrgRate(
+  orgId: number,
+  ratePercent: number,
+): Promise<AdminPartnerResult> {
+  await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(orgId, "orgId");
+
+  const rateBps = percentToBps(ratePercent);
+  const err = validateOrgRateBps(rateBps);
+  if (err) return { ok: false, error: err };
+
+  const updated = await db
+    .update(partnerOrgs)
+    .set({ commissionRateBps: rateBps, updatedAt: new Date() })
+    .where(eq(partnerOrgs.id, orgId))
+    .returning({ id: partnerOrgs.id });
+  if (updated.length === 0) return { ok: false, error: "Org not found." };
+
+  revalidateOrg(orgId);
+  return { ok: true };
+}
+
+/**
+ * Approves a pending partner application: provisions the Clerk login (when
+ * not already provisioned), flips the org to `active`, and emails the owner
+ * a one-time activation link.
+ */
+export async function approvePartnerOrg(
+  orgId: number,
+): Promise<AdminPartnerResult> {
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(orgId, "orgId");
+
+  const [org] = await db
+    .select()
+    .from(partnerOrgs)
+    .where(eq(partnerOrgs.id, orgId))
+    .limit(1);
+  if (!org) return { ok: false, error: "Org not found." };
+
+  let clerkUserId = org.clerkUserId;
+  if (!clerkUserId) {
+    try {
+      clerkUserId = await createPartnerClerkUser({
+        email: org.contactEmail,
+        name: org.contactName || org.name,
+        phone: org.contactPhone,
+      });
+    } catch (err) {
+      return {
+        ok: false,
+        error:
+          err instanceof PartnerProvisionError
+            ? err.message
+            : "Could not create the partner's account.",
+      };
+    }
+  }
+
+  await db
+    .update(partnerOrgs)
+    .set({
+      clerkUserId,
+      status: "active",
+      approvedAt: new Date(),
+      approvedBy: ctx.userId,
+      updatedAt: new Date(),
+    })
+    .where(eq(partnerOrgs.id, orgId));
+
+  // Approval email + activation link are best-effort; "Resend activation"
+  // covers failures.
+  const userId = clerkUserId;
+  runAfterResponse(
+    (async () => {
+      const activateUrl = await buildPartnerActivateUrl(userId);
+      await sendPartnerApprovedEmail({
+        to: org.contactEmail,
+        contactName: org.contactName ?? "",
+        orgName: org.name,
+        activateUrl: activateUrl ?? undefined,
+      });
+    })(),
+  );
+
+  revalidateOrg(orgId);
+  return { ok: true };
+}
+
+/** Suspends (or reactivates) a partner org's portal access. */
+export async function setPartnerOrgStatus(
+  orgId: number,
+  status: "active" | "suspended",
+): Promise<AdminPartnerResult> {
+  await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(orgId, "orgId");
+  if (status !== "active" && status !== "suspended") {
+    return { ok: false, error: "Invalid status." };
+  }
+
+  const updated = await db
+    .update(partnerOrgs)
+    .set({ status, updatedAt: new Date() })
+    .where(eq(partnerOrgs.id, orgId))
+    .returning({ id: partnerOrgs.id });
+  if (updated.length === 0) return { ok: false, error: "Org not found." };
+
+  revalidateOrg(orgId);
+  return { ok: true };
+}
+
+/** Re-sends a partner org owner's activation email with a fresh ticket. */
+export async function resendPartnerActivation(
+  orgId: number,
+): Promise<AdminPartnerResult> {
+  await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(orgId, "orgId");
+
+  const [org] = await db
+    .select()
+    .from(partnerOrgs)
+    .where(eq(partnerOrgs.id, orgId))
+    .limit(1);
+  if (!org) return { ok: false, error: "Org not found." };
+  if (!org.clerkUserId) {
+    return { ok: false, error: "This org has no account to activate yet — approve it first." };
+  }
+
+  const activateUrl = await buildPartnerActivateUrl(org.clerkUserId);
+  if (!activateUrl) {
+    return { ok: false, error: "Could not generate an activation link. Please try again." };
+  }
+
+  const sent = await sendPartnerApprovedEmail({
+    to: org.contactEmail,
+    contactName: org.contactName ?? "",
+    orgName: org.name,
+    activateUrl,
+  });
+  if (!sent) {
+    return { ok: false, error: "The activation email could not be sent. Check email configuration." };
+  }
+  return { ok: true };
+}
+
+/** Records a single transaction for an attributed clinic (+ its ledger entries). */
+export async function addPartnerTransaction(input: {
+  clinicId: number;
+  dateIso: string;
+  amountDollars: number;
+  description: string;
+  reference: string;
+}): Promise<AdminPartnerResult> {
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(input.clinicId, "clinicId");
+
+  const date = new Date(input.dateIso);
+  if (Number.isNaN(date.getTime())) {
+    return { ok: false, error: "Enter a valid transaction date." };
+  }
+  if (!Number.isFinite(input.amountDollars) || input.amountDollars < 0) {
+    return { ok: false, error: "Enter a valid revenue amount." };
+  }
+
+  try {
+    await createTransactionWithCommission({
+      clinicId: input.clinicId,
+      date,
+      revenueCents: Math.round(input.amountDollars * 100),
+      description: input.description.trim().slice(0, 300) || null,
+      reference: input.reference.trim().slice(0, 120) || null,
+      source: "manual",
+      createdBy: ctx.userId,
+    });
+  } catch (err) {
+    if (err instanceof TransactionError) {
+      return { ok: false, error: err.message };
+    }
+    console.error("[admin/partners] addPartnerTransaction failed");
+    return { ok: false, error: "Could not record the transaction." };
+  }
+
+  revalidatePath("/admin/partners/transactions");
+  return { ok: true };
+}
+
+export interface CsvImportResult {
+  ok: boolean;
+  imported: number;
+  errors: string[];
+}
+
+/**
+ * Bulk transaction import. Each CSV row identifies a clinic (by id or
+ * contact email), a date, and a revenue amount; each valid row becomes a
+ * transaction with its commission entries. Rows that fail (unknown clinic,
+ * no attribution, bad data) are reported individually — good rows still land.
+ */
+export async function importPartnerTransactionsCsv(
+  csvText: string,
+): Promise<CsvImportResult> {
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
+
+  if (csvText.length > 1024 * 1024) {
+    return { ok: false, imported: 0, errors: ["File too large (1 MB max)."] };
+  }
+
+  const parsed = parseTransactionsCsv(csvText);
+  const errors = [...parsed.errors];
+  let imported = 0;
+
+  for (const row of parsed.rows) {
+    // Resolve clinic by id first, then by contact email.
+    let clinicId = row.clinicId;
+    if (!clinicId && row.clinicEmail) {
+      const [clinic] = await db
+        .select({ id: clinics.id })
+        .from(clinics)
+        .where(eq(clinics.contactEmail, row.clinicEmail))
+        .limit(1);
+      clinicId = clinic?.id ?? null;
+    }
+    if (!clinicId) {
+      errors.push(`Line ${row.line}: clinic not found.`);
+      continue;
+    }
+
+    try {
+      await createTransactionWithCommission({
+        clinicId,
+        date: row.date,
+        revenueCents: row.revenueCents,
+        description: row.description,
+        reference: row.reference,
+        source: "csv",
+        createdBy: ctx.userId,
+      });
+      imported++;
+    } catch (err) {
+      errors.push(
+        `Line ${row.line}: ${err instanceof TransactionError ? err.message : "could not record the transaction."}`,
+      );
+    }
+  }
+
+  revalidatePath("/admin/partners/transactions");
+  return { ok: imported > 0 || errors.length === 0, imported, errors };
+}
+
+/**
+ * Records a payout to an org (repId null) or one of its reps. The amount is
+ * the payee's full unpaid balance (pending + approved entries); those entries
+ * are atomically marked `paid` and stamped with the payout id.
+ */
+export async function recordPartnerPayout(input: {
+  orgId: number;
+  repId: number | null;
+  method: string;
+  reference: string;
+  notes: string;
+}): Promise<AdminPartnerResult> {
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(input.orgId, "orgId");
+  if (input.repId != null) assertId(input.repId, "repId");
+
+  const payee = input.repId != null ? ("rep" as const) : ("org" as const);
+  const entryScope = and(
+    eq(commissionEntries.orgId, input.orgId),
+    eq(commissionEntries.payee, payee),
+    ...(input.repId != null ? [eq(commissionEntries.repId, input.repId)] : []),
+    inArray(commissionEntries.status, ["pending", "approved"]),
+  );
+
+  try {
+    const result = await db.transaction(async (tx) => {
+      // Lock the unpaid entries so two concurrent payouts can't double-pay.
+      const unpaid = await tx
+        .select({
+          id: commissionEntries.id,
+          amountCents: commissionEntries.amountCents,
+        })
+        .from(commissionEntries)
+        .where(entryScope)
+        .for("update");
+
+      if (unpaid.length === 0) return null;
+      const amountCents = unpaid.reduce((sum, e) => sum + e.amountCents, 0);
+
+      const [payout] = await tx
+        .insert(payouts)
+        .values({
+          orgId: input.orgId,
+          repId: input.repId,
+          payee,
+          amountCents,
+          method: input.method.trim().slice(0, 40) || null,
+          reference: input.reference.trim().slice(0, 200) || null,
+          notes: input.notes.trim().slice(0, 4000) || null,
+          recordedBy: ctx.userId,
+          recordedByEmail: ctx.email,
+        })
+        .returning({ id: payouts.id });
+
+      await tx
+        .update(commissionEntries)
+        .set({ status: "paid", payoutId: payout.id })
+        .where(
+          inArray(
+            commissionEntries.id,
+            unpaid.map((e) => e.id),
+          ),
+        );
+
+      return amountCents;
+    });
+
+    if (result == null) {
+      return { ok: false, error: "No unpaid commission for this payee." };
+    }
+
+    // Confirmation email (best-effort).
+    runAfterResponse(
+      (async () => {
+        const recipient =
+          input.repId != null
+            ? await db
+                .select({ name: partnerReps.name, email: partnerReps.email })
+                .from(partnerReps)
+                .where(eq(partnerReps.id, input.repId))
+                .limit(1)
+                .then((r) => r[0])
+            : await db
+                .select({
+                  name: sql<string>`coalesce(${partnerOrgs.contactName}, ${partnerOrgs.name})`,
+                  email: partnerOrgs.contactEmail,
+                })
+                .from(partnerOrgs)
+                .where(eq(partnerOrgs.id, input.orgId))
+                .limit(1)
+                .then((r) => r[0]);
+        if (recipient?.email) {
+          await sendPayoutRecordedEmail({
+            to: recipient.email,
+            name: recipient.name ?? "",
+            amountLabel: formatCents(result),
+            method: input.method.trim() || null,
+            reference: input.reference.trim() || null,
+          });
+        }
+      })(),
+    );
+  } catch {
+    console.error("[admin/partners] recordPartnerPayout failed");
+    return { ok: false, error: "Could not record the payout." };
+  }
+
+  revalidateOrg(input.orgId);
+  return { ok: true };
+}

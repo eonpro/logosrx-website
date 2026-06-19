@@ -13,6 +13,13 @@ export const SITE = {
   lifefilePortal: "https://host4.lifefile.net/logospharmacy/doctor",
 } as const;
 
+/**
+ * Absolute origin for links in emails, Slack messages, and referral URLs.
+ * Prefers the deploy-specific env var (preview deployments) and falls back to
+ * the canonical production URL.
+ */
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? SITE.url;
+
 export const CONTACT = {
   address: {
     street: "7543 W. Waters Ave",

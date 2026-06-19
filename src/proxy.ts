@@ -10,6 +10,15 @@ const isDashboardRoute = createRouteMatcher(["/dashboard(.*)"]);
 // verification check lives in the page (it needs the DB); here we only do the
 // edge fast-path: bounce anonymous visitors into account creation.
 const isCatalogRoute = createRouteMatcher(["/catalog(.*)"]);
+// Affiliate partner portal. `/partners/apply` (the public application form)
+// and `/partners/sign-in` stay open; everything else requires a session. The
+// partner-identity check (org owner vs rep, suspension) needs the DB, so it's
+// enforced server-side via `requirePartner()` in the pages, not here.
+const isPartnerRoute = createRouteMatcher(["/partners(.*)"]);
+const isPublicPartnerRoute = createRouteMatcher([
+  "/partners/apply(.*)",
+  "/partners/sign-in(.*)",
+]);
 
 export default clerkMiddleware(async (auth, req) => {
   // Profile dashboard: require a signed-in user; bounce anonymous visitors to
@@ -32,6 +41,19 @@ export default clerkMiddleware(async (auth, req) => {
     if (!session.userId) {
       const url = req.nextUrl.clone();
       url.pathname = "/onboarding";
+      return NextResponse.redirect(url);
+    }
+    return;
+  }
+
+  // Partner portal: require a signed-in user; bounce anonymous visitors to the
+  // partner sign-in, preserving the intended destination.
+  if (isPartnerRoute(req) && !isPublicPartnerRoute(req)) {
+    const session = await auth();
+    if (!session.userId) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/partners/sign-in";
+      url.searchParams.set("redirect_url", req.nextUrl.pathname);
       return NextResponse.redirect(url);
     }
     return;

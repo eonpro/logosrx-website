@@ -17,15 +17,111 @@ import { Pool } from "pg";
  * (IF NOT EXISTS / ON CONFLICT) so a re-run is safe.
  */
 
+/**
+ * Splits a SQL script into individual statements on top-level semicolons,
+ * while ignoring semicolons that appear inside line comments (`-- …`), block
+ * comments (`/* … *\/`), single-quoted strings (`'…'`), and dollar-quoted
+ * blocks (`$$ … $$` or `$tag$ … $tag$`). The dollar-quote handling is what lets
+ * `DO $$ BEGIN … END $$;` guard blocks (used for idempotent enum creation)
+ * survive intact — a naive `split(";")` shreds them.
+ */
 function parseStatements(sql: string): string[] {
-  const withoutComments = sql
-    .split("\n")
-    .filter((line) => !line.trim().startsWith("--"))
-    .join("\n");
-  return withoutComments
-    .split(";")
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const out: string[] = [];
+  let buf = "";
+  let i = 0;
+  let inSingle = false; // inside '...'
+  let inLineComment = false; // inside -- ...
+  let inBlockComment = false; // inside /* ... */
+  let dollarTag: string | null = null; // active $tag$ delimiter
+
+  while (i < sql.length) {
+    const c = sql[i];
+
+    if (inLineComment) {
+      buf += c;
+      if (c === "\n") inLineComment = false;
+      i++;
+      continue;
+    }
+    if (inBlockComment) {
+      if (sql.startsWith("*/", i)) {
+        buf += "*/";
+        i += 2;
+        inBlockComment = false;
+        continue;
+      }
+      buf += c;
+      i++;
+      continue;
+    }
+    if (dollarTag) {
+      if (sql.startsWith(dollarTag, i)) {
+        buf += dollarTag;
+        i += dollarTag.length;
+        dollarTag = null;
+        continue;
+      }
+      buf += c;
+      i++;
+      continue;
+    }
+    if (inSingle) {
+      buf += c;
+      if (c === "'") {
+        if (sql[i + 1] === "'") {
+          buf += "'"; // escaped quote inside the string
+          i += 2;
+          continue;
+        }
+        inSingle = false;
+      }
+      i++;
+      continue;
+    }
+
+    // Not currently inside any quoted/comment region.
+    if (sql.startsWith("--", i)) {
+      inLineComment = true;
+      buf += "--";
+      i += 2;
+      continue;
+    }
+    if (sql.startsWith("/*", i)) {
+      inBlockComment = true;
+      buf += "/*";
+      i += 2;
+      continue;
+    }
+    if (c === "'") {
+      inSingle = true;
+      buf += c;
+      i++;
+      continue;
+    }
+    if (c === "$") {
+      const match = /^\$[A-Za-z0-9_]*\$/.exec(sql.slice(i));
+      if (match) {
+        dollarTag = match[0];
+        buf += match[0];
+        i += match[0].length;
+        continue;
+      }
+    }
+    if (c === ";") {
+      const trimmed = buf.trim();
+      if (trimmed) out.push(trimmed);
+      buf = "";
+      i++;
+      continue;
+    }
+
+    buf += c;
+    i++;
+  }
+
+  const tail = buf.trim();
+  if (tail) out.push(tail);
+  return out;
 }
 
 async function main() {

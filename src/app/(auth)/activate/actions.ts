@@ -1,31 +1,16 @@
 "use server";
 
 import { auth, clerkClient } from "@clerk/nextjs/server";
+import { and, eq, isNull } from "drizzle-orm";
+import { clerkErrorMessage } from "@/lib/auth/clerk-users";
+import { db } from "@/lib/db";
+import { partnerReps } from "@/lib/db/schema";
 
 const MIN_PASSWORD_LENGTH = 8;
 
 export interface ActivateResult {
   ok: boolean;
   error?: string;
-}
-
-/** Extracts a user-facing message from a Clerk Backend API error. */
-function clerkErrorMessage(err: unknown): string {
-  if (err && typeof err === "object" && "errors" in err) {
-    const errors = (
-      err as {
-        errors?: Array<{ code?: string; message?: string; longMessage?: string }>;
-      }
-    ).errors;
-    const first = errors?.[0];
-    if (first) {
-      if (first.code === "form_password_pwned") {
-        return "That password has appeared in a data breach. Please choose a different one.";
-      }
-      return first.longMessage || first.message || "Could not set your password.";
-    }
-  }
-  return "Could not set your password.";
 }
 
 /**
@@ -59,7 +44,10 @@ export async function activateSetPassword(
     await client.users.updateUser(userId, { password });
   } catch (err) {
     console.error("[activate] updateUser failed");
-    return { ok: false, error: clerkErrorMessage(err) };
+    return {
+      ok: false,
+      error: clerkErrorMessage(err, "Could not set your password."),
+    };
   }
 
   // Mark the primary email verified so the clinic isn't prompted to verify on
@@ -74,6 +62,22 @@ export async function activateSetPassword(
     }
   } catch {
     console.error("[activate] email verify failed (non-critical)");
+  }
+
+  // If this account is an invited partner rep, stamp first activation.
+  // Best-effort: a failure never blocks the password set.
+  try {
+    await db
+      .update(partnerReps)
+      .set({ activatedAt: new Date(), updatedAt: new Date() })
+      .where(
+        and(
+          eq(partnerReps.clerkUserId, userId),
+          isNull(partnerReps.activatedAt),
+        ),
+      );
+  } catch {
+    console.error("[activate] rep activation stamp failed (non-critical)");
   }
 
   return { ok: true };

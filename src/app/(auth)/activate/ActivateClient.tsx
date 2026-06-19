@@ -11,7 +11,13 @@ const MIN_PASSWORD_LENGTH = 8;
 
 type Phase = "activating" | "ready" | "expired";
 
-export default function ActivateClient({ ticket }: { ticket: string }) {
+export default function ActivateClient({
+  ticket,
+  next = "/dashboard",
+}: {
+  ticket: string;
+  next?: string;
+}) {
   const router = useRouter();
   const { isLoaded, signIn, setActive } = useSignIn();
   const [phase, setPhase] = useState<Phase>("activating");
@@ -64,7 +70,7 @@ export default function ActivateClient({ ticket }: { ticket: string }) {
         setError(res.error ?? "Something went wrong.");
         return;
       }
-      router.push("/dashboard");
+      router.push(next);
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");

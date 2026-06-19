@@ -5,7 +5,13 @@ import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { clinics, clinicPayments, clinicSignatures } from "@/lib/db/schema";
+import {
+  clerkErrorMessage,
+  deriveUsername,
+  toE164,
+} from "@/lib/auth/clerk-users";
 import { encrypt } from "@/lib/onboarding/encryption";
+import { stampClinicAttribution } from "@/lib/partners/attribution";
 import { notifyNewClinic } from "@/lib/notifications/slack";
 import { runAfterResponse } from "@/lib/runtime/after";
 import {
@@ -41,34 +47,6 @@ export interface CreateAccountResult extends ActionResult {
 
 const MIN_PASSWORD_LENGTH = 8;
 
-/**
- * Best-effort E.164 normalization for US-style phone numbers. Clerk requires
- * phone numbers in E.164 when the instance treats phone as a required field.
- */
-function toE164(raw: string): string | undefined {
-  const trimmed = raw.trim();
-  if (trimmed.startsWith("+")) {
-    const digits = trimmed.slice(1).replace(/\D/g, "");
-    return digits ? `+${digits}` : undefined;
-  }
-  const digits = trimmed.replace(/\D/g, "");
-  if (digits.length === 10) return `+1${digits}`;
-  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
-  return digits ? `+${digits}` : undefined;
-}
-
-/**
- * Derives a unique, valid Clerk username from the email local-part. The random
- * suffix avoids collisions; sign-in still uses email + password, so this value
- * is never surfaced to the clinic.
- */
-function deriveUsername(email: string): string {
-  const local = email.split("@")[0]?.toLowerCase().replace(/[^a-z0-9_]/g, "") ?? "";
-  const base = (local.length >= 3 ? local : `clinic${local}`).slice(0, 40);
-  const suffix = Math.random().toString(36).slice(2, 8);
-  return `${base}_${suffix}`;
-}
-
 const PRODUCT_LABELS: Record<string, string> = {
   weight_loss: "Weight Loss",
   peptides: "Peptides",
@@ -89,25 +67,6 @@ function toClinicNotification(s: OnboardingFormState) {
     providerCount: s.providers.length,
     state: s.providers[0]?.licenseState ?? "",
   };
-}
-
-/** Extracts a user-facing message from a Clerk Backend API error. */
-function clerkErrorMessage(err: unknown): string {
-  if (err && typeof err === "object" && "errors" in err) {
-    const errors = (
-      err as {
-        errors?: Array<{ code?: string; message?: string; longMessage?: string }>;
-      }
-    ).errors;
-    const first = errors?.[0];
-    if (first) {
-      if (first.code === "form_identifier_exists") {
-        return "An account with this email already exists. Please sign in instead.";
-      }
-      return first.longMessage || first.message || "Could not create your account.";
-    }
-  }
-  return "Could not create your account.";
 }
 
 /** Maps the in-memory wizard state to the `clinics` row columns. */
@@ -260,6 +219,9 @@ export async function completeOnboarding(
       upsertPayment(userId, state),
       upsertSignatures(userId, state),
     ]);
+    // Partner referral attribution (from the /join/<code> cookie, if any).
+    // Best-effort by design; runs after the profile write so the row exists.
+    await stampClinicAttribution(userId);
     // Admin Slack ping is non-critical: don't make the clinic wait on it.
     runAfterResponse(notifyNewClinic(toClinicNotification(state)));
     return { ok: true };
@@ -337,7 +299,7 @@ export async function createAccountAndComplete(
       // Some Clerk instances require username/phone on every user. We supply a
       // derived username and the contact phone so creation succeeds; clinics
       // still sign in with email + password.
-      username: deriveUsername(email),
+      username: deriveUsername(email, "clinic"),
       phoneNumber: phoneNumber ? [phoneNumber] : undefined,
       password,
       firstName: firstName || undefined,
@@ -353,7 +315,10 @@ export async function createAccountAndComplete(
           )
         : String(err);
     console.error("[onboarding] createUser failed:", detail);
-    return { ok: false, error: clerkErrorMessage(err) };
+    return {
+      ok: false,
+      error: clerkErrorMessage(err, "Could not create your account."),
+    };
   }
 
   // 2. Persist the profile. If this fails, roll back the orphaned Clerk user so
@@ -379,6 +344,9 @@ export async function createAccountAndComplete(
       error: "Could not save your application. Please try again.",
     };
   }
+
+  // Partner referral attribution (from the /join/<code> cookie, if any).
+  await stampClinicAttribution(newUserId);
 
   // Notify admins (resilient: never throws / never blocks the response).
   runAfterResponse(notifyNewClinic(toClinicNotification(state)));
