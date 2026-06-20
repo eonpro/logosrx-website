@@ -42,153 +42,207 @@ const GROUP_CARD_OFFSETS = (() => {
 const ART_CLASS =
   "absolute inset-0 h-full w-full transition-transform duration-700 group-hover:scale-105";
 
-/** Routes a global design index to its unique abstract motif. */
+/** Routes a global design index to its unique abstract molecule motif. */
 function CardArtwork({ design, uid }: { design: number; uid: string }) {
   switch (design % DESIGN_COUNT) {
     case 0:
-      return <BubblesArt uid={uid} />;
+      return <HexLatticeMolecule uid={uid} />;
     case 1:
-      return <AuroraArt uid={uid} />;
+      return <MoleculeCluster uid={uid} />;
     case 2:
-      return <MeshArt uid={uid} />;
+      return <PolymerChain uid={uid} />;
     case 3:
-      return <RingsArt />;
+      return <FusedRings uid={uid} />;
     case 4:
-      return <BlobArt uid={uid} />;
+      return <NetworkGraph uid={uid} />;
     default:
-      return <PanelsArt />;
+      return <AtomOrbit uid={uid} />;
   }
 }
 
-/** Glossy oil-bubbles — radial-shaded circles with rim light + specular dot. */
-function BubblesArt({ uid }: { uid: string }) {
-  const g = `${uid}-b`;
-  const bubbles = [
-    { x: 190, y: 54, r: 54 },
-    { x: 148, y: 142, r: 30 },
-    { x: 216, y: 152, r: 20 },
-    { x: 108, y: 60, r: 16 },
-    { x: 70, y: 168, r: 27 },
-    { x: 198, y: 202, r: 12 },
-    { x: 132, y: 198, r: 9 },
-  ];
+/* ──────────────── Molecule artwork primitives ──────────────── */
+
+type Pt = [number, number];
+interface AtomSpec {
+  x: number;
+  y: number;
+  r: number;
+}
+
+function hexVerts(cx: number, cy: number, r: number): Pt[] {
+  return Array.from({ length: 6 }, (_, k) => {
+    const a = (Math.PI / 180) * (60 * k - 90);
+    return [cx + r * Math.cos(a), cy + r * Math.sin(a)] as Pt;
+  });
+}
+
+function ringBonds(v: Pt[]): [Pt, Pt][] {
+  return v.map((p, k) => [p, v[(k + 1) % 6]] as [Pt, Pt]);
+}
+
+function dedupAtoms(list: AtomSpec[]): AtomSpec[] {
+  const m = new Map<string, AtomSpec>();
+  for (const a of list) {
+    const key = `${Math.round(a.x)},${Math.round(a.y)}`;
+    const cur = m.get(key);
+    if (!cur || a.r > cur.r) m.set(key, a);
+  }
+  return [...m.values()];
+}
+
+function dedupBonds(list: [Pt, Pt][]): [Pt, Pt][] {
+  const m = new Map<string, [Pt, Pt]>();
+  for (const [a, b] of list) {
+    const ka = `${Math.round(a[0])},${Math.round(a[1])}`;
+    const kb = `${Math.round(b[0])},${Math.round(b[1])}`;
+    m.set([ka, kb].sort().join("|"), [a, b]);
+  }
+  return [...m.values()];
+}
+
+/** Shared renderer: glowing bonds beneath glossy atom spheres. */
+function MoleculeSVG({
+  uid,
+  atoms,
+  bonds,
+  underlay,
+}: {
+  uid: string;
+  atoms: AtomSpec[];
+  bonds: [Pt, Pt][];
+  underlay?: React.ReactNode;
+}) {
+  const g = `${uid}-atom`;
   return (
     <svg aria-hidden="true" viewBox="0 0 240 220" preserveAspectRatio="xMidYMid slice" className={ART_CLASS}>
       <defs>
-        <radialGradient id={g} cx="34%" cy="28%" r="75%">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.6" />
-          <stop offset="24%" stopColor="#ffffff" stopOpacity="0.14" />
-          <stop offset="66%" stopColor="#ffffff" stopOpacity="0" />
-          <stop offset="100%" stopColor="#1A1750" stopOpacity="0.28" />
+        <radialGradient id={g} cx="34%" cy="30%" r="72%">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+          <stop offset="28%" stopColor="#ffffff" stopOpacity="0.42" />
+          <stop offset="64%" stopColor="#ffffff" stopOpacity="0.1" />
+          <stop offset="100%" stopColor="#1A1750" stopOpacity="0.4" />
         </radialGradient>
       </defs>
-      {bubbles.map((b, k) => (
+      {underlay}
+      <g stroke="#ffffff" strokeLinecap="round">
+        {bonds.map(([a, b], k) => (
+          <g key={k}>
+            <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} strokeOpacity="0.14" strokeWidth="5" />
+            <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} strokeOpacity="0.5" strokeWidth="1.6" />
+          </g>
+        ))}
+      </g>
+      {atoms.map((a, k) => (
         <g key={k}>
-          <circle cx={b.x} cy={b.y} r={b.r} fill={`url(#${g})`} stroke="#ffffff" strokeOpacity="0.3" strokeWidth="1" />
-          <circle cx={b.x - b.r * 0.34} cy={b.y - b.r * 0.4} r={Math.max(b.r * 0.14, 1.5)} fill="#ffffff" fillOpacity="0.75" />
+          <circle cx={a.x} cy={a.y} r={a.r} fill={`url(#${g})`} stroke="#ffffff" strokeOpacity="0.35" strokeWidth="0.8" />
+          <circle cx={a.x - a.r * 0.32} cy={a.y - a.r * 0.34} r={Math.max(a.r * 0.24, 1)} fill="#ffffff" fillOpacity="0.85" />
         </g>
       ))}
     </svg>
   );
 }
 
-/** Aurora ribbons — soft translucent flowing bands. */
-function AuroraArt({ uid }: { uid: string }) {
-  const g = `${uid}-a`;
-  return (
-    <svg aria-hidden="true" viewBox="0 0 240 220" preserveAspectRatio="xMidYMid slice" className={ART_CLASS}>
-      <defs>
-        <linearGradient id={g} x1="0" y1="0" x2="1" y2="0.4">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0" />
-          <stop offset="50%" stopColor="#ffffff" stopOpacity="0.5" />
-          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <g fill={`url(#${g})`}>
-        <path d="M-20 58 C 60 8, 130 104, 260 36 L 260 64 C 130 132, 60 36, -20 86 Z" opacity="0.35" />
-        <path d="M-20 118 C 70 70, 140 168, 260 104 L 260 128 C 140 192, 70 96, -20 146 Z" opacity="0.22" />
-      </g>
-      <g fill="#ffffff">
-        <circle cx="202" cy="44" r="4" fillOpacity="0.6" />
-        <circle cx="56" cy="182" r="3" fillOpacity="0.5" />
-      </g>
-    </svg>
-  );
+/** 0 — Honeycomb lattice (graphene-like cluster). */
+function HexLatticeMolecule({ uid }: { uid: string }) {
+  const r = 30;
+  const dx = Math.sqrt(3) * r;
+  const centers: Pt[] = [
+    [56, 78],
+    [56 + dx, 78],
+    [56 + 2 * dx, 78],
+    [56 + dx / 2, 78 + 1.5 * r],
+    [56 + 1.5 * dx, 78 + 1.5 * r],
+  ];
+  const bonds = dedupBonds(centers.flatMap((c) => ringBonds(hexVerts(c[0], c[1], r))));
+  const atoms = dedupAtoms(centers.flatMap((c) => hexVerts(c[0], c[1], r)).map(([x, y]) => ({ x, y, r: 5 })));
+  return <MoleculeSVG uid={uid} atoms={atoms} bonds={bonds} />;
 }
 
-/** Soft mesh — a single diagonal light streak over the dreamy gradient. */
-function MeshArt({ uid }: { uid: string }) {
-  const g = `${uid}-m`;
-  return (
-    <svg aria-hidden="true" viewBox="0 0 240 220" preserveAspectRatio="xMidYMid slice" className={ART_CLASS}>
-      <defs>
-        <linearGradient id={g} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0" />
-          <stop offset="50%" stopColor="#ffffff" stopOpacity="0.22" />
-          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <rect x="-60" y="40" width="360" height="46" fill={`url(#${g})`} transform="rotate(-24 120 110)" />
-      <circle cx="60" cy="60" r="2.5" fill="#ffffff" fillOpacity="0.5" />
-      <circle cx="186" cy="150" r="2" fill="#ffffff" fillOpacity="0.45" />
-    </svg>
-  );
+/** 1 — Radial molecule cluster (central atom + shell). */
+function MoleculeCluster({ uid }: { uid: string }) {
+  const cx = 148;
+  const cy = 108;
+  const outer = hexVerts(cx, cy, 72);
+  const atoms: AtomSpec[] = [
+    { x: cx, y: cy, r: 17 },
+    ...outer.map(([x, y], k) => ({ x, y, r: k % 2 ? 8 : 13 })),
+  ];
+  const bonds: [Pt, Pt][] = [
+    ...outer.map((p) => [[cx, cy], p] as [Pt, Pt]),
+    [outer[0], outer[1]],
+    [outer[2], outer[3]],
+    [outer[4], outer[5]],
+  ];
+  return <MoleculeSVG uid={uid} atoms={atoms} bonds={bonds} />;
 }
 
-/** Concentric rings radiating from a corner. */
-function RingsArt() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 240 220" preserveAspectRatio="xMidYMid slice" className={ART_CLASS}>
-      <g fill="none" stroke="#ffffff" strokeWidth="1.5">
-        <circle cx="224" cy="14" r="34" strokeOpacity="0.4" />
-        <circle cx="224" cy="14" r="66" strokeOpacity="0.3" />
-        <circle cx="224" cy="14" r="100" strokeOpacity="0.2" />
-        <circle cx="224" cy="14" r="138" strokeOpacity="0.13" />
-        <circle cx="224" cy="14" r="180" strokeOpacity="0.08" />
-      </g>
-      <g fill="#ffffff" stroke="none">
-        <circle cx="52" cy="160" r="6" fillOpacity="0.5" />
-        <circle cx="96" cy="186" r="3" fillOpacity="0.4" />
-      </g>
-    </svg>
-  );
+/** 2 — Polymer backbone (zig-zag chain with side branches). */
+function PolymerChain({ uid }: { uid: string }) {
+  const pts: Pt[] = [];
+  for (let k = 0; k < 8; k++) pts.push([-6 + k * 36, k % 2 ? 128 : 84]);
+  const bonds: [Pt, Pt][] = pts.slice(1).map((p, k) => [pts[k], p]);
+  const atoms: AtomSpec[] = pts.map((p, k) => ({ x: p[0], y: p[1], r: k % 2 ? 8 : 11 }));
+  pts.forEach((p, k) => {
+    if (k % 2 === 0 && k > 0 && k < pts.length - 1) {
+      const tip: Pt = [p[0], p[1] - 34];
+      bonds.push([p, tip]);
+      atoms.push({ x: tip[0], y: tip[1], r: 6 });
+    }
+  });
+  return <MoleculeSVG uid={uid} atoms={atoms} bonds={bonds} />;
 }
 
-/** Liquid organic blob with accent specks. */
-function BlobArt({ uid }: { uid: string }) {
-  const g = `${uid}-l`;
-  return (
-    <svg aria-hidden="true" viewBox="0 0 240 220" preserveAspectRatio="xMidYMid slice" className={ART_CLASS}>
-      <defs>
-        <linearGradient id={g} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.22" />
-          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.05" />
-        </linearGradient>
-      </defs>
-      <path
-        d="M168 26 C 208 36, 232 78, 220 118 C 210 152, 232 178, 198 196 C 164 214, 120 196, 92 200 C 52 206, 18 184, 26 146 C 32 116, 8 96, 26 66 C 44 36, 96 44, 124 32 C 142 24, 150 22, 168 26 Z"
-        fill={`url(#${g})`}
-        stroke="#ffffff"
-        strokeOpacity="0.22"
-        strokeWidth="1.2"
-      />
-      <circle cx="186" cy="64" r="3" fill="#ffffff" fillOpacity="0.6" />
-      <circle cx="70" cy="170" r="2.5" fill="#ffffff" fillOpacity="0.5" />
-    </svg>
-  );
+/** 3 — Fused hexagonal rings (naphthalene-like). */
+function FusedRings({ uid }: { uid: string }) {
+  const r = 46;
+  const dx = Math.sqrt(3) * r;
+  const c1: Pt = [86, 110];
+  const c2: Pt = [86 + dx, 110];
+  const v1 = hexVerts(c1[0], c1[1], r);
+  const v2 = hexVerts(c2[0], c2[1], r);
+  const bonds = dedupBonds([...ringBonds(v1), ...ringBonds(v2)]);
+  const atoms = dedupAtoms([...v1, ...v2].map(([x, y]) => ({ x, y, r: 7 })));
+  return <MoleculeSVG uid={uid} atoms={atoms} bonds={bonds} />;
 }
 
-/** Stacked glassmorphic panels at angles. */
-function PanelsArt() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 240 220" preserveAspectRatio="xMidYMid slice" className={ART_CLASS}>
-      <g stroke="#ffffff">
-        <rect x="120" y="-10" width="150" height="150" rx="22" fill="#ffffff" fillOpacity="0.10" strokeOpacity="0.22" strokeWidth="1.2" transform="rotate(18 195 65)" />
-        <rect x="40" y="70" width="150" height="150" rx="22" fill="#ffffff" fillOpacity="0.08" strokeOpacity="0.2" strokeWidth="1.2" transform="rotate(18 115 145)" />
-        <rect x="-30" y="20" width="110" height="110" rx="18" fill="#ffffff" fillOpacity="0.06" strokeOpacity="0.16" strokeWidth="1.2" transform="rotate(18 25 75)" />
-      </g>
-    </svg>
+/** 4 — Scattered molecular network graph. */
+function NetworkGraph({ uid }: { uid: string }) {
+  const nodes: AtomSpec[] = [
+    { x: 40, y: 52, r: 10 },
+    { x: 108, y: 30, r: 7 },
+    { x: 182, y: 58, r: 13 },
+    { x: 212, y: 142, r: 8 },
+    { x: 150, y: 118, r: 15 },
+    { x: 78, y: 112, r: 9 },
+    { x: 120, y: 188, r: 10 },
+    { x: 38, y: 168, r: 7 },
+    { x: 204, y: 198, r: 6 },
+  ];
+  const edges: [number, number][] = [
+    [0, 5], [5, 1], [1, 2], [2, 4], [4, 3], [4, 6], [5, 7], [6, 8], [6, 7], [4, 5], [2, 3],
+  ];
+  const bonds: [Pt, Pt][] = edges.map(([a, b]) => [[nodes[a].x, nodes[a].y], [nodes[b].x, nodes[b].y]]);
+  return <MoleculeSVG uid={uid} atoms={nodes} bonds={bonds} />;
+}
+
+/** 5 — Atom with orbiting electrons. */
+function AtomOrbit({ uid }: { uid: string }) {
+  const cx = 150;
+  const cy = 108;
+  const underlay = (
+    <g fill="none" stroke="#ffffff" strokeOpacity="0.28" strokeWidth="1.4">
+      <ellipse cx={cx} cy={cy} rx="96" ry="42" transform={`rotate(20 ${cx} ${cy})`} />
+      <ellipse cx={cx} cy={cy} rx="96" ry="42" transform={`rotate(80 ${cx} ${cy})`} />
+      <ellipse cx={cx} cy={cy} rx="96" ry="42" transform={`rotate(-44 ${cx} ${cy})`} />
+    </g>
   );
+  const atoms: AtomSpec[] = [
+    { x: cx, y: cy, r: 18 },
+    { x: cx + 74, y: cy - 28, r: 7 },
+    { x: cx - 64, y: cy + 40, r: 6 },
+    { x: cx + 16, y: cy - 54, r: 6 },
+  ];
+  return <MoleculeSVG uid={uid} atoms={atoms} bonds={[]} underlay={underlay} />;
 }
 
 interface DesktopNavProps {
