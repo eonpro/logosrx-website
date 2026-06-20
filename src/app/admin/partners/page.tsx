@@ -12,6 +12,7 @@ import {
 } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/auth/admin";
 import { formatBps, formatCents } from "@/lib/partners/commission";
+import ApproveOrgButton from "./ApproveOrgButton";
 
 const STATUS_BADGE: Record<string, string> = {
   active: "bg-emerald-100 text-emerald-700",
@@ -86,7 +87,7 @@ export default async function AdminPartnersPage() {
         </div>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-beige bg-white">
-          <table className="w-full min-w-[940px] text-left text-sm">
+          <table className="w-full min-w-[1040px] text-left text-sm">
             <thead className="bg-cream/60 text-xs uppercase tracking-wide text-navy/55">
               <tr>
                 <th className="px-5 py-3 font-semibold">Organization</th>
@@ -97,6 +98,7 @@ export default async function AdminPartnersPage() {
                 <th className="px-5 py-3 font-semibold text-right">Clinics</th>
                 <th className="px-5 py-3 font-semibold text-right">Unpaid</th>
                 <th className="px-5 py-3 font-semibold">Applied</th>
+                <th className="px-5 py-3 font-semibold text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-beige text-navy">
@@ -164,6 +166,18 @@ export default async function AdminPartnersPage() {
                       day: "numeric",
                       year: "numeric",
                     })}
+                  </td>
+                  <td className="px-5 py-3 text-right">
+                    {org.status === "pending" ? (
+                      <ApproveOrgButton orgId={org.id} />
+                    ) : (
+                      <Link
+                        href={`/admin/partners/${org.id}`}
+                        className="text-xs font-medium text-navy/55 hover:text-magenta"
+                      >
+                        Manage
+                      </Link>
+                    )}
                   </td>
                 </tr>
               ))}
