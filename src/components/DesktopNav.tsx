@@ -151,10 +151,10 @@ function MegaPanel({ id, group, onMouseEnter, onMouseLeave, onItemClick }: MegaP
       transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      className="absolute left-0 right-0 top-full mt-3 z-50"
+      className="absolute left-0 right-0 top-full z-50"
     >
-      <div className="overflow-hidden rounded-2xl border border-beige bg-white shadow-2xl shadow-navy/10 ring-1 ring-black/5">
-        <div className="grid grid-cols-12 gap-8 p-8">
+      <div className="border-b border-beige bg-white shadow-2xl shadow-navy/10 rounded-b-2xl">
+        <div className="mx-auto grid max-w-7xl grid-cols-12 gap-8 px-6 py-8 lg:px-8">
           <div className="col-span-7 grid grid-cols-2 gap-x-8 gap-y-6">
             {group.columns?.map((column) => (
               <div key={column.title}>

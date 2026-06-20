@@ -38,7 +38,7 @@ export default function Header() {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 border-b border-white/10 transition-colors duration-300 supports-backdrop-filter:backdrop-blur-md supports-backdrop-filter:bg-white/60">
-        <div className="relative mx-auto max-w-7xl flex items-center justify-between px-6 py-4 lg:px-8">
+        <div className="mx-auto max-w-7xl flex items-center justify-between px-6 py-4 lg:px-8">
           <Link href="/" className="relative flex items-center gap-2" aria-label={SITE.name}>
             <Image
               src="/images/logo.svg"
