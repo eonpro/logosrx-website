@@ -46,11 +46,15 @@ export default function AuthShell({
   children,
   subtitle,
   footerLink,
+  width = "narrow",
 }: {
   children: React.ReactNode;
   subtitle?: string;
   footerLink?: { label: string; text: string; href: string };
+  /** `wide` widens the content column for richer pages (e.g. a pricing quote). */
+  width?: "narrow" | "wide";
 }) {
+  const widthClass = width === "wide" ? "max-w-3xl" : "max-w-[420px]";
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-y-auto bg-[#0c0a1d] py-12 sm:py-16">
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
@@ -79,7 +83,7 @@ export default function AuthShell({
         }}
       />
 
-      <div className="relative z-10 w-full max-w-[420px] px-6">
+      <div className={`relative z-10 w-full ${widthClass} px-6`}>
         <motion.div
           className="mb-10 flex flex-col items-center"
           initial={{ opacity: 0, y: 20 }}

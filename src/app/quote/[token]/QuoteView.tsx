@@ -170,15 +170,15 @@ export default function QuoteView({
         </div>
       )}
 
-      <div className="rounded-2xl border border-beige-dark bg-navy p-8 text-center text-white">
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center text-white backdrop-blur-sm">
         <h2 className="text-lg font-bold">Accept this pricing</h2>
-        <p className="mx-auto mt-2 max-w-md text-sm text-white/70">
+        <p className="mx-auto mt-2 max-w-md text-sm text-white/60">
           Accepting creates your Logos RX provider account with this pricing
           applied. You&apos;ll finish a short onboarding, then a team member
           verifies your clinic before your portal goes live.
         </p>
         {error && (
-          <p className="mx-auto mt-4 max-w-md rounded-lg bg-red-500/20 px-3 py-2 text-sm text-red-100">
+          <p className="mx-auto mt-4 max-w-md rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-300">
             {error}
           </p>
         )}
@@ -186,7 +186,7 @@ export default function QuoteView({
           type="button"
           onClick={accept}
           disabled={pending}
-          className="mt-5 inline-flex items-center gap-2 rounded-full bg-magenta px-8 py-3 text-sm font-semibold text-white transition-colors hover:bg-magenta/90 disabled:opacity-50"
+          className="mt-5 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-magenta to-magenta-dark px-8 py-3 text-[15px] font-semibold text-white shadow-[0_0_24px_rgba(198,46,136,0.3)] transition-all hover:shadow-[0_0_32px_rgba(198,46,136,0.5)] disabled:opacity-60"
         >
           {pending ? "Setting up…" : "Accept pricing & create account"}
         </button>

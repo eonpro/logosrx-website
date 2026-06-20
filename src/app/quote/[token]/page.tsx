@@ -14,6 +14,7 @@ import {
 } from "@/data/catalog";
 import { products } from "@/data/products";
 import { SITE } from "@/lib/constants";
+import AuthShell from "@/components/auth/AuthShell";
 import QuoteGate from "./QuoteGate";
 import QuoteView, { type QuoteViewItem } from "./QuoteView";
 
@@ -51,38 +52,20 @@ const imageById = new Map<string, { url: string; alt: string } | null>(
   }),
 );
 
-function Shell({ children }: { children: React.ReactNode }) {
-  return (
-    <main className="min-h-screen bg-beige">
-      <header className="border-b border-beige-dark/60 bg-white">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
-          <span className="text-lg font-bold tracking-tight text-navy">
-            {SITE.name}
-          </span>
-          <span className="text-xs font-medium uppercase tracking-wider text-navy/50">
-            Pricing Quote
-          </span>
-        </div>
-      </header>
-      <div className="mx-auto max-w-3xl px-6 py-10 sm:py-14">{children}</div>
-    </main>
-  );
-}
-
 function Closed({ title, body }: { title: string; body: string }) {
   return (
-    <Shell>
-      <div className="rounded-2xl border border-beige-dark bg-white p-8 text-center">
-        <h1 className="text-xl font-bold text-navy">{title}</h1>
-        <p className="mt-3 text-sm text-navy/65">{body}</p>
+    <AuthShell subtitle="Pricing Quote">
+      <div className="text-center">
+        <h1 className="text-xl font-semibold text-white">{title}</h1>
+        <p className="mt-3 text-sm text-white/55">{body}</p>
         <Link
           href="/"
-          className="mt-6 inline-flex rounded-full bg-navy px-6 py-2.5 text-sm font-semibold text-white hover:bg-navy/90"
+          className="mx-auto mt-6 inline-block rounded-xl bg-gradient-to-r from-magenta to-magenta-dark px-6 py-3 text-[15px] font-semibold text-white shadow-[0_0_24px_rgba(198,46,136,0.3)] transition-all hover:shadow-[0_0_32px_rgba(198,46,136,0.5)]"
         >
           Go to {SITE.name}
         </Link>
       </div>
-    </Shell>
+    </AuthShell>
   );
 }
 
@@ -142,13 +125,13 @@ export default async function QuotePage({ params }: PageProps) {
 
   if (!hasAccess) {
     return (
-      <Shell>
+      <AuthShell subtitle="Pricing Quote">
         <QuoteGate
           token={token}
           clinicName={quote.clinicName}
           contactName={quote.contactName}
         />
-      </Shell>
+      </AuthShell>
     );
   }
 
@@ -169,7 +152,7 @@ export default async function QuotePage({ params }: PageProps) {
   });
 
   return (
-    <Shell>
+    <AuthShell subtitle="Pricing Quote" width="wide">
       <QuoteView
         token={token}
         clinicName={quote.clinicName}
@@ -179,6 +162,6 @@ export default async function QuotePage({ params }: PageProps) {
         expiresAt={quote.expiresAt ? quote.expiresAt.toISOString() : null}
         items={viewItems}
       />
-    </Shell>
+    </AuthShell>
   );
 }

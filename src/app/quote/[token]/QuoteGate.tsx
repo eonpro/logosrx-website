@@ -36,26 +36,27 @@ export default function QuoteGate({
   }
 
   return (
-    <div className="mx-auto max-w-md rounded-2xl border border-beige-dark bg-white p-8 shadow-sm">
-      <div className="mb-6 text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-magenta/10">
+    <div className="flex flex-col gap-5">
+      <div className="text-center">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-magenta/15 ring-1 ring-magenta/30">
           <svg
             width="22"
             height="22"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#E6007E"
+            stroke="currentColor"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
             aria-hidden="true"
+            className="text-magenta-light"
           >
             <rect x="3" y="11" width="18" height="11" rx="2" />
             <path d="M7 11V7a5 5 0 0 1 10 0v4" />
           </svg>
         </div>
-        <h1 className="text-xl font-bold text-navy">{greeting}</h1>
-        <p className="mt-2 text-sm text-navy/65">
+        <h1 className="text-xl font-semibold text-white">{greeting}</h1>
+        <p className="mt-1 text-sm text-white/55">
           {clinicName?.trim()
             ? `A custom pricing quote for ${clinicName.trim()} is ready.`
             : "A custom pricing quote is ready for you."}{" "}
@@ -63,14 +64,11 @@ export default function QuoteGate({
         </p>
       </div>
 
-      <form onSubmit={submit} className="space-y-4">
-        <div>
-          <label
-            htmlFor="quote-password"
-            className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-navy/60"
-          >
+      <form onSubmit={submit} className="flex flex-col gap-4">
+        <label className="flex flex-col gap-1.5">
+          <span className="text-xs font-medium uppercase tracking-wider text-white/40">
             Quote password
-          </label>
+          </span>
           <input
             id="quote-password"
             type="text"
@@ -80,13 +78,13 @@ export default function QuoteGate({
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="XXXX-XXXX-XXXX"
-            className="w-full rounded-xl border border-beige-dark bg-beige/40 px-4 py-3 text-center font-mono text-base tracking-widest text-navy outline-none focus:border-magenta focus:ring-1 focus:ring-magenta"
+            className="h-12 rounded-xl border border-white/10 bg-white/5 px-4 text-center font-mono text-base tracking-widest text-white outline-none transition-colors placeholder:text-white/20 focus:border-magenta focus:ring-1 focus:ring-magenta/30"
             autoFocus
           />
-        </div>
+        </label>
 
         {error && (
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm text-red-300">
             {error}
           </p>
         )}
@@ -94,7 +92,7 @@ export default function QuoteGate({
         <button
           type="submit"
           disabled={pending || !password.trim()}
-          className="w-full rounded-full bg-magenta px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-magenta/90 disabled:opacity-50"
+          className="h-12 rounded-xl bg-gradient-to-r from-magenta to-magenta-dark text-[15px] font-semibold text-white shadow-[0_0_24px_rgba(198,46,136,0.3)] transition-all hover:shadow-[0_0_32px_rgba(198,46,136,0.5)] disabled:opacity-60"
         >
           {pending ? "Checking…" : "View my quote"}
         </button>
