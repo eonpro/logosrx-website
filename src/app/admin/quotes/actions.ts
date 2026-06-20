@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { pricingQuotes } from "@/lib/db/schema";
 import { ADMIN_ROLE, requireAdmin } from "@/lib/auth/admin";
+import { recordAdminAudit } from "@/lib/audit/log";
 import {
   createQuoteRecord,
   type CreateQuoteRecordResult,
@@ -66,6 +67,10 @@ export async function createQuote(
   });
 
   if (result.ok) {
+    await recordAdminAudit(ctx, "quote.create", {
+      type: "quote",
+      id: result.quote?.id ?? null,
+    }, { email: input.email, discountPct: input.discountPct });
     revalidatePath("/admin/quotes");
     revalidatePath("/admin");
   }
@@ -82,7 +87,7 @@ export interface RegenerateResult {
 export async function regenerateQuotePassword(
   id: number,
 ): Promise<RegenerateResult> {
-  await requireAdmin({ minRole: ADMIN_ROLE });
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
   assertId(id);
 
   const [quote] = await db
@@ -101,18 +106,24 @@ export async function regenerateQuotePassword(
     .set({ passwordHash: hashQuotePassword(password), updatedAt: new Date() })
     .where(eq(pricingQuotes.id, id));
 
+  await recordAdminAudit(ctx, "quote.regenerate_password", {
+    type: "quote",
+    id,
+  });
+
   revalidatePath(`/admin/quotes/${id}`);
   return { ok: true, password };
 }
 
 /** Disables a quote link so it can no longer be opened or accepted. */
 export async function revokeQuote(id: number) {
-  await requireAdmin({ minRole: ADMIN_ROLE });
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
   assertId(id);
   await db
     .update(pricingQuotes)
     .set({ status: "revoked", updatedAt: new Date() })
     .where(eq(pricingQuotes.id, id));
+  await recordAdminAudit(ctx, "quote.revoke", { type: "quote", id });
   revalidatePath("/admin/quotes");
   revalidatePath(`/admin/quotes/${id}`);
   revalidatePath("/admin");
@@ -120,7 +131,7 @@ export async function revokeQuote(id: number) {
 
 /** Re-activates a previously revoked quote (not allowed once claimed). */
 export async function reactivateQuote(id: number) {
-  await requireAdmin({ minRole: ADMIN_ROLE });
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
   assertId(id);
   const [quote] = await db
     .select({ status: pricingQuotes.status })
@@ -132,15 +143,17 @@ export async function reactivateQuote(id: number) {
     .update(pricingQuotes)
     .set({ status: "active", updatedAt: new Date() })
     .where(eq(pricingQuotes.id, id));
+  await recordAdminAudit(ctx, "quote.reactivate", { type: "quote", id });
   revalidatePath("/admin/quotes");
   revalidatePath(`/admin/quotes/${id}`);
 }
 
 /** Permanently deletes a quote and its line items. */
 export async function deleteQuote(id: number) {
-  await requireAdmin({ minRole: ADMIN_ROLE });
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
   assertId(id);
   await db.delete(pricingQuotes).where(eq(pricingQuotes.id, id));
+  await recordAdminAudit(ctx, "quote.delete", { type: "quote", id });
   revalidatePath("/admin/quotes");
   revalidatePath("/admin");
 }

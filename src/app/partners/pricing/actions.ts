@@ -5,6 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { clinicPricing, clinics } from "@/lib/db/schema";
 import { requirePartner } from "@/lib/auth/partner";
+import { recordPartnerAudit } from "@/lib/audit/log";
 import { validateSellAboveFloor } from "@/lib/partners/commission";
 import { getOrgFloorMap } from "@/lib/partners/pricing";
 
@@ -95,6 +96,11 @@ export async function setClinicProductPrice(input: {
       },
     });
 
+  await recordPartnerAudit(ctx, "partner.clinic_price_set", {
+    type: "clinic",
+    id: input.clinicId,
+  }, { productId, priceCents, floorCents: floor.floorCents });
+
   revalidatePath("/partners/pricing");
   return { ok: true };
 }
@@ -116,6 +122,11 @@ export async function resetClinicProductPrice(
     .where(
       and(eq(clinicPricing.clinicId, clinicId), eq(clinicPricing.productId, pid)),
     );
+
+  await recordPartnerAudit(ctx, "partner.clinic_price_reset", {
+    type: "clinic",
+    id: clinicId,
+  }, { productId: pid });
 
   revalidatePath("/partners/pricing");
   return { ok: true };

@@ -10,6 +10,11 @@ import * as Sentry from "@sentry/nextjs";
  */
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
+    // Fail fast on missing/malformed config before serving any traffic. Runs
+    // only in the Node runtime where the full env + process APIs are present.
+    const { validateEnv } = await import("./src/lib/env");
+    validateEnv();
+
     await import("./sentry.server.config");
   }
   if (process.env.NEXT_RUNTIME === "edge") {

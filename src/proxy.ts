@@ -1,5 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
+import { buildCsp, generateNonce } from "@/lib/security/csp";
 
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 const isAdminSignInRoute = createRouteMatcher(["/admin/sign-in(.*)"]);
@@ -20,62 +21,86 @@ const isPublicPartnerRoute = createRouteMatcher([
   "/partners/sign-in(.*)",
 ]);
 
+// Sensitive route groups that handle auth and/or customer data. These are all
+// dynamically rendered, so we can serve a strict, nonce-based CSP that drops
+// `script-src 'unsafe-inline'`. The static marketing surface stays on the
+// relaxed CSP (it's emitted at build time and can't carry a per-request nonce).
+const isStrictCspRoute = createRouteMatcher([
+  "/admin(.*)",
+  "/dashboard(.*)",
+  "/partners(.*)",
+  "/onboarding(.*)",
+  "/quote(.*)",
+  "/sign-in(.*)",
+  "/sign-up(.*)",
+]);
+
+/**
+ * Builds the outgoing response with the appropriate Content-Security-Policy.
+ *
+ *   - Sensitive routes get a fresh nonce + strict CSP. The nonce is also placed
+ *     on the *request* headers (and an `x-nonce` header) so Next.js can read it
+ *     during SSR and stamp it onto every framework/page script it emits, and so
+ *     server components can forward it to <ClerkProvider nonce={…}>.
+ *   - Everything else gets the relaxed (unsafe-inline) CSP, preserving static
+ *     generation and CDN caching for the marketing site.
+ */
+function withCsp(req: NextRequest): NextResponse {
+  if (!isStrictCspRoute(req)) {
+    const res = NextResponse.next();
+    res.headers.set("Content-Security-Policy", buildCsp());
+    return res;
+  }
+
+  const nonce = generateNonce();
+  const csp = buildCsp({ nonce });
+
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", csp);
+
+  const res = NextResponse.next({ request: { headers: requestHeaders } });
+  res.headers.set("Content-Security-Policy", csp);
+  return res;
+}
+
+function redirectTo(req: NextRequest, pathname: string, withRedirectParam = true) {
+  const url = req.nextUrl.clone();
+  url.pathname = pathname;
+  if (withRedirectParam) {
+    url.searchParams.set("redirect_url", req.nextUrl.pathname);
+  }
+  return NextResponse.redirect(url);
+}
+
 export default clerkMiddleware(async (auth, req) => {
+  // --- Auth gating (may short-circuit with a redirect) ---------------------
+
   // Profile dashboard: require a signed-in user; bounce anonymous visitors to
   // the public sign-in, preserving the intended destination.
   if (isDashboardRoute(req)) {
-    const session = await auth();
-    if (!session.userId) {
-      const url = req.nextUrl.clone();
-      url.pathname = "/sign-in";
-      url.searchParams.set("redirect_url", req.nextUrl.pathname);
-      return NextResponse.redirect(url);
-    }
-    return;
+    const { userId } = await auth();
+    if (!userId) return redirectTo(req, "/sign-in");
+  } else if (isCatalogRoute(req)) {
+    // Full catalog: anonymous visitors must create an account first. Approval
+    // is enforced in the catalog page itself for signed-in users.
+    const { userId } = await auth();
+    if (!userId) return redirectTo(req, "/onboarding", false);
+  } else if (isPartnerRoute(req) && !isPublicPartnerRoute(req)) {
+    // Partner portal: require a signed-in user; bounce anonymous visitors to
+    // the partner sign-in, preserving the intended destination.
+    const { userId } = await auth();
+    if (!userId) return redirectTo(req, "/partners/sign-in");
+  } else if (isAdminRoute(req) && !isAdminSignInRoute(req)) {
+    // Admin: require a session; the email-allowlist check requires Clerk's
+    // backend client + env vars (Node runtime), so it's enforced server-side
+    // via `requireAdmin()` in the admin layout/pages, not here.
+    const { userId } = await auth();
+    if (!userId) return redirectTo(req, "/admin/sign-in");
   }
 
-  // Full catalog: anonymous visitors must create an account first. Approval is
-  // enforced in the catalog page itself for signed-in users.
-  if (isCatalogRoute(req)) {
-    const session = await auth();
-    if (!session.userId) {
-      const url = req.nextUrl.clone();
-      url.pathname = "/onboarding";
-      return NextResponse.redirect(url);
-    }
-    return;
-  }
-
-  // Partner portal: require a signed-in user; bounce anonymous visitors to the
-  // partner sign-in, preserving the intended destination.
-  if (isPartnerRoute(req) && !isPublicPartnerRoute(req)) {
-    const session = await auth();
-    if (!session.userId) {
-      const url = req.nextUrl.clone();
-      url.pathname = "/partners/sign-in";
-      url.searchParams.set("redirect_url", req.nextUrl.pathname);
-      return NextResponse.redirect(url);
-    }
-    return;
-  }
-
-  if (!isAdminRoute(req) || isAdminSignInRoute(req)) {
-    return;
-  }
-
-  const session = await auth();
-
-  // Not signed in → bounce to admin sign-in. Preserve the intended destination.
-  if (!session.userId) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/admin/sign-in";
-    url.searchParams.set("redirect_url", req.nextUrl.pathname);
-    return NextResponse.redirect(url);
-  }
-
-  // The email-allowlist check requires Clerk's backend client + env vars, which
-  // are only reliable in the Node runtime — so it's enforced server-side via
-  // `requireAdmin()` in the admin layout/pages, not here in edge middleware.
+  // --- Attach the Content-Security-Policy to the response ------------------
+  return withCsp(req);
 });
 
 export const config = {

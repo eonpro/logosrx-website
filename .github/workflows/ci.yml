@@ -103,6 +103,70 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run build
 
+  e2e:
+    name: E2E smoke
+    needs: install
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Clerk *test* instance keys. Even the public specs need them because the
+      # partner/admin route groups mount <ClerkProvider> and the proxy uses
+      # clerkMiddleware. Set these repo secrets to turn the gate on.
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.E2E_CLERK_PUBLISHABLE_KEY }}
+      CLERK_SECRET_KEY: ${{ secrets.E2E_CLERK_SECRET_KEY }}
+      NEXT_TELEMETRY_DISABLED: "1"
+      SKIP_ENV_VALIDATION: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+
+      # Without Clerk test creds the app can't boot for E2E. Skip cleanly (with
+      # a visible notice) rather than failing, so forks/contributors aren't
+      # blocked; the gate becomes real once the secrets are configured.
+      - name: Detect E2E credentials
+        id: creds
+        run: |
+          if [ -n "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" ] && [ -n "$CLERK_SECRET_KEY" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=E2E skipped::Set E2E_CLERK_PUBLISHABLE_KEY and E2E_CLERK_SECRET_KEY repo secrets to enable the E2E gate."
+          fi
+
+      - name: Install Playwright (chromium)
+        if: steps.creds.outputs.present == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Build
+        if: steps.creds.outputs.present == 'true'
+        run: npm run build
+
+      - name: Run public E2E smoke
+        if: steps.creds.outputs.present == 'true'
+        env:
+          # Run the built app for production-fidelity routing/middleware.
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+        run: |
+          npm run start &
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:3000 >/dev/null; then break; fi
+            sleep 1
+          done
+          npx playwright test --project=desktop-chrome \
+            tests/e2e/partners-public.spec.ts tests/e2e/quote-public.spec.ts
+
+      - name: Upload Playwright report
+        if: steps.creds.outputs.present == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+
   schema:
     name: Structured data (Rich Results)
     needs: install

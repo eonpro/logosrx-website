@@ -1,112 +1,20 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
-const isProd = process.env.NODE_ENV === "production";
-
-/**
- * Allowed origins for third-party resources. Update here when integrating
- * additional analytics, payment, or auth providers.
- *
- *   - Adobe Typekit  → marketing fonts (use.typekit.net, p.typekit.net)
- *   - Clerk          → auth UI + telemetry
- *   - Vercel Blob    → private resume downloads (proxied through /api/admin)
+/*
+ * The Content-Security-Policy is set per-request by the proxy (`src/proxy.ts`)
+ * so sensitive, dynamically-rendered routes (/admin, /dashboard, /partners,
+ * /onboarding, /quote, /sign-in, /sign-up) can use a strict, nonce-based
+ * `script-src` (no `'unsafe-inline'`) while the statically-generated marketing
+ * pages keep a relaxed CSP and stay CDN-cacheable. Keeping CSP out of
+ * next.config avoids emitting a second, conflicting CSP header. All other
+ * (static) security headers remain here.
  */
-const TYPEKIT = ["https://use.typekit.net", "https://p.typekit.net"];
-
-/**
- * Production Clerk instances serve their Frontend API from a custom domain on
- * the app's own root (e.g. `clerk.logosrx.com`), NOT from `*.clerk.com`. That
- * host is encoded (base64) inside the publishable key, so we decode it here and
- * add it to the CSP allow-list. Without this the browser blocks `clerk.browser.js`
- * in production and the `<SignIn>` / `<SignUp>` forms silently never mount.
- *
- * Development / keyless mode uses `*.clerk.accounts.dev`, which the static
- * wildcard below already covers, so this is a no-op locally.
- */
-function clerkFrontendApiOrigin(): string | null {
-  const pk = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-  if (!pk) return null;
-  const encoded = pk.replace(/^pk_(test|live)_/, "");
-  try {
-    const host = Buffer.from(encoded, "base64")
-      .toString("utf8")
-      .replace(/\$+$/, "")
-      .trim();
-    return host.includes(".") ? `https://${host}` : null;
-  } catch {
-    return null;
-  }
-}
-
-const clerkFapiOrigin = clerkFrontendApiOrigin();
-
-const CLERK = [
-  "https://*.clerk.com",
-  "https://*.clerk.accounts.dev",
-  "https://*.clerk.services",
-  "https://challenges.cloudflare.com",
-  ...(clerkFapiOrigin ? [clerkFapiOrigin] : []),
-];
-const VERCEL = [
-  "https://*.public.blob.vercel-storage.com",
-  "https://vercel.com",
-  "https://*.vercel-storage.com",
-];
-
-const connectSrc = ["'self'", ...CLERK, "https://*.clerk-telemetry.com"];
-const scriptSrc = [
-  "'self'",
-  // Next.js hydration uses inline bootstrap scripts. A future hardening step
-  // will switch to per-request nonces via middleware.
-  "'unsafe-inline'",
-  ...(isProd ? [] : ["'unsafe-eval'"]),
-  ...CLERK,
-];
-const styleSrc = [
-  "'self'",
-  // Tailwind injects build-time CSS, but Framer Motion / inline styles also
-  // produce `<style>` attributes that need allowance.
-  "'unsafe-inline'",
-  ...TYPEKIT,
-];
-const fontSrc = ["'self'", "data:", ...TYPEKIT];
-const imgSrc = ["'self'", "data:", "blob:", "https://img.clerk.com", ...VERCEL];
-const frameSrc = ["'self'", ...CLERK];
-const workerSrc = ["'self'", "blob:"];
-// Marketing video assets are self-hosted under /public/videos (P1d). Explicit
-// `media-src` so the CSP doesn't silently fall back to `default-src` if a
-// reviewer tightens defaults later.
-const mediaSrc = ["'self'"];
-
-const csp = [
-  "default-src 'self'",
-  `script-src ${scriptSrc.join(" ")}`,
-  `style-src ${styleSrc.join(" ")}`,
-  `img-src ${imgSrc.join(" ")}`,
-  `font-src ${fontSrc.join(" ")}`,
-  `connect-src ${connectSrc.join(" ")}`,
-  `frame-src ${frameSrc.join(" ")}`,
-  `worker-src ${workerSrc.join(" ")}`,
-  `media-src ${mediaSrc.join(" ")}`,
-  "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "object-src 'none'",
-  // Block legacy mixed-content paths; upgrade-insecure-requests is a no-op on
-  // HTTPS-only sites but defends if someone embeds an http:// URL by mistake.
-  "upgrade-insecure-requests",
-  // Forward violations to our sink (P2d). `report-to` is the modern
-  // Reporting API target; `report-uri` is kept for browsers that haven't
-  // implemented Reporting API yet (Safari < 16, older Firefox).
-  "report-to csp-endpoint",
-  "report-uri /api/csp-report",
-].join("; ");
 
 /*
  * Report-To group definition. Browsers that support the Reporting API will
- * POST violation reports (and other report types) here. We only declare a
- * CSP group for now; add a `nel` (Network Error Logging) group later if we
- * want to capture TLS / DNS failures too.
+ * POST CSP violation reports here. The CSP itself (set in the proxy) references
+ * this `csp-endpoint` group. Add a `nel` group later for Network Error Logging.
  */
 const reportTo = JSON.stringify({
   group: "csp-endpoint",
@@ -138,7 +46,6 @@ const permissionsPolicy = [
 ].join(", ");
 
 const baselineSecurityHeaders = [
-  { key: "Content-Security-Policy", value: csp },
   { key: "Report-To", value: reportTo },
   {
     key: "Strict-Transport-Security",

@@ -11,6 +11,7 @@ import {
   payouts,
 } from "@/lib/db/schema";
 import { ADMIN_ROLE, requireAdmin } from "@/lib/auth/admin";
+import { recordAdminAudit } from "@/lib/audit/log";
 import {
   formatCents,
   percentToBps,
@@ -52,7 +53,7 @@ export async function setPartnerOrgRate(
   orgId: number,
   ratePercent: number,
 ): Promise<AdminPartnerResult> {
-  await requireAdmin({ minRole: ADMIN_ROLE });
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
   assertId(orgId, "orgId");
 
   const rateBps = percentToBps(ratePercent);
@@ -66,6 +67,11 @@ export async function setPartnerOrgRate(
     .returning({ id: partnerOrgs.id });
   if (updated.length === 0) return { ok: false, error: "Org not found." };
 
+  await recordAdminAudit(ctx, "partner_org.set_rate", {
+    type: "partner_org",
+    id: orgId,
+  }, { rateBps });
+
   revalidateOrg(orgId);
   return { ok: true };
 }
@@ -75,7 +81,7 @@ export async function setPartnerOrgCompensationModel(
   orgId: number,
   model: "commission" | "margin",
 ): Promise<AdminPartnerResult> {
-  await requireAdmin({ minRole: ADMIN_ROLE });
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
   assertId(orgId, "orgId");
   if (model !== "commission" && model !== "margin") {
     return { ok: false, error: "Invalid compensation model." };
@@ -87,6 +93,11 @@ export async function setPartnerOrgCompensationModel(
     .where(eq(partnerOrgs.id, orgId))
     .returning({ id: partnerOrgs.id });
   if (updated.length === 0) return { ok: false, error: "Org not found." };
+
+  await recordAdminAudit(ctx, "partner_org.set_compensation_model", {
+    type: "partner_org",
+    id: orgId,
+  }, { model });
 
   revalidateOrg(orgId);
   return { ok: true };
@@ -100,7 +111,7 @@ export async function setOrgFloorPrice(input: {
   floorDollars: number;
   unit: string;
 }): Promise<AdminPartnerResult> {
-  await requireAdmin({ minRole: ADMIN_ROLE });
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
   assertId(input.orgId, "orgId");
   const productId = input.productId.trim();
   if (!productId) return { ok: false, error: "Product is required." };
@@ -108,13 +119,19 @@ export async function setOrgFloorPrice(input: {
     return { ok: false, error: "Enter a valid floor price." };
   }
 
+  const floorCents = Math.round(input.floorDollars * 100);
   await upsertOrgFloor({
     orgId: input.orgId,
     productId,
     productName: input.productName.trim() || productId,
-    floorCents: Math.round(input.floorDollars * 100),
+    floorCents,
     unit: input.unit.trim() || null,
   });
+
+  await recordAdminAudit(ctx, "partner_org.set_floor", {
+    type: "partner_org",
+    id: input.orgId,
+  }, { productId, floorCents });
 
   revalidateOrg(input.orgId);
   return { ok: true };
@@ -125,12 +142,18 @@ export async function resetOrgFloorPrice(
   orgId: number,
   productId: string,
 ): Promise<AdminPartnerResult> {
-  await requireAdmin({ minRole: ADMIN_ROLE });
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
   assertId(orgId, "orgId");
   const pid = productId.trim();
   if (!pid) return { ok: false, error: "Product is required." };
 
   await deleteOrgFloor(orgId, pid);
+
+  await recordAdminAudit(ctx, "partner_org.reset_floor", {
+    type: "partner_org",
+    id: orgId,
+  }, { productId: pid });
+
   revalidateOrg(orgId);
   return { ok: true };
 }
@@ -183,6 +206,11 @@ export async function approvePartnerOrg(
     })
     .where(eq(partnerOrgs.id, orgId));
 
+  await recordAdminAudit(ctx, "partner_org.approve", {
+    type: "partner_org",
+    id: orgId,
+  }, { orgName: org.name });
+
   // Approval email + activation link are best-effort; "Resend activation"
   // covers failures.
   const userId = clerkUserId;
@@ -207,7 +235,7 @@ export async function setPartnerOrgStatus(
   orgId: number,
   status: "active" | "suspended",
 ): Promise<AdminPartnerResult> {
-  await requireAdmin({ minRole: ADMIN_ROLE });
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
   assertId(orgId, "orgId");
   if (status !== "active" && status !== "suspended") {
     return { ok: false, error: "Invalid status." };
@@ -219,6 +247,13 @@ export async function setPartnerOrgStatus(
     .where(eq(partnerOrgs.id, orgId))
     .returning({ id: partnerOrgs.id });
   if (updated.length === 0) return { ok: false, error: "Org not found." };
+
+  await recordAdminAudit(
+    ctx,
+    status === "suspended" ? "partner_org.suspend" : "partner_org.reactivate",
+    { type: "partner_org", id: orgId },
+    { status },
+  );
 
   revalidateOrg(orgId);
   return { ok: true };
@@ -304,6 +339,11 @@ export async function addPartnerTransaction(input: {
     console.error("[admin/partners] addPartnerTransaction failed");
     return { ok: false, error: "Could not record the transaction." };
   }
+
+  await recordAdminAudit(ctx, "partner.transaction_add", {
+    type: "clinic",
+    id: input.clinicId,
+  }, { revenueCents: Math.round(input.amountDollars * 100), costCents });
 
   revalidatePath("/admin/partners/transactions");
   return { ok: true };
@@ -443,6 +483,11 @@ export async function recordPartnerPayout(input: {
     if (result == null) {
       return { ok: false, error: "No unpaid commission for this payee." };
     }
+
+    await recordAdminAudit(ctx, "partner.payout", {
+      type: "partner_org",
+      id: input.orgId,
+    }, { repId: input.repId, payee, amountCents: result });
 
     // Confirmation email (best-effort).
     runAfterResponse(

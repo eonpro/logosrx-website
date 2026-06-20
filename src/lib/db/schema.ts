@@ -553,6 +553,44 @@ export const cardAccessLog = pgTable("card_access_log", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+/**
+ * Immutable audit trail of privileged state changes (clinic approvals, partner
+ * suspensions, pricing/commission edits, payouts, quote lifecycle, card
+ * reveals). Append-only by convention — the app never updates or deletes rows;
+ * rely on Postgres role grants (INSERT/SELECT only) to enforce immutability at
+ * the DB layer for SOC2/HIPAA evidence.
+ *
+ * `metadata` carries action-specific context (e.g. before/after values, amount
+ * in cents, target name). Never store decrypted PII/PHI or card data here.
+ */
+export const auditEvents = pgTable(
+  "audit_events",
+  {
+    id: serial("id").primaryKey(),
+    // Who acted: "admin" | "partner" | "system".
+    actorType: varchar("actor_type", { length: 20 }).notNull(),
+    // Clerk user id of the actor (null for system-generated events).
+    actorId: varchar("actor_id", { length: 64 }),
+    actorEmail: varchar("actor_email", { length: 255 }),
+    // Dotted action name, e.g. "clinic.verify", "partner_org.suspend".
+    action: varchar("action", { length: 80 }).notNull(),
+    // What was acted on, e.g. ("clinic", "42") or ("partner_org", "7").
+    targetType: varchar("target_type", { length: 40 }),
+    targetId: varchar("target_id", { length: 64 }),
+    // Action-specific structured context (before/after, amounts, etc.).
+    metadata: jsonb("metadata"),
+    // Best-effort client IP (from x-forwarded-for) for the request.
+    ip: varchar("ip", { length: 64 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("audit_events_actor_idx").on(t.actorId),
+    index("audit_events_target_idx").on(t.targetType, t.targetId),
+    index("audit_events_action_idx").on(t.action),
+    index("audit_events_created_idx").on(t.createdAt),
+  ],
+);
+
 // ---------------------------------------------------------------------------
 // Affiliate partner program (EONPRO-style)
 //
@@ -795,6 +833,8 @@ export type NewClinicNote = typeof clinicNotes.$inferInsert;
 export type ClinicPriceItem = typeof clinicPricing.$inferSelect;
 export type NewClinicPriceItem = typeof clinicPricing.$inferInsert;
 export type CardAccessLogEntry = typeof cardAccessLog.$inferSelect;
+export type AuditEvent = typeof auditEvents.$inferSelect;
+export type NewAuditEvent = typeof auditEvents.$inferInsert;
 export type ClinicPayment = typeof clinicPayments.$inferSelect;
 export type NewClinicPayment = typeof clinicPayments.$inferInsert;
 export type ClinicSignatures = typeof clinicSignatures.$inferSelect;

@@ -11,6 +11,7 @@ import {
   clinics,
 } from "@/lib/db/schema";
 import { ADMIN_ROLE, requireAdmin } from "@/lib/auth/admin";
+import { recordAdminAudit } from "@/lib/audit/log";
 import { buildActivateUrl } from "@/lib/auth/clerk-users";
 import { decrypt } from "@/lib/onboarding/encryption";
 import { sendClinicApprovedEmail } from "@/lib/notifications/email";
@@ -65,6 +66,17 @@ export async function setClinicVerification(
       updatedAt: new Date(),
     })
     .where(eq(clinics.id, id));
+
+  await recordAdminAudit(
+    ctx,
+    status === "verified"
+      ? "clinic.verify"
+      : status === "rejected"
+        ? "clinic.reject"
+        : "clinic.unverify",
+    { type: "clinic", id },
+    { status },
+  );
 
   if (status === "verified") {
     // Notifications (and the Clerk activation-link mint) are best-effort and
@@ -220,12 +232,17 @@ export async function revealCard(
     return { ok: false, error: "No card on file for this clinic." };
   }
 
-  // Audit the access before returning the sensitive data.
+  // Audit the access before returning the sensitive data. Written to both the
+  // dedicated card-access log and the unified audit trail.
   await db.insert(cardAccessLog).values({
     clinicId,
     adminUserId: ctx.userId,
     adminEmail: ctx.email,
     action: "reveal",
+  });
+  await recordAdminAudit(ctx, "clinic.card_reveal", {
+    type: "clinic",
+    id: clinicId,
   });
 
   return {
@@ -293,7 +310,7 @@ export async function setClinicPricing(
   discountPct: number,
   notes: string,
 ) {
-  await requireAdmin({ minRole: ADMIN_ROLE });
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
   assertId(clinicId, "clinicId");
   if (!VALID_TIER.has(tier)) throw new Error("invalid tier");
   const pct = Math.max(0, Math.min(100, Math.round(discountPct)));
@@ -307,6 +324,11 @@ export async function setClinicPricing(
       updatedAt: new Date(),
     })
     .where(eq(clinics.id, clinicId));
+
+  await recordAdminAudit(ctx, "clinic.pricing_update", {
+    type: "clinic",
+    id: clinicId,
+  }, { tier, discountPct: pct });
 
   revalidatePath(`/admin/clinics/${clinicId}`);
 }
@@ -322,7 +344,7 @@ export async function setProductPrice(
   priceDollars: number,
   unit: string,
 ) {
-  await requireAdmin({ minRole: ADMIN_ROLE });
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
   assertId(clinicId, "clinicId");
   const pid = productId.trim();
   if (!pid) throw new Error("productId required");
@@ -352,12 +374,17 @@ export async function setProductPrice(
       },
     });
 
+  await recordAdminAudit(ctx, "clinic.product_price_set", {
+    type: "clinic",
+    id: clinicId,
+  }, { productId: pid, priceCents: cents });
+
   revalidatePath(`/admin/clinics/${clinicId}`);
 }
 
 /** Clears a clinic's override for a catalog SKU, reverting it to standard pricing. */
 export async function resetProductPrice(clinicId: number, productId: string) {
-  await requireAdmin({ minRole: ADMIN_ROLE });
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
   assertId(clinicId, "clinicId");
   const pid = productId.trim();
   if (!pid) throw new Error("productId required");
@@ -367,6 +394,11 @@ export async function resetProductPrice(clinicId: number, productId: string) {
     .where(
       and(eq(clinicPricing.clinicId, clinicId), eq(clinicPricing.productId, pid)),
     );
+
+  await recordAdminAudit(ctx, "clinic.product_price_reset", {
+    type: "clinic",
+    id: clinicId,
+  }, { productId: pid });
 
   revalidatePath(`/admin/clinics/${clinicId}`);
 }
@@ -378,33 +410,45 @@ export async function addPriceItem(
   priceDollars: number,
   unit: string,
 ) {
-  await requireAdmin({ minRole: ADMIN_ROLE });
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
   assertId(clinicId, "clinicId");
   const name = productName.trim();
   if (!name) throw new Error("product name required");
   if (!Number.isFinite(priceDollars) || priceDollars < 0) {
     throw new Error("invalid price");
   }
+  const cents = Math.round(priceDollars * 100);
 
   await db.insert(clinicPricing).values({
     clinicId,
     productName: name,
-    priceCents: Math.round(priceDollars * 100),
+    priceCents: cents,
     unit: unit.trim() || null,
   });
+
+  await recordAdminAudit(ctx, "clinic.price_item_add", {
+    type: "clinic",
+    id: clinicId,
+  }, { productName: name, priceCents: cents });
 
   revalidatePath(`/admin/clinics/${clinicId}`);
 }
 
 /** Removes a per-product custom price. */
 export async function deletePriceItem(itemId: number) {
-  await requireAdmin({ minRole: ADMIN_ROLE });
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
   assertId(itemId, "itemId");
   const [row] = await db
     .delete(clinicPricing)
     .where(eq(clinicPricing.id, itemId))
     .returning({ clinicId: clinicPricing.clinicId });
-  if (row) revalidatePath(`/admin/clinics/${row.clinicId}`);
+  if (row) {
+    await recordAdminAudit(ctx, "clinic.price_item_delete", {
+      type: "clinic",
+      id: row.clinicId,
+    }, { itemId });
+    revalidatePath(`/admin/clinics/${row.clinicId}`);
+  }
 }
 
 /** Returns a clinic's recent card-access audit entries (most recent first). */

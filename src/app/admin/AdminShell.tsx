@@ -88,6 +88,17 @@ const navItems: SidebarNavItem[] = [
       </svg>
     ),
   },
+  {
+    label: "Audit Log",
+    href: "/admin/audit",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M4 3h9l3 3v11a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M12 3v4h4" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M7 11l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
 ];
 
 export default function AdminShell({

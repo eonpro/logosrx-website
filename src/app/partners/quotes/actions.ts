@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { pricingQuotes } from "@/lib/db/schema";
 import { requirePartner, type PartnerContext } from "@/lib/auth/partner";
+import { recordPartnerAudit } from "@/lib/audit/log";
 import { getOrgFloorMap } from "@/lib/partners/pricing";
 import { validateSellAboveFloor } from "@/lib/partners/commission";
 import {
@@ -106,7 +107,13 @@ export async function createPartnerQuote(
     partnerRepId: ctx.kind === "rep" ? ctx.rep!.id : null,
   });
 
-  if (result.ok) revalidatePath("/partners/quotes");
+  if (result.ok) {
+    await recordPartnerAudit(ctx, "quote.create", {
+      type: "quote",
+      id: result.quote?.id ?? null,
+    }, { email: input.email, itemCount: items.length });
+    revalidatePath("/partners/quotes");
+  }
   return result;
 }
 
@@ -139,6 +146,11 @@ export async function regeneratePartnerQuotePassword(
     .set({ passwordHash: hashQuotePassword(password), updatedAt: new Date() })
     .where(eq(pricingQuotes.id, id));
 
+  await recordPartnerAudit(ctx, "quote.regenerate_password", {
+    type: "quote",
+    id,
+  });
+
   revalidatePath(`/partners/quotes/${id}`);
   return { ok: true, password };
 }
@@ -151,6 +163,7 @@ export async function revokePartnerQuote(id: number) {
     .update(pricingQuotes)
     .set({ status: "revoked", updatedAt: new Date() })
     .where(eq(pricingQuotes.id, id));
+  await recordPartnerAudit(ctx, "quote.revoke", { type: "quote", id });
   revalidatePath("/partners/quotes");
   revalidatePath(`/partners/quotes/${id}`);
 }
@@ -164,6 +177,7 @@ export async function reactivatePartnerQuote(id: number) {
     .update(pricingQuotes)
     .set({ status: "active", updatedAt: new Date() })
     .where(eq(pricingQuotes.id, id));
+  await recordPartnerAudit(ctx, "quote.reactivate", { type: "quote", id });
   revalidatePath("/partners/quotes");
   revalidatePath(`/partners/quotes/${id}`);
 }
@@ -173,5 +187,6 @@ export async function deletePartnerQuote(id: number) {
   assertId(id);
   if (!(await assertOwned(id, ctx))) return;
   await db.delete(pricingQuotes).where(eq(pricingQuotes.id, id));
+  await recordPartnerAudit(ctx, "quote.delete", { type: "quote", id });
   revalidatePath("/partners/quotes");
 }

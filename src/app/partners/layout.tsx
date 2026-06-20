@@ -1,4 +1,5 @@
 import { ClerkProvider } from "@clerk/nextjs";
+import { headers } from "next/headers";
 import { getPartnerContext } from "@/lib/auth/partner";
 import PartnersShell from "./PartnersShell";
 
@@ -16,9 +17,10 @@ export default async function PartnersLayout({
   // Null for anonymous visitors (sign-in/apply pages) and non-partners; the
   // individual pages enforce access, the shell only adapts its chrome.
   const ctx = await getPartnerContext();
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
-    <ClerkProvider afterSignOutUrl="/">
+    <ClerkProvider afterSignOutUrl="/" nonce={nonce}>
       <PartnersShell
         kind={ctx?.kind ?? null}
         orgName={ctx?.org.name ?? null}

@@ -4,6 +4,7 @@ import {
   randomBytes,
   createHash,
 } from "node:crypto";
+import { getAppSecret } from "@/lib/security/secret";
 
 /**
  * AES-256-GCM helpers for encrypting sensitive onboarding fields (card number,
@@ -27,17 +28,8 @@ let cachedKey: Buffer | null = null;
 function resolveKey(): Buffer {
   if (cachedKey) return cachedKey;
 
-  const raw = process.env.ONBOARDING_ENCRYPTION_KEY;
-  if (!raw) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error(
-        "ONBOARDING_ENCRYPTION_KEY is required in production to encrypt payment data.",
-      );
-    }
-    // Dev-only deterministic fallback so the wizard works without secrets.
-    cachedKey = createHash("sha256").update("logos-dev-fallback-key").digest();
-    return cachedKey;
-  }
+  // Throws in production when unset; deterministic dev fallback otherwise.
+  const raw = getAppSecret();
 
   let key: Buffer | null = null;
   // Try base64 then hex; require exactly 32 bytes to use directly.

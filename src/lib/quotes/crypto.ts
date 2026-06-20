@@ -6,6 +6,7 @@ import {
   scryptSync,
   timingSafeEqual,
 } from "node:crypto";
+import { getAppSecret } from "@/lib/security/secret";
 
 /**
  * Cryptographic helpers for password-gated pricing quotes.
@@ -97,11 +98,14 @@ function normalizePassword(password: string): string {
 
 let cachedKey: Buffer | null = null;
 
-/** Derives a stable HMAC key from the app's encryption secret. */
+/**
+ * Derives a stable HMAC key from the app's master secret. Throws in production
+ * when the secret is unset (via `getAppSecret`) so quote cookies can never be
+ * signed with a publicly-known development key.
+ */
 function hmacKey(): Buffer {
   if (cachedKey) return cachedKey;
-  const raw = process.env.ONBOARDING_ENCRYPTION_KEY || "logos-dev-fallback-key";
-  cachedKey = createHash("sha256").update(`quote-hmac:${raw}`).digest();
+  cachedKey = createHash("sha256").update(`quote-hmac:${getAppSecret()}`).digest();
   return cachedKey;
 }
 
