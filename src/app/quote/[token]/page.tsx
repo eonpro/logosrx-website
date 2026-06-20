@@ -7,7 +7,12 @@ import {
   isQuoteOpenable,
 } from "@/lib/quotes/data";
 import { QUOTE_ACCESS_COOKIE, verifyQuoteAccess } from "@/lib/quotes/crypto";
-import { catalogProducts, standardCatalogPrice } from "@/data/catalog";
+import {
+  catalogProducts,
+  resolveDetailSlug,
+  standardCatalogPrice,
+} from "@/data/catalog";
+import { products } from "@/data/products";
 import { SITE } from "@/lib/constants";
 import QuoteGate from "./QuoteGate";
 import QuoteView, { type QuoteViewItem } from "./QuoteView";
@@ -28,6 +33,21 @@ const standardCentsById = new Map<string, number | null>(
   catalogProducts.map((p) => {
     const dollars = standardCatalogPrice(p);
     return [p.id, dollars === null ? null : Math.round(dollars * 100)];
+  }),
+);
+
+// Resolve each catalog SKU to its marketing product image (same mapping the
+// clinic storefront uses), so quote line items can show the product photo.
+const detailSlugs = products.map((p) => p.slug);
+const productBySlug = new Map(products.map((p) => [p.slug, p]));
+const imageById = new Map<string, { url: string; alt: string } | null>(
+  catalogProducts.map((p) => {
+    const slug = resolveDetailSlug(p.id, detailSlugs);
+    const prod = slug ? productBySlug.get(slug) : undefined;
+    return [
+      p.id,
+      prod?.image ? { url: prod.image, alt: prod.imageAlt ?? prod.name } : null,
+    ];
   }),
 );
 
@@ -136,12 +156,15 @@ export default async function QuotePage({ params }: PageProps) {
     const standardCents = it.productId
       ? standardCentsById.get(it.productId) ?? null
       : null;
+    const image = it.productId ? imageById.get(it.productId) ?? null : null;
     return {
       id: it.id,
       name: it.productName,
       unit: it.unit,
       priceCents: it.priceCents,
       standardCents,
+      imageUrl: image?.url ?? null,
+      imageAlt: image?.alt ?? null,
     };
   });
 

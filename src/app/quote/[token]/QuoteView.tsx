@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { formatCents, discountPercent } from "@/lib/portal/pricing";
 import { acceptQuote } from "./actions";
@@ -11,6 +12,8 @@ export interface QuoteViewItem {
   unit: string | null;
   priceCents: number;
   standardCents: number | null;
+  imageUrl?: string | null;
+  imageAlt?: string | null;
 }
 
 export default function QuoteView({
@@ -106,10 +109,39 @@ export default function QuoteView({
                     className="border-b border-beige-dark/60 last:border-0"
                   >
                     <td className="px-5 py-4">
-                      <div className="font-medium text-navy">{it.name}</div>
-                      {it.unit && (
-                        <div className="text-xs text-navy/50">{it.unit}</div>
-                      )}
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-beige-dark/50 bg-beige/40">
+                          {it.imageUrl ? (
+                            <Image
+                              src={it.imageUrl}
+                              alt={it.imageAlt ?? it.name}
+                              width={48}
+                              height={48}
+                              className="h-full w-full object-contain p-1"
+                            />
+                          ) : (
+                            <svg
+                              width="20"
+                              height="20"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              className="text-navy/25"
+                            >
+                              <rect x="3" y="3" width="18" height="18" rx="2" />
+                              <path d="M3 15l5-5 4 4 3-3 6 6" strokeLinecap="round" strokeLinejoin="round" />
+                              <circle cx="8.5" cy="8.5" r="1.5" />
+                            </svg>
+                          )}
+                        </div>
+                        <div>
+                          <div className="font-medium text-navy">{it.name}</div>
+                          {it.unit && (
+                            <div className="text-xs text-navy/50">{it.unit}</div>
+                          )}
+                        </div>
+                      </div>
                     </td>
                     <td className="px-5 py-4 text-right text-navy/45">
                       {it.standardCents !== null ? (
