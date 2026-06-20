@@ -1,33 +1,27 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { NAV_GROUPS, type MegaMenuLink } from "@/lib/constants";
 
 /**
- * Per-card abstract artwork for the mega-menu feature cards. Each design pairs a
- * distinct mesh-gradient background with its own SVG shape motif so every card
- * reads as a unique, modern abstract composition. Designs are assigned by a
- * GLOBAL card index (see GROUP_CARD_OFFSETS) so the cards visible in any single
- * panel are always different from one another.
+ * Abstract molecule artwork for the mega-menu feature cards — soft, 3D-rendered
+ * molecular images (glossy spheres, glowing bonds, bokeh) in the brand palette.
+ * Assigned by a GLOBAL card index (see GROUP_CARD_OFFSETS) so the cards visible
+ * in any single panel are always different from one another.
  */
-const CARD_GRADIENTS = [
-  // 0 — warm coral → cool blue (glossy oil-bubble hero)
-  "radial-gradient(95% 95% at 16% 18%, #E2637A 0%, transparent 60%), radial-gradient(95% 95% at 86% 90%, #5F86C4 0%, transparent 60%), linear-gradient(135deg, #C62E88, #262262)",
-  // 1 — aurora: sky → purple → navy
-  "radial-gradient(90% 90% at 82% 6%, #6EA3D7 0%, transparent 55%), linear-gradient(160deg, #5F86C4 0%, #6E469B 58%, #1A1750 100%)",
-  // 2 — soft dreamy mesh (Sessions)
-  "radial-gradient(80% 80% at 14% 12%, #E2637A 0%, transparent 55%), radial-gradient(78% 78% at 88% 10%, #6EA3D7 0%, transparent 55%), radial-gradient(95% 95% at 82% 96%, #6E469B 0%, transparent 60%), radial-gradient(95% 95% at 8% 96%, #262262 0%, transparent 62%), linear-gradient(135deg, #C62E88, #35307A)",
-  // 3 — magenta bloom → deep purple (concentric rings)
-  "radial-gradient(100% 100% at 84% 16%, #C62E88 0%, transparent 55%), linear-gradient(140deg, #6E469B, #1A1750)",
-  // 4 — sky bloom → purple (liquid blob)
-  "radial-gradient(95% 95% at 18% 84%, #6EA3D7 0%, transparent 55%), linear-gradient(135deg, #7357A4, #262262)",
-  // 5 — coral → purple → navy (glass panels)
-  "linear-gradient(135deg, #E2637A 0%, #6E469B 52%, #1A1750 100%)",
+const CARD_IMAGES = [
+  "/images/menu/menu-mol-1.jpg", // hexagonal lattice (navy/violet)
+  "/images/menu/menu-mol-2.jpg", // sphere cluster (blue/purple)
+  "/images/menu/menu-mol-3.jpg", // polymer chain (magenta)
+  "/images/menu/menu-mol-4.jpg", // network (navy/blue)
+  "/images/menu/menu-mol-5.jpg", // bokeh bubbles (pink/blue)
+  "/images/menu/menu-mol-6.jpg", // helix strands (purple/sky)
 ] as const;
 
-const DESIGN_COUNT = CARD_GRADIENTS.length;
+const DESIGN_COUNT = CARD_IMAGES.length;
 
 /** Starting global card index for each nav group, so designs never repeat within one panel. */
 const GROUP_CARD_OFFSETS = (() => {
@@ -38,212 +32,6 @@ const GROUP_CARD_OFFSETS = (() => {
     return start;
   });
 })();
-
-const ART_CLASS =
-  "absolute inset-0 h-full w-full transition-transform duration-700 group-hover:scale-105";
-
-/** Routes a global design index to its unique abstract molecule motif. */
-function CardArtwork({ design, uid }: { design: number; uid: string }) {
-  switch (design % DESIGN_COUNT) {
-    case 0:
-      return <HexLatticeMolecule uid={uid} />;
-    case 1:
-      return <MoleculeCluster uid={uid} />;
-    case 2:
-      return <PolymerChain uid={uid} />;
-    case 3:
-      return <FusedRings uid={uid} />;
-    case 4:
-      return <NetworkGraph uid={uid} />;
-    default:
-      return <AtomOrbit uid={uid} />;
-  }
-}
-
-/* ──────────────── Molecule artwork primitives ──────────────── */
-
-type Pt = [number, number];
-interface AtomSpec {
-  x: number;
-  y: number;
-  r: number;
-}
-
-function hexVerts(cx: number, cy: number, r: number): Pt[] {
-  return Array.from({ length: 6 }, (_, k) => {
-    const a = (Math.PI / 180) * (60 * k - 90);
-    return [cx + r * Math.cos(a), cy + r * Math.sin(a)] as Pt;
-  });
-}
-
-function ringBonds(v: Pt[]): [Pt, Pt][] {
-  return v.map((p, k) => [p, v[(k + 1) % 6]] as [Pt, Pt]);
-}
-
-function dedupAtoms(list: AtomSpec[]): AtomSpec[] {
-  const m = new Map<string, AtomSpec>();
-  for (const a of list) {
-    const key = `${Math.round(a.x)},${Math.round(a.y)}`;
-    const cur = m.get(key);
-    if (!cur || a.r > cur.r) m.set(key, a);
-  }
-  return [...m.values()];
-}
-
-function dedupBonds(list: [Pt, Pt][]): [Pt, Pt][] {
-  const m = new Map<string, [Pt, Pt]>();
-  for (const [a, b] of list) {
-    const ka = `${Math.round(a[0])},${Math.round(a[1])}`;
-    const kb = `${Math.round(b[0])},${Math.round(b[1])}`;
-    m.set([ka, kb].sort().join("|"), [a, b]);
-  }
-  return [...m.values()];
-}
-
-/** Shared renderer: glowing bonds beneath glossy atom spheres. */
-function MoleculeSVG({
-  uid,
-  atoms,
-  bonds,
-  underlay,
-}: {
-  uid: string;
-  atoms: AtomSpec[];
-  bonds: [Pt, Pt][];
-  underlay?: React.ReactNode;
-}) {
-  const g = `${uid}-atom`;
-  return (
-    <svg aria-hidden="true" viewBox="0 0 240 220" preserveAspectRatio="xMidYMid slice" className={ART_CLASS}>
-      <defs>
-        <radialGradient id={g} cx="34%" cy="30%" r="72%">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
-          <stop offset="28%" stopColor="#ffffff" stopOpacity="0.42" />
-          <stop offset="64%" stopColor="#ffffff" stopOpacity="0.1" />
-          <stop offset="100%" stopColor="#1A1750" stopOpacity="0.4" />
-        </radialGradient>
-      </defs>
-      {underlay}
-      <g stroke="#ffffff" strokeLinecap="round">
-        {bonds.map(([a, b], k) => (
-          <g key={k}>
-            <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} strokeOpacity="0.14" strokeWidth="5" />
-            <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} strokeOpacity="0.5" strokeWidth="1.6" />
-          </g>
-        ))}
-      </g>
-      {atoms.map((a, k) => (
-        <g key={k}>
-          <circle cx={a.x} cy={a.y} r={a.r} fill={`url(#${g})`} stroke="#ffffff" strokeOpacity="0.35" strokeWidth="0.8" />
-          <circle cx={a.x - a.r * 0.32} cy={a.y - a.r * 0.34} r={Math.max(a.r * 0.24, 1)} fill="#ffffff" fillOpacity="0.85" />
-        </g>
-      ))}
-    </svg>
-  );
-}
-
-/** 0 — Honeycomb lattice (graphene-like cluster). */
-function HexLatticeMolecule({ uid }: { uid: string }) {
-  const r = 30;
-  const dx = Math.sqrt(3) * r;
-  const centers: Pt[] = [
-    [56, 78],
-    [56 + dx, 78],
-    [56 + 2 * dx, 78],
-    [56 + dx / 2, 78 + 1.5 * r],
-    [56 + 1.5 * dx, 78 + 1.5 * r],
-  ];
-  const bonds = dedupBonds(centers.flatMap((c) => ringBonds(hexVerts(c[0], c[1], r))));
-  const atoms = dedupAtoms(centers.flatMap((c) => hexVerts(c[0], c[1], r)).map(([x, y]) => ({ x, y, r: 5 })));
-  return <MoleculeSVG uid={uid} atoms={atoms} bonds={bonds} />;
-}
-
-/** 1 — Radial molecule cluster (central atom + shell). */
-function MoleculeCluster({ uid }: { uid: string }) {
-  const cx = 148;
-  const cy = 108;
-  const outer = hexVerts(cx, cy, 72);
-  const atoms: AtomSpec[] = [
-    { x: cx, y: cy, r: 17 },
-    ...outer.map(([x, y], k) => ({ x, y, r: k % 2 ? 8 : 13 })),
-  ];
-  const bonds: [Pt, Pt][] = [
-    ...outer.map((p) => [[cx, cy], p] as [Pt, Pt]),
-    [outer[0], outer[1]],
-    [outer[2], outer[3]],
-    [outer[4], outer[5]],
-  ];
-  return <MoleculeSVG uid={uid} atoms={atoms} bonds={bonds} />;
-}
-
-/** 2 — Polymer backbone (zig-zag chain with side branches). */
-function PolymerChain({ uid }: { uid: string }) {
-  const pts: Pt[] = [];
-  for (let k = 0; k < 8; k++) pts.push([-6 + k * 36, k % 2 ? 128 : 84]);
-  const bonds: [Pt, Pt][] = pts.slice(1).map((p, k) => [pts[k], p]);
-  const atoms: AtomSpec[] = pts.map((p, k) => ({ x: p[0], y: p[1], r: k % 2 ? 8 : 11 }));
-  pts.forEach((p, k) => {
-    if (k % 2 === 0 && k > 0 && k < pts.length - 1) {
-      const tip: Pt = [p[0], p[1] - 34];
-      bonds.push([p, tip]);
-      atoms.push({ x: tip[0], y: tip[1], r: 6 });
-    }
-  });
-  return <MoleculeSVG uid={uid} atoms={atoms} bonds={bonds} />;
-}
-
-/** 3 — Fused hexagonal rings (naphthalene-like). */
-function FusedRings({ uid }: { uid: string }) {
-  const r = 46;
-  const dx = Math.sqrt(3) * r;
-  const c1: Pt = [86, 110];
-  const c2: Pt = [86 + dx, 110];
-  const v1 = hexVerts(c1[0], c1[1], r);
-  const v2 = hexVerts(c2[0], c2[1], r);
-  const bonds = dedupBonds([...ringBonds(v1), ...ringBonds(v2)]);
-  const atoms = dedupAtoms([...v1, ...v2].map(([x, y]) => ({ x, y, r: 7 })));
-  return <MoleculeSVG uid={uid} atoms={atoms} bonds={bonds} />;
-}
-
-/** 4 — Scattered molecular network graph. */
-function NetworkGraph({ uid }: { uid: string }) {
-  const nodes: AtomSpec[] = [
-    { x: 40, y: 52, r: 10 },
-    { x: 108, y: 30, r: 7 },
-    { x: 182, y: 58, r: 13 },
-    { x: 212, y: 142, r: 8 },
-    { x: 150, y: 118, r: 15 },
-    { x: 78, y: 112, r: 9 },
-    { x: 120, y: 188, r: 10 },
-    { x: 38, y: 168, r: 7 },
-    { x: 204, y: 198, r: 6 },
-  ];
-  const edges: [number, number][] = [
-    [0, 5], [5, 1], [1, 2], [2, 4], [4, 3], [4, 6], [5, 7], [6, 8], [6, 7], [4, 5], [2, 3],
-  ];
-  const bonds: [Pt, Pt][] = edges.map(([a, b]) => [[nodes[a].x, nodes[a].y], [nodes[b].x, nodes[b].y]]);
-  return <MoleculeSVG uid={uid} atoms={nodes} bonds={bonds} />;
-}
-
-/** 5 — Atom with orbiting electrons. */
-function AtomOrbit({ uid }: { uid: string }) {
-  const cx = 150;
-  const cy = 108;
-  const underlay = (
-    <g fill="none" stroke="#ffffff" strokeOpacity="0.28" strokeWidth="1.4">
-      <ellipse cx={cx} cy={cy} rx="96" ry="42" transform={`rotate(20 ${cx} ${cy})`} />
-      <ellipse cx={cx} cy={cy} rx="96" ry="42" transform={`rotate(80 ${cx} ${cy})`} />
-      <ellipse cx={cx} cy={cy} rx="96" ry="42" transform={`rotate(-44 ${cx} ${cy})`} />
-    </g>
-  );
-  const atoms: AtomSpec[] = [
-    { x: cx, y: cy, r: 18 },
-    { x: cx + 74, y: cy - 28, r: 7 },
-    { x: cx - 64, y: cy + 40, r: 6 },
-    { x: cx + 16, y: cy - 54, r: 6 },
-  ];
-  return <MoleculeSVG uid={uid} atoms={atoms} bonds={[]} underlay={underlay} />;
-}
 
 interface DesktopNavProps {
   /** When the header is over a dark hero section, invert the trigger colors. */
@@ -418,29 +206,30 @@ function MegaPanel({ id, group, groupIndex, onMouseEnter, onMouseLeave, onItemCl
               {group.cards.map((card, i) => {
                 const design = (GROUP_CARD_OFFSETS[groupIndex] + i) % DESIGN_COUNT;
                 return (
-                <Link
-                  key={card.href + card.label}
-                  href={card.href}
-                  onClick={onItemClick}
-                  {...(card.newTab ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                  className="group relative flex flex-1 flex-col justify-end overflow-hidden rounded-xl bg-navy min-h-[190px] focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta focus-visible:ring-offset-2"
-                >
-                  <div
-                    className="absolute -inset-12 blur-2xl transition-transform duration-700 group-hover:scale-110"
-                    style={{ backgroundImage: CARD_GRADIENTS[design] }}
-                    aria-hidden="true"
-                  />
-                  <CardArtwork design={design} uid={`art-${groupIndex}-${i}`} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/60 via-transparent to-transparent" aria-hidden="true" />
-                  <div className="relative flex items-center justify-between gap-2 p-4">
-                    <span className="text-sm font-semibold text-white">{card.label}</span>
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-colors group-hover:bg-magenta">
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                        <path d="M3 9L9 3M9 3H4M9 3V8" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </span>
-                  </div>
-                </Link>
+                  <Link
+                    key={card.href + card.label}
+                    href={card.href}
+                    onClick={onItemClick}
+                    {...(card.newTab ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                    className="group relative flex flex-1 flex-col justify-end overflow-hidden rounded-xl bg-navy min-h-[190px] focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta focus-visible:ring-offset-2"
+                  >
+                    <Image
+                      src={CARD_IMAGES[design]}
+                      alt=""
+                      fill
+                      sizes="(max-width: 1280px) 22vw, 260px"
+                      className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/85 via-navy-deep/15 to-navy-deep/10" aria-hidden="true" />
+                    <div className="relative flex items-center justify-between gap-2 p-4">
+                      <span className="text-sm font-semibold text-white drop-shadow">{card.label}</span>
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-colors group-hover:bg-magenta">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                          <path d="M3 9L9 3M9 3H4M9 3V8" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </span>
+                    </div>
+                  </Link>
                 );
               })}
             </div>
