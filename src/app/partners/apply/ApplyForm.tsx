@@ -124,7 +124,7 @@ export default function ApplyForm() {
               required
             />
           </Field>
-          <Field label="Phone">
+          <Field label="Phone" required>
             <input
               className={inputClass}
               type="tel"
@@ -132,6 +132,7 @@ export default function ApplyForm() {
               onChange={(e) => setPhone(e.target.value)}
               placeholder="(555) 555-5555"
               maxLength={30}
+              required
             />
           </Field>
           <Field label="Website">

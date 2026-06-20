@@ -52,8 +52,8 @@ export default function AuthShell({
   footerLink?: { label: string; text: string; href: string };
 }) {
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0c0a1d]">
-      <div className="pointer-events-none absolute inset-0" aria-hidden>
+    <div className="relative flex min-h-screen items-center justify-center overflow-y-auto bg-[#0c0a1d] py-12 sm:py-16">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,#1a1750_0%,#0c0a1d_70%)]" />
         <GradientOrb
           className="w-[600px] h-[600px] bg-magenta/60 -top-48 -right-48"

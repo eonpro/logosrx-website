@@ -59,14 +59,17 @@ export async function submitPartnerApplication(
   const website = input.website.trim().slice(0, 255);
   const notes = input.notes.trim().slice(0, 4000);
 
-  if (!orgName || !contactName || !email) {
+  if (!orgName || !contactName || !email || !phone) {
     return {
       ok: false,
-      error: "Organization name, contact name, and email are required.",
+      error: "Organization name, contact name, email, and phone are required.",
     };
   }
   if (!EMAIL_RE.test(email)) {
     return { ok: false, error: "Please enter a valid email address." };
+  }
+  if (phone.replace(/\D/g, "").length < 7) {
+    return { ok: false, error: "Please enter a valid phone number." };
   }
 
   try {
