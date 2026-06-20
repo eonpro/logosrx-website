@@ -1,10 +1,14 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * Public smoke for the password-gated pricing quote page. Needs only the app
- * booted with Clerk test keys (no seeded DB): an unknown token renders the
- * branded "not available" state on the same AuthShell the login pages use,
- * which verifies the route, the shell chrome, and the logo render.
+ * Smoke for the password-gated pricing quote page. The `/quote/[token]` route
+ * looks the token up in the database before rendering (even the "not found"
+ * state), so this spec needs a reachable DB — it is NOT part of the DB-free CI
+ * smoke. Run it against a real deploy (a seeded preview) via PLAYWRIGHT_BASE_URL.
+ *
+ * An unknown token renders the branded "not available" state on the same
+ * AuthShell the login pages use, verifying the route, the shell chrome, and
+ * the logo render.
  */
 
 test.describe("pricing quote — public", () => {

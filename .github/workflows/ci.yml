@@ -156,8 +156,12 @@ jobs:
             if curl -sf http://localhost:3000 >/dev/null; then break; fi
             sleep 1
           done
+          # Only DB-free specs run here. partners-public covers routing,
+          # middleware protection, and server-rendered chrome without a
+          # database. Quote-page and authenticated specs need a seeded DB and
+          # run against a real deploy via PLAYWRIGHT_BASE_URL (see tests/e2e).
           npx playwright test --project=desktop-chrome \
-            tests/e2e/partners-public.spec.ts tests/e2e/quote-public.spec.ts
+            tests/e2e/partners-public.spec.ts
 
       - name: Upload Playwright report
         if: steps.creds.outputs.present == 'true' && always()
