@@ -6,67 +6,187 @@ import { AnimatePresence, motion } from "framer-motion";
 import { NAV_GROUPS, type MegaMenuLink } from "@/lib/constants";
 
 /**
- * Abstract, on-brand "mesh gradient" fields for the mega-menu feature cards —
- * soft overlapping color blooms (warm coral → sky → purple → navy) that read as
- * dreamy brand artwork rather than literal photos. Cycled by card index per
- * panel. A slight blur on the layer (see card markup) softens the blooms.
+ * Per-card abstract artwork for the mega-menu feature cards. Each design pairs a
+ * distinct mesh-gradient background with its own SVG shape motif so every card
+ * reads as a unique, modern abstract composition. Designs are assigned by a
+ * GLOBAL card index (see GROUP_CARD_OFFSETS) so the cards visible in any single
+ * panel are always different from one another.
  */
-const ABSTRACT_GRADIENTS = [
-  // coral TL · sky TR · purple BR · navy BL
+const CARD_GRADIENTS = [
+  // 0 — warm coral → cool blue (glossy oil-bubble hero)
+  "radial-gradient(95% 95% at 16% 18%, #E2637A 0%, transparent 60%), radial-gradient(95% 95% at 86% 90%, #5F86C4 0%, transparent 60%), linear-gradient(135deg, #C62E88, #262262)",
+  // 1 — aurora: sky → purple → navy
+  "radial-gradient(90% 90% at 82% 6%, #6EA3D7 0%, transparent 55%), linear-gradient(160deg, #5F86C4 0%, #6E469B 58%, #1A1750 100%)",
+  // 2 — soft dreamy mesh (Sessions)
   "radial-gradient(80% 80% at 14% 12%, #E2637A 0%, transparent 55%), radial-gradient(78% 78% at 88% 10%, #6EA3D7 0%, transparent 55%), radial-gradient(95% 95% at 82% 96%, #6E469B 0%, transparent 60%), radial-gradient(95% 95% at 8% 96%, #262262 0%, transparent 62%), linear-gradient(135deg, #C62E88, #35307A)",
-  // sky TR · purple TL · coral bottom
-  "radial-gradient(82% 82% at 86% 14%, #6EA3D7 0%, transparent 55%), radial-gradient(85% 85% at 10% 18%, #7357A4 0%, transparent 55%), radial-gradient(100% 100% at 50% 102%, #E2637A 0%, transparent 60%), linear-gradient(160deg, #5F86C4, #262262)",
-  // coral TL · sky right · deep purple bottom
-  "radial-gradient(85% 85% at 18% 14%, #E2637A 0%, transparent 52%), radial-gradient(80% 80% at 92% 32%, #5F86C4 0%, transparent 52%), radial-gradient(110% 110% at 60% 104%, #6E469B 0%, transparent 60%), linear-gradient(135deg, #C62E88, #1A1750)",
+  // 3 — magenta bloom → deep purple (concentric rings)
+  "radial-gradient(100% 100% at 84% 16%, #C62E88 0%, transparent 55%), linear-gradient(140deg, #6E469B, #1A1750)",
+  // 4 — sky bloom → purple (liquid blob)
+  "radial-gradient(95% 95% at 18% 84%, #6EA3D7 0%, transparent 55%), linear-gradient(135deg, #7357A4, #262262)",
+  // 5 — coral → purple → navy (glass panels)
+  "linear-gradient(135deg, #E2637A 0%, #6E469B 52%, #1A1750 100%)",
 ] as const;
 
-/**
- * Decorative abstract shape artwork layered over each card's mesh gradient so
- * the cards read as designed artwork (bubbles, rings, organic circles) rather
- * than flat color. Three motifs cycled by card index. Purely presentational.
- */
-function CardArtwork({ variant }: { variant: number }) {
-  const v = ((variant % 3) + 3) % 3;
+const DESIGN_COUNT = CARD_GRADIENTS.length;
+
+/** Starting global card index for each nav group, so designs never repeat within one panel. */
+const GROUP_CARD_OFFSETS = (() => {
+  let acc = 0;
+  return NAV_GROUPS.map((g) => {
+    const start = acc;
+    acc += g.cards?.length ?? 0;
+    return start;
+  });
+})();
+
+const ART_CLASS =
+  "absolute inset-0 h-full w-full transition-transform duration-700 group-hover:scale-105";
+
+/** Routes a global design index to its unique abstract motif. */
+function CardArtwork({ design, uid }: { design: number; uid: string }) {
+  switch (design % DESIGN_COUNT) {
+    case 0:
+      return <BubblesArt uid={uid} />;
+    case 1:
+      return <AuroraArt uid={uid} />;
+    case 2:
+      return <MeshArt uid={uid} />;
+    case 3:
+      return <RingsArt />;
+    case 4:
+      return <BlobArt uid={uid} />;
+    default:
+      return <PanelsArt />;
+  }
+}
+
+/** Glossy oil-bubbles — radial-shaded circles with rim light + specular dot. */
+function BubblesArt({ uid }: { uid: string }) {
+  const g = `${uid}-b`;
+  const bubbles = [
+    { x: 190, y: 54, r: 54 },
+    { x: 148, y: 142, r: 30 },
+    { x: 216, y: 152, r: 20 },
+    { x: 108, y: 60, r: 16 },
+    { x: 70, y: 168, r: 27 },
+    { x: 198, y: 202, r: 12 },
+    { x: 132, y: 198, r: 9 },
+  ];
   return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 240 220"
-      preserveAspectRatio="xMidYMid slice"
-      className="absolute inset-0 h-full w-full transition-transform duration-700 group-hover:scale-105"
-    >
-      {v === 0 && (
-        // Oil-bubble cluster
-        <g fill="#ffffff">
-          <circle cx="188" cy="44" r="50" fillOpacity="0.10" stroke="#ffffff" strokeOpacity="0.30" strokeWidth="1.5" />
-          <circle cx="150" cy="122" r="27" fillOpacity="0.10" stroke="#ffffff" strokeOpacity="0.28" strokeWidth="1.5" />
-          <circle cx="216" cy="134" r="18" fillOpacity="0.16" stroke="#ffffff" strokeOpacity="0.34" strokeWidth="1.5" />
-          <circle cx="116" cy="56" r="12" fillOpacity="0.18" stroke="#ffffff" strokeOpacity="0.34" strokeWidth="1.2" />
-          <circle cx="76" cy="158" r="23" fillOpacity="0.08" stroke="#ffffff" strokeOpacity="0.22" strokeWidth="1.5" />
-          <circle cx="184" cy="190" r="10" fillOpacity="0.18" stroke="#ffffff" strokeOpacity="0.34" strokeWidth="1.2" />
+    <svg aria-hidden="true" viewBox="0 0 240 220" preserveAspectRatio="xMidYMid slice" className={ART_CLASS}>
+      <defs>
+        <radialGradient id={g} cx="34%" cy="28%" r="75%">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.6" />
+          <stop offset="24%" stopColor="#ffffff" stopOpacity="0.14" />
+          <stop offset="66%" stopColor="#ffffff" stopOpacity="0" />
+          <stop offset="100%" stopColor="#1A1750" stopOpacity="0.28" />
+        </radialGradient>
+      </defs>
+      {bubbles.map((b, k) => (
+        <g key={k}>
+          <circle cx={b.x} cy={b.y} r={b.r} fill={`url(#${g})`} stroke="#ffffff" strokeOpacity="0.3" strokeWidth="1" />
+          <circle cx={b.x - b.r * 0.34} cy={b.y - b.r * 0.4} r={Math.max(b.r * 0.14, 1.5)} fill="#ffffff" fillOpacity="0.75" />
         </g>
-      )}
-      {v === 1 && (
-        // Concentric rings + accent dots
-        <g fill="none" stroke="#ffffff" strokeWidth="1.5">
-          <circle cx="208" cy="30" r="24" strokeOpacity="0.38" />
-          <circle cx="208" cy="30" r="50" strokeOpacity="0.27" />
-          <circle cx="208" cy="30" r="78" strokeOpacity="0.18" />
-          <circle cx="208" cy="30" r="108" strokeOpacity="0.12" />
-          <circle cx="58" cy="150" r="30" strokeOpacity="0.30" />
-          <circle cx="58" cy="150" r="7" fill="#ffffff" fillOpacity="0.55" stroke="none" />
-          <circle cx="120" cy="120" r="4" fill="#ffffff" fillOpacity="0.5" stroke="none" />
-        </g>
-      )}
-      {v === 2 && (
-        // Overlapping translucent orbs with soft outlines
-        <g fill="#ffffff" stroke="#ffffff">
-          <circle cx="66" cy="58" r="66" fillOpacity="0.12" strokeOpacity="0.22" strokeWidth="1.5" />
-          <circle cx="184" cy="86" r="84" fillOpacity="0.10" strokeOpacity="0.18" strokeWidth="1.5" />
-          <circle cx="142" cy="192" r="58" fillOpacity="0.12" strokeOpacity="0.22" strokeWidth="1.5" />
-          <circle cx="38" cy="168" r="40" fillOpacity="0.10" strokeOpacity="0.2" strokeWidth="1.5" />
-          <circle cx="206" cy="184" r="16" fillOpacity="0.2" strokeOpacity="0.3" strokeWidth="1.2" />
-        </g>
-      )}
+      ))}
+    </svg>
+  );
+}
+
+/** Aurora ribbons — soft translucent flowing bands. */
+function AuroraArt({ uid }: { uid: string }) {
+  const g = `${uid}-a`;
+  return (
+    <svg aria-hidden="true" viewBox="0 0 240 220" preserveAspectRatio="xMidYMid slice" className={ART_CLASS}>
+      <defs>
+        <linearGradient id={g} x1="0" y1="0" x2="1" y2="0.4">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0" />
+          <stop offset="50%" stopColor="#ffffff" stopOpacity="0.5" />
+          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <g fill={`url(#${g})`}>
+        <path d="M-20 58 C 60 8, 130 104, 260 36 L 260 64 C 130 132, 60 36, -20 86 Z" opacity="0.35" />
+        <path d="M-20 118 C 70 70, 140 168, 260 104 L 260 128 C 140 192, 70 96, -20 146 Z" opacity="0.22" />
+      </g>
+      <g fill="#ffffff">
+        <circle cx="202" cy="44" r="4" fillOpacity="0.6" />
+        <circle cx="56" cy="182" r="3" fillOpacity="0.5" />
+      </g>
+    </svg>
+  );
+}
+
+/** Soft mesh — a single diagonal light streak over the dreamy gradient. */
+function MeshArt({ uid }: { uid: string }) {
+  const g = `${uid}-m`;
+  return (
+    <svg aria-hidden="true" viewBox="0 0 240 220" preserveAspectRatio="xMidYMid slice" className={ART_CLASS}>
+      <defs>
+        <linearGradient id={g} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0" />
+          <stop offset="50%" stopColor="#ffffff" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <rect x="-60" y="40" width="360" height="46" fill={`url(#${g})`} transform="rotate(-24 120 110)" />
+      <circle cx="60" cy="60" r="2.5" fill="#ffffff" fillOpacity="0.5" />
+      <circle cx="186" cy="150" r="2" fill="#ffffff" fillOpacity="0.45" />
+    </svg>
+  );
+}
+
+/** Concentric rings radiating from a corner. */
+function RingsArt() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 240 220" preserveAspectRatio="xMidYMid slice" className={ART_CLASS}>
+      <g fill="none" stroke="#ffffff" strokeWidth="1.5">
+        <circle cx="224" cy="14" r="34" strokeOpacity="0.4" />
+        <circle cx="224" cy="14" r="66" strokeOpacity="0.3" />
+        <circle cx="224" cy="14" r="100" strokeOpacity="0.2" />
+        <circle cx="224" cy="14" r="138" strokeOpacity="0.13" />
+        <circle cx="224" cy="14" r="180" strokeOpacity="0.08" />
+      </g>
+      <g fill="#ffffff" stroke="none">
+        <circle cx="52" cy="160" r="6" fillOpacity="0.5" />
+        <circle cx="96" cy="186" r="3" fillOpacity="0.4" />
+      </g>
+    </svg>
+  );
+}
+
+/** Liquid organic blob with accent specks. */
+function BlobArt({ uid }: { uid: string }) {
+  const g = `${uid}-l`;
+  return (
+    <svg aria-hidden="true" viewBox="0 0 240 220" preserveAspectRatio="xMidYMid slice" className={ART_CLASS}>
+      <defs>
+        <linearGradient id={g} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.05" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M168 26 C 208 36, 232 78, 220 118 C 210 152, 232 178, 198 196 C 164 214, 120 196, 92 200 C 52 206, 18 184, 26 146 C 32 116, 8 96, 26 66 C 44 36, 96 44, 124 32 C 142 24, 150 22, 168 26 Z"
+        fill={`url(#${g})`}
+        stroke="#ffffff"
+        strokeOpacity="0.22"
+        strokeWidth="1.2"
+      />
+      <circle cx="186" cy="64" r="3" fill="#ffffff" fillOpacity="0.6" />
+      <circle cx="70" cy="170" r="2.5" fill="#ffffff" fillOpacity="0.5" />
+    </svg>
+  );
+}
+
+/** Stacked glassmorphic panels at angles. */
+function PanelsArt() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 240 220" preserveAspectRatio="xMidYMid slice" className={ART_CLASS}>
+      <g stroke="#ffffff">
+        <rect x="120" y="-10" width="150" height="150" rx="22" fill="#ffffff" fillOpacity="0.10" strokeOpacity="0.22" strokeWidth="1.2" transform="rotate(18 195 65)" />
+        <rect x="40" y="70" width="150" height="150" rx="22" fill="#ffffff" fillOpacity="0.08" strokeOpacity="0.2" strokeWidth="1.2" transform="rotate(18 115 145)" />
+        <rect x="-30" y="20" width="110" height="110" rx="18" fill="#ffffff" fillOpacity="0.06" strokeOpacity="0.16" strokeWidth="1.2" transform="rotate(18 25 75)" />
+      </g>
     </svg>
   );
 }
@@ -186,6 +306,7 @@ export default function DesktopNav({ onDark }: DesktopNavProps) {
             key={active}
             id={`mega-${active}`}
             group={NAV_GROUPS[active]}
+            groupIndex={active}
             onMouseEnter={clearCloseTimer}
             onMouseLeave={scheduleClose}
             onItemClick={() => setActive(null)}
@@ -199,12 +320,13 @@ export default function DesktopNav({ onDark }: DesktopNavProps) {
 interface MegaPanelProps {
   id: string;
   group: (typeof NAV_GROUPS)[number];
+  groupIndex: number;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
   onItemClick: () => void;
 }
 
-function MegaPanel({ id, group, onMouseEnter, onMouseLeave, onItemClick }: MegaPanelProps) {
+function MegaPanel({ id, group, groupIndex, onMouseEnter, onMouseLeave, onItemClick }: MegaPanelProps) {
   return (
     <motion.div
       id={id}
@@ -239,20 +361,22 @@ function MegaPanel({ id, group, onMouseEnter, onMouseLeave, onItemClick }: MegaP
 
           {group.cards?.length ? (
             <div className="col-span-5 flex gap-4">
-              {group.cards.map((card, i) => (
+              {group.cards.map((card, i) => {
+                const design = (GROUP_CARD_OFFSETS[groupIndex] + i) % DESIGN_COUNT;
+                return (
                 <Link
                   key={card.href + card.label}
                   href={card.href}
                   onClick={onItemClick}
                   {...(card.newTab ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                  className="group relative flex flex-1 flex-col justify-end overflow-hidden rounded-xl bg-navy min-h-[180px] focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta focus-visible:ring-offset-2"
+                  className="group relative flex flex-1 flex-col justify-end overflow-hidden rounded-xl bg-navy min-h-[190px] focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta focus-visible:ring-offset-2"
                 >
                   <div
                     className="absolute -inset-12 blur-2xl transition-transform duration-700 group-hover:scale-110"
-                    style={{ backgroundImage: ABSTRACT_GRADIENTS[i % ABSTRACT_GRADIENTS.length] }}
+                    style={{ backgroundImage: CARD_GRADIENTS[design] }}
                     aria-hidden="true"
                   />
-                  <CardArtwork variant={i} />
+                  <CardArtwork design={design} uid={`art-${groupIndex}-${i}`} />
                   <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/60 via-transparent to-transparent" aria-hidden="true" />
                   <div className="relative flex items-center justify-between gap-2 p-4">
                     <span className="text-sm font-semibold text-white">{card.label}</span>
@@ -263,7 +387,8 @@ function MegaPanel({ id, group, onMouseEnter, onMouseLeave, onItemClick }: MegaP
                     </span>
                   </div>
                 </Link>
-              ))}
+                );
+              })}
             </div>
           ) : null}
         </div>
