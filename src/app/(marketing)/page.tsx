@@ -1,3 +1,7 @@
+import type { Metadata } from "next";
+import JsonLd from "@/components/JsonLd";
+import { buildMetadata, faqPageSchema, graph } from "@/lib/seo";
+import { homeFaqs } from "@/data/faqs";
 import Hero from "@/components/Hero";
 import StatsCounter from "@/components/StatsCounter";
 import HowItWorks from "@/components/HowItWorks";
@@ -11,9 +15,16 @@ import Newsletter from "@/components/Newsletter";
 import ScrollingMarquee from "@/components/ScrollingMarquee";
 import PatientRefill from "@/components/PatientRefill";
 
+export const metadata: Metadata = buildMetadata({
+  description:
+    "Logos RX is a 503A compounding pharmacy in Tampa, Florida, licensed in 25 states, with sterile and non-sterile labs preparing personalized medications prescribed by licensed providers.",
+  path: "/",
+});
+
 export default function Home() {
   return (
     <>
+      <JsonLd data={graph(faqPageSchema(homeFaqs.map((f) => ({ question: f.question, answer: f.answer }))))} />
       <Hero />
       <StatsCounter />
       <HowItWorks />

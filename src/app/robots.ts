@@ -24,12 +24,40 @@ export default function robots(): MetadataRoute.Robots {
     disallow.push("/catalog", "/catalog/");
   }
 
+  // AI answer-engine + training crawlers we explicitly welcome. Being readable
+  // by these is the whole GEO/AEO play — it lets ChatGPT, Claude, Perplexity,
+  // Gemini/AI Overviews, and Bing Copilot cite Logos RX as a source. They each
+  // inherit the same `disallow` list (admin/api/auth stay private).
+  //
+  // Stakeholder note: to opt OUT of *model training* while staying citable in
+  // answers, disallow the training-only agents (GPTBot, ClaudeBot, CCBot,
+  // Google-Extended) and keep the answer-time fetchers (OAI-SearchBot,
+  // PerplexityBot, Claude-User/Claude-SearchBot). Default here is allow-all.
+  const aiCrawlers = [
+    "GPTBot", // OpenAI training
+    "OAI-SearchBot", // ChatGPT search/answers
+    "ChatGPT-User", // ChatGPT live browsing
+    "ClaudeBot", // Anthropic crawler
+    "anthropic-ai", // Anthropic (legacy token)
+    "Claude-User", // Claude live browsing
+    "Claude-SearchBot", // Claude search
+    "PerplexityBot", // Perplexity index
+    "Perplexity-User", // Perplexity live fetch
+    "Google-Extended", // Gemini / Vertex training + grounding
+    "Applebot-Extended", // Apple Intelligence
+    "Bingbot", // Bing + Copilot
+    "Amazonbot",
+    "Meta-ExternalAgent",
+    "cohere-ai",
+    "CCBot", // Common Crawl (feeds many models)
+  ];
+
   return {
-    rules: {
-      userAgent: "*",
-      allow: "/",
-      disallow,
-    },
+    rules: [
+      { userAgent: "*", allow: "/", disallow },
+      { userAgent: aiCrawlers, allow: "/", disallow },
+    ],
     sitemap: `${SITE.url}/sitemap.xml`,
+    host: SITE.url,
   };
 }

@@ -69,6 +69,7 @@ export default function Hero() {
             width={600}
             height={800}
             priority
+            sizes="(min-width: 1024px) 600px, 100vw"
             className="w-full lg:w-[85%] xl:w-[75%] max-w-[600px] h-auto block"
           />
         </motion.div>

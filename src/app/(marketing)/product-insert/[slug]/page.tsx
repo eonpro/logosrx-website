@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { productInserts, getProductInsert } from "@/data/product-inserts";
 import { CONTACT, SITE } from "@/lib/constants";
+import { buildMetadata } from "@/lib/seo";
 import ProductInsertContent from "./ProductInsertContent";
 
 export function generateStaticParams() {
@@ -18,10 +19,12 @@ export async function generateMetadata({
   const { slug } = await params;
   const insert = getProductInsert(slug);
   if (!insert) return {};
-  return {
+  return buildMetadata({
     title: insert.title,
     description: insert.subtitle,
-  };
+    path: `/product-insert/${insert.slug}`,
+    type: "article",
+  });
 }
 
 export default async function ProductInsertPage({

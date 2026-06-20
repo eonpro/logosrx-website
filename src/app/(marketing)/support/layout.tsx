@@ -4,6 +4,7 @@ export const metadata: Metadata = {
   title: "Support & Education Center",
   description:
     "Expert pharmaceutical consultations, how-to guides, and dedicated customer service from the Logos RX team.",
+  alternates: { canonical: "/support" },
 };
 
 export default function SupportLayout({

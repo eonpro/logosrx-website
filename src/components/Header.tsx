@@ -4,7 +4,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import MobileMenu from "./MobileMenu";
-import { NAV_LINKS, SITE } from "@/lib/constants";
+import DesktopNav from "./DesktopNav";
+import TrackedLink from "./TrackedLink";
+import { SITE } from "@/lib/constants";
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -36,7 +38,7 @@ export default function Header() {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 border-b border-white/10 transition-colors duration-300 supports-backdrop-filter:backdrop-blur-md supports-backdrop-filter:bg-white/60">
-        <div className="mx-auto max-w-7xl flex items-center justify-between px-6 py-4 lg:px-8">
+        <div className="relative mx-auto max-w-7xl flex items-center justify-between px-6 py-4 lg:px-8">
           <Link href="/" className="relative flex items-center gap-2" aria-label={SITE.name}>
             <Image
               src="/images/logo.svg"
@@ -55,24 +57,7 @@ export default function Header() {
             />
           </Link>
 
-          <nav
-            aria-label="Primary"
-            className="hidden lg:flex items-center gap-7 xl:gap-9"
-          >
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`text-sm font-semibold tracking-wide transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta focus-visible:ring-offset-2 rounded ${
-                  onDark
-                    ? "text-white/80 hover:text-white focus-visible:ring-offset-navy-deep"
-                    : "text-navy hover:text-magenta focus-visible:ring-offset-white"
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
+          <DesktopNav onDark={onDark} />
 
           <div className="flex items-center gap-3 sm:gap-4">
             <Link
@@ -88,6 +73,19 @@ export default function Header() {
               </svg>
               LOG IN
             </Link>
+
+            <TrackedLink
+              href={SITE.lifefilePortal}
+              event="cta_lifefile_login"
+              eventParams={{ location: "header" }}
+              newTab
+              className="hidden sm:inline-flex items-center gap-2 rounded-full bg-magenta px-4 py-1.5 text-sm font-semibold text-white transition-colors duration-300 hover:bg-magenta-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta focus-visible:ring-offset-2"
+            >
+              Provider Login
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <path d="M3 1.5L9 6L3 10.5V1.5Z" fill="currentColor" />
+              </svg>
+            </TrackedLink>
 
             <button
               onClick={() => setMenuOpen(true)}
