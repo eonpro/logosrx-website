@@ -103,49 +103,65 @@ export async function createQuoteRecord(
   let token: string;
   try {
     token = await uniqueToken();
-  } catch {
+  } catch (err) {
+    console.error("[quotes] token allocation failed:", err);
     return { ok: false, error: "Could not create the quote. Please try again." };
   }
 
+  // Note: we intentionally avoid a multi-statement DB transaction here. Under
+  // serverless + RDS IAM pooling, holding one connection across BEGIN…COMMIT is
+  // the most failure-prone path (a recycled/expired connection mid-transaction
+  // throws). Instead we insert the parent row, then the items, and compensate
+  // by deleting the orphan parent if the items insert fails.
   let quoteId: number;
   try {
-    quoteId = await db.transaction(async (tx) => {
-      const [row] = await tx
-        .insert(pricingQuotes)
-        .values({
-          token,
-          clinicName: input.clinicName?.trim() || null,
-          contactName: input.contactName?.trim() || null,
-          email,
-          intro: input.intro?.trim() || null,
-          passwordHash,
-          tier: input.tier,
-          discountPct,
-          expiresAt,
-          createdBy: input.createdBy,
-          createdByEmail: input.createdByEmail,
-          partnerOrgId: input.partnerOrgId ?? null,
-          partnerRepId: input.partnerRepId ?? null,
-        })
-        .returning({ id: pricingQuotes.id });
-
-      if (items.length > 0) {
-        await tx.insert(pricingQuoteItems).values(
-          items.map((it, idx) => ({
-            quoteId: row.id,
-            productId: it.productId,
-            productName: it.productName.trim(),
-            priceCents: Math.round(it.priceCents),
-            unit: it.unit?.trim() || null,
-            sortOrder: idx,
-          })),
-        );
-      }
-      return row.id;
-    });
-  } catch {
-    console.error("[quotes] createQuoteRecord failed");
+    const [row] = await db
+      .insert(pricingQuotes)
+      .values({
+        token,
+        clinicName: input.clinicName?.trim() || null,
+        contactName: input.contactName?.trim() || null,
+        email,
+        intro: input.intro?.trim() || null,
+        passwordHash,
+        tier: input.tier,
+        discountPct,
+        expiresAt,
+        createdBy: input.createdBy,
+        createdByEmail: input.createdByEmail,
+        partnerOrgId: input.partnerOrgId ?? null,
+        partnerRepId: input.partnerRepId ?? null,
+      })
+      .returning({ id: pricingQuotes.id });
+    quoteId = row.id;
+  } catch (err) {
+    console.error("[quotes] quote insert failed:", err);
     return { ok: false, error: "Could not create the quote. Please try again." };
+  }
+
+  if (items.length > 0) {
+    try {
+      await db.insert(pricingQuoteItems).values(
+        items.map((it, idx) => ({
+          quoteId,
+          productId: it.productId,
+          productName: it.productName.trim(),
+          priceCents: Math.round(it.priceCents),
+          unit: it.unit?.trim() || null,
+          sortOrder: idx,
+        })),
+      );
+    } catch (err) {
+      console.error("[quotes] items insert failed; rolling back quote:", err);
+      // Compensate: a quote with no line items is invalid, so remove the orphan.
+      await db
+        .delete(pricingQuotes)
+        .where(eq(pricingQuotes.id, quoteId))
+        .catch((delErr) =>
+          console.error("[quotes] orphan cleanup failed:", delErr),
+        );
+      return { ok: false, error: "Could not create the quote. Please try again." };
+    }
   }
 
   return {
