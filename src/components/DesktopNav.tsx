@@ -6,14 +6,18 @@ import { AnimatePresence, motion } from "framer-motion";
 import { NAV_GROUPS, type MegaMenuLink } from "@/lib/constants";
 
 /**
- * Abstract, on-brand gradient fields for the mega-menu feature cards — used
- * instead of literal product photos so the cards read as colorful brand
- * artwork (matching the reference design). Cycled by card index per panel.
+ * Abstract, on-brand "mesh gradient" fields for the mega-menu feature cards —
+ * soft overlapping color blooms (warm coral → sky → purple → navy) that read as
+ * dreamy brand artwork rather than literal photos. Cycled by card index per
+ * panel. A slight blur on the layer (see card markup) softens the blooms.
  */
 const ABSTRACT_GRADIENTS = [
-  "radial-gradient(115% 90% at 0% 0%, rgba(226,99,122,0.9) 0%, transparent 45%), linear-gradient(135deg, #C62E88 0%, #6E469B 55%, #1A1750 100%)",
-  "radial-gradient(110% 90% at 100% 0%, rgba(110,163,215,0.85) 0%, transparent 45%), linear-gradient(140deg, #5F86C4 0%, #7357A4 52%, #262262 100%)",
-  "radial-gradient(90% 90% at 18% 12%, rgba(198,46,136,0.85) 0%, transparent 42%), radial-gradient(100% 100% at 92% 92%, rgba(95,134,196,0.8) 0%, transparent 48%), #1A1750",
+  // coral TL · sky TR · purple BR · navy BL
+  "radial-gradient(80% 80% at 14% 12%, #E2637A 0%, transparent 55%), radial-gradient(78% 78% at 88% 10%, #6EA3D7 0%, transparent 55%), radial-gradient(95% 95% at 82% 96%, #6E469B 0%, transparent 60%), radial-gradient(95% 95% at 8% 96%, #262262 0%, transparent 62%), linear-gradient(135deg, #C62E88, #35307A)",
+  // sky TR · purple TL · coral bottom
+  "radial-gradient(82% 82% at 86% 14%, #6EA3D7 0%, transparent 55%), radial-gradient(85% 85% at 10% 18%, #7357A4 0%, transparent 55%), radial-gradient(100% 100% at 50% 102%, #E2637A 0%, transparent 60%), linear-gradient(160deg, #5F86C4, #262262)",
+  // coral TL · sky right · deep purple bottom
+  "radial-gradient(85% 85% at 18% 14%, #E2637A 0%, transparent 52%), radial-gradient(80% 80% at 92% 32%, #5F86C4 0%, transparent 52%), radial-gradient(110% 110% at 60% 104%, #6E469B 0%, transparent 60%), linear-gradient(135deg, #C62E88, #1A1750)",
 ] as const;
 
 interface DesktopNavProps {
@@ -193,11 +197,11 @@ function MegaPanel({ id, group, onMouseEnter, onMouseLeave, onItemClick }: MegaP
                   className="group relative flex flex-1 flex-col justify-end overflow-hidden rounded-xl bg-navy min-h-[180px] focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta focus-visible:ring-offset-2"
                 >
                   <div
-                    className="absolute inset-0 transition-transform duration-500 group-hover:scale-110"
+                    className="absolute -inset-12 blur-2xl transition-transform duration-700 group-hover:scale-110"
                     style={{ backgroundImage: ABSTRACT_GRADIENTS[i % ABSTRACT_GRADIENTS.length] }}
                     aria-hidden="true"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/60 via-transparent to-transparent" aria-hidden="true" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/55 via-transparent to-transparent" aria-hidden="true" />
                   <div className="relative flex items-center justify-between gap-2 p-4">
                     <span className="text-sm font-semibold text-white">{card.label}</span>
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-colors group-hover:bg-magenta">
