@@ -8,6 +8,7 @@ import {
   emailSignups,
   promotions,
   featuredProducts,
+  pricingQuotes,
 } from "@/lib/db/schema";
 import { count, sql } from "drizzle-orm";
 import { requireAdmin } from "@/lib/auth/admin";
@@ -18,7 +19,7 @@ import { requireAdmin } from "@/lib/auth/admin";
  * filtered sub-count in a single pass using conditional aggregation.
  */
 async function getStats() {
-  const [apps, clinicLeads, accounts, emails, merch, featured] =
+  const [apps, clinicLeads, accounts, emails, merch, featured, quotes] =
     await Promise.all([
     db
       .select({
@@ -61,6 +62,14 @@ async function getStats() {
         ),
       })
       .from(featuredProducts),
+    db
+      .select({
+        total: count(),
+        active: sql<number>`count(*) filter (where ${pricingQuotes.status} = 'active' and (${pricingQuotes.expiresAt} is null or ${pricingQuotes.expiresAt} > now()))`.mapWith(
+          Number,
+        ),
+      })
+      .from(pricingQuotes),
   ]);
 
   return {
@@ -72,6 +81,7 @@ async function getStats() {
       total: merch[0].promoActive,
       featured: featured[0].featuredActive,
     },
+    quotes: { total: quotes[0].total, active: quotes[0].active },
   };
 }
 
@@ -100,6 +110,11 @@ const cards = [
     label: "Merchandising",
     href: "/admin/merchandising",
     color: "bg-amber-500",
+  },
+  {
+    label: "Pricing Quotes",
+    href: "/admin/quotes",
+    color: "bg-rose-500",
   },
 ];
 
@@ -142,6 +157,13 @@ export default async function AdminOverview() {
       badge: stats.merchandising.featured,
       badgeLabel: "featured",
       badgeClass: "bg-amber-100 text-amber-700",
+    },
+    {
+      ...cards[5],
+      total: stats.quotes.total,
+      badge: stats.quotes.active,
+      badgeLabel: "active",
+      badgeClass: "bg-rose-100 text-rose-700",
     },
   ];
 

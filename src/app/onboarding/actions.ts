@@ -12,6 +12,7 @@ import {
 } from "@/lib/auth/clerk-users";
 import { encrypt } from "@/lib/onboarding/encryption";
 import { stampClinicAttribution } from "@/lib/partners/attribution";
+import { applyClaimedQuote } from "@/lib/quotes/apply";
 import { notifyNewClinic } from "@/lib/notifications/slack";
 import { runAfterResponse } from "@/lib/runtime/after";
 import {
@@ -222,6 +223,9 @@ export async function completeOnboarding(
     // Partner referral attribution (from the /join/<code> cookie, if any).
     // Best-effort by design; runs after the profile write so the row exists.
     await stampClinicAttribution(userId);
+    // Apply an accepted custom pricing quote (from the `quote_claim` cookie),
+    // if this clinic reached onboarding by accepting one. Best-effort.
+    await applyClaimedQuote(userId);
     // Admin Slack ping is non-critical: don't make the clinic wait on it.
     runAfterResponse(notifyNewClinic(toClinicNotification(state)));
     return { ok: true };
@@ -347,6 +351,9 @@ export async function createAccountAndComplete(
 
   // Partner referral attribution (from the /join/<code> cookie, if any).
   await stampClinicAttribution(newUserId);
+  // Apply an accepted custom pricing quote (from the `quote_claim` cookie), if
+  // this visitor reached onboarding by accepting one. Best-effort.
+  await applyClaimedQuote(newUserId);
 
   // Notify admins (resilient: never throws / never blocks the response).
   runAfterResponse(notifyNewClinic(toClinicNotification(state)));

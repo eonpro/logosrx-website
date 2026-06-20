@@ -62,6 +62,22 @@ export const pricingTierEnum = pgEnum("pricing_tier", [
   "vip",
 ]);
 
+/**
+ * Lifecycle of a custom pricing quote (a password-gated link sent to a
+ * prospective clinic):
+ *   - `active`  — live; can be opened with the password and accepted.
+ *   - `accepted`— the recipient accepted the pricing (CTA clicked) but hasn't
+ *     finished creating their account yet.
+ *   - `claimed` — an account was created and the quoted pricing was applied.
+ *   - `revoked` — an admin disabled the link; it no longer opens.
+ */
+export const quoteStatusEnum = pgEnum("quote_status", [
+  "active",
+  "accepted",
+  "claimed",
+  "revoked",
+]);
+
 /** Lifecycle of a partner org or rep account (affiliate program). */
 export const partnerStatusEnum = pgEnum("partner_status", [
   "pending",
@@ -450,6 +466,81 @@ export const featuredProducts = pgTable("featured_products", {
 ]);
 
 /**
+ * A custom pricing quote an admin builds for a prospective clinic and shares as
+ * a password-gated link (`/quote/<token>`). The recipient enters the password,
+ * reviews their quoted line items (in `pricing_quote_items`), and accepts —
+ * which routes them into account creation. On signup the quote's `tier`,
+ * `discountPct`, and line items are applied to the new clinic and the row is
+ * marked `claimed`.
+ *
+ * Only the scrypt hash of the password is stored (`passwordHash`); the plaintext
+ * is shown to the admin exactly once at creation/regeneration to share out-of-band.
+ */
+export const pricingQuotes = pgTable("pricing_quotes", {
+  id: serial("id").primaryKey(),
+  // Unguessable public slug used in the URL. base32, ~24 chars.
+  token: varchar("token", { length: 32 }).notNull().unique(),
+  clinicName: varchar("clinic_name", { length: 200 }),
+  contactName: varchar("contact_name", { length: 200 }),
+  // Recipient email (lowercased). Prefills onboarding; not used for auth.
+  email: varchar("email", { length: 255 }).notNull(),
+  // Optional intro/message shown above the quoted items.
+  intro: text("intro"),
+  // scrypt hash, serialized as `saltHex:hashHex`. Never the plaintext.
+  passwordHash: text("password_hash").notNull(),
+  // Pricing applied to the clinic on claim (alongside the line items).
+  tier: pricingTierEnum("tier").default("standard").notNull(),
+  discountPct: integer("discount_pct").default(0).notNull(),
+  status: quoteStatusEnum("status").default("active").notNull(),
+  expiresAt: timestamp("expires_at"),
+  // Admin who created the quote.
+  createdBy: varchar("created_by", { length: 64 }).notNull(),
+  createdByEmail: varchar("created_by_email", { length: 255 }),
+  viewedAt: timestamp("viewed_at"),
+  acceptedAt: timestamp("accepted_at"),
+  // Set when an account is created from this quote.
+  claimedClerkUserId: varchar("claimed_clerk_user_id", { length: 64 }),
+  claimedClinicId: integer("claimed_clinic_id").references(() => clinics.id, {
+    onDelete: "set null",
+  }),
+  claimedAt: timestamp("claimed_at"),
+  // When a quote is created by a partner (sales org), these attribute the
+  // resulting clinic to that org/rep on claim (so they earn on its sales).
+  // NULL for admin-created quotes.
+  partnerOrgId: integer("partner_org_id").references(() => partnerOrgs.id, {
+    onDelete: "set null",
+  }),
+  partnerRepId: integer("partner_rep_id").references(() => partnerReps.id, {
+    onDelete: "set null",
+  }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (t) => [
+  index("pricing_quotes_status_idx").on(t.status),
+  index("pricing_quotes_created_at_idx").on(t.createdAt),
+  index("pricing_quotes_partner_org_idx").on(t.partnerOrgId),
+]);
+
+/**
+ * A single line on a pricing quote. `productId` is a catalog SKU id (applied as
+ * a per-SKU override on claim) or NULL for an ad-hoc item. Prices are cents.
+ */
+export const pricingQuoteItems = pgTable("pricing_quote_items", {
+  id: serial("id").primaryKey(),
+  quoteId: integer("quote_id")
+    .notNull()
+    .references(() => pricingQuotes.id, { onDelete: "cascade" }),
+  productId: varchar("product_id", { length: 120 }),
+  productName: varchar("product_name", { length: 200 }).notNull(),
+  priceCents: integer("price_cents").notNull(),
+  unit: varchar("unit", { length: 60 }),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => [
+  index("pricing_quote_items_quote_id_idx").on(t.quoteId),
+]);
+
+/**
  * Audit trail for sensitive card reveals. Written every time an admin decrypts
  * and views a clinic's full card details (gated by password re-verification).
  */
@@ -712,6 +803,10 @@ export type Promotion = typeof promotions.$inferSelect;
 export type NewPromotion = typeof promotions.$inferInsert;
 export type FeaturedProduct = typeof featuredProducts.$inferSelect;
 export type NewFeaturedProduct = typeof featuredProducts.$inferInsert;
+export type PricingQuote = typeof pricingQuotes.$inferSelect;
+export type NewPricingQuote = typeof pricingQuotes.$inferInsert;
+export type PricingQuoteItem = typeof pricingQuoteItems.$inferSelect;
+export type NewPricingQuoteItem = typeof pricingQuoteItems.$inferInsert;
 export type PartnerOrg = typeof partnerOrgs.$inferSelect;
 export type NewPartnerOrg = typeof partnerOrgs.$inferInsert;
 export type PartnerRep = typeof partnerReps.$inferSelect;
