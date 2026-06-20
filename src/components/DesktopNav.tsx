@@ -1,10 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { NAV_GROUPS, type MegaMenuLink } from "@/lib/constants";
+
+/**
+ * Abstract, on-brand gradient fields for the mega-menu feature cards — used
+ * instead of literal product photos so the cards read as colorful brand
+ * artwork (matching the reference design). Cycled by card index per panel.
+ */
+const ABSTRACT_GRADIENTS = [
+  "radial-gradient(115% 90% at 0% 0%, rgba(226,99,122,0.9) 0%, transparent 45%), linear-gradient(135deg, #C62E88 0%, #6E469B 55%, #1A1750 100%)",
+  "radial-gradient(110% 90% at 100% 0%, rgba(110,163,215,0.85) 0%, transparent 45%), linear-gradient(140deg, #5F86C4 0%, #7357A4 52%, #262262 100%)",
+  "radial-gradient(90% 90% at 18% 12%, rgba(198,46,136,0.85) 0%, transparent 42%), radial-gradient(100% 100% at 92% 92%, rgba(95,134,196,0.8) 0%, transparent 48%), #1A1750",
+] as const;
 
 interface DesktopNavProps {
   /** When the header is over a dark hero section, invert the trigger colors. */
@@ -174,7 +184,7 @@ function MegaPanel({ id, group, onMouseEnter, onMouseLeave, onItemClick }: MegaP
 
           {group.cards?.length ? (
             <div className="col-span-5 flex gap-4">
-              {group.cards.map((card) => (
+              {group.cards.map((card, i) => (
                 <Link
                   key={card.href + card.label}
                   href={card.href}
@@ -182,14 +192,12 @@ function MegaPanel({ id, group, onMouseEnter, onMouseLeave, onItemClick }: MegaP
                   {...(card.newTab ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                   className="group relative flex flex-1 flex-col justify-end overflow-hidden rounded-xl bg-navy min-h-[180px] focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta focus-visible:ring-offset-2"
                 >
-                  <Image
-                    src={card.image}
-                    alt=""
-                    fill
-                    sizes="(max-width: 1280px) 18vw, 220px"
-                    className="object-cover opacity-90 transition-transform duration-500 group-hover:scale-105"
+                  <div
+                    className="absolute inset-0 transition-transform duration-500 group-hover:scale-110"
+                    style={{ backgroundImage: ABSTRACT_GRADIENTS[i % ABSTRACT_GRADIENTS.length] }}
+                    aria-hidden="true"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/85 via-navy-deep/20 to-transparent" aria-hidden="true" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/60 via-transparent to-transparent" aria-hidden="true" />
                   <div className="relative flex items-center justify-between gap-2 p-4">
                     <span className="text-sm font-semibold text-white">{card.label}</span>
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-colors group-hover:bg-magenta">
