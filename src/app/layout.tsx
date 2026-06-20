@@ -1,7 +1,42 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import JsonLd from "@/components/JsonLd";
+import Analytics from "@/components/Analytics";
 import { SITE } from "@/lib/constants";
+import {
+  graph,
+  organizationSchema,
+  webSiteSchema,
+  localBusinessSchema,
+} from "@/lib/seo";
+
+/**
+ * Sitewide entity graph: Organization + WebSite (SearchAction) + Pharmacy/
+ * LocalBusiness, linked by stable `@id`s. Rendered once in `<head>` so every
+ * page inherits a consistent, cross-referenced entity for search + AI engines.
+ */
+const siteSchema = graph(
+  organizationSchema(),
+  webSiteSchema(),
+  localBusinessSchema(),
+);
+
+/**
+ * Search-engine ownership verification, driven by env so tokens stay out of the
+ * repo and can differ per environment. Set in `.env.local` / hosting config:
+ *   NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION  → Google Search Console
+ *   NEXT_PUBLIC_BING_SITE_VERIFICATION    → Bing Webmaster Tools (msvalidate.01)
+ * Each block is omitted when its var is unset, so we never emit empty tags.
+ */
+const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
+const bingVerification = process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION;
+const verification: Metadata["verification"] | undefined =
+  googleVerification || bingVerification
+    ? {
+        ...(googleVerification ? { google: googleVerification } : {}),
+        ...(bingVerification ? { other: { "msvalidate.01": bingVerification } } : {}),
+      }
+    : undefined;
 
 export const metadata: Metadata = {
   title: {
@@ -10,6 +45,8 @@ export const metadata: Metadata = {
   },
   description: SITE.description,
   metadataBase: new URL(SITE.url),
+  alternates: { canonical: "/" },
+  ...(verification ? { verification } : {}),
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -86,7 +123,7 @@ export default function RootLayout({
           href="https://use.typekit.net/fcc6pra.css"
         />
         <link rel="stylesheet" href="https://use.typekit.net/fcc6pra.css" />
-        <JsonLd />
+        <JsonLd data={siteSchema} />
       </head>
       <body className="min-h-screen flex flex-col" suppressHydrationWarning>
         <a
@@ -96,6 +133,7 @@ export default function RootLayout({
           Skip to main content
         </a>
         {children}
+        <Analytics />
       </body>
     </html>
   );

@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import Reveal from "@/components/Reveal";
 import { CONTACT } from "@/lib/constants";
-import { articles, articleCategories, getArticlesByCategory } from "@/data/articles";
+import { articleCategories, getArticlesByCategory } from "@/data/articles";
 import type { ArticleCategory } from "@/data/articles";
 
 export default function SupportPage() {
@@ -16,12 +16,7 @@ export default function SupportPage() {
       {/* Hero */}
       <section className="bg-gradient-to-b from-cream to-white py-20 sm:py-28">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="max-w-3xl"
-          >
+          <Reveal duration={600} className="max-w-3xl">
             <p className="text-xs sm:text-sm font-semibold tracking-[0.2em] uppercase text-magenta mb-3">
               Support
             </p>
@@ -33,13 +28,12 @@ export default function SupportPage() {
               customer service, our support center is your go-to destination to connect
               with the Logos RX team.
             </p>
-          </motion.div>
+          </Reveal>
 
           {/* Contact card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.15 }}
+          <Reveal
+            duration={600}
+            delay={150}
             className="mt-10 inline-flex flex-col sm:flex-row gap-6 rounded-2xl bg-white p-6 sm:p-8 shadow-sm border border-beige"
           >
             <div className="flex items-center gap-4">
@@ -72,20 +66,14 @@ export default function SupportPage() {
                 </a>
               </div>
             </div>
-          </motion.div>
+          </Reveal>
         </div>
       </section>
 
       {/* Product Inserts */}
       <section className="bg-white py-20 sm:py-24 border-b border-beige">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.5 }}
-            className="mb-10"
-          >
+          <Reveal rootMargin="-80px 0px" className="mb-10">
             <h2 className="text-2xl sm:text-3xl font-bold text-navy mb-3">
               Product Inserts
             </h2>
@@ -93,7 +81,7 @@ export default function SupportPage() {
               Download step-by-step instructions on how to properly inject, store, and
               dispose of injectable medications.
             </p>
-          </motion.div>
+          </Reveal>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl">
             {[
@@ -120,15 +108,9 @@ export default function SupportPage() {
                 ),
               },
             ].map((insert, i) => (
-              <Link
-                key={insert.slug}
-                href={`/product-insert/${insert.slug}`}
-              >
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: i * 0.1 }}
+              <Link key={insert.slug} href={`/product-insert/${insert.slug}`}>
+                <Reveal
+                  delay={i * 100}
                   className="group flex items-start gap-5 rounded-2xl bg-cream p-6 hover:shadow-md transition-shadow cursor-pointer"
                 >
                   <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-magenta shrink-0 shadow-sm">
@@ -148,7 +130,7 @@ export default function SupportPage() {
                       </svg>
                     </span>
                   </div>
-                </motion.div>
+                </Reveal>
               </Link>
             ))}
           </div>
@@ -158,20 +140,14 @@ export default function SupportPage() {
       {/* Articles */}
       <section className="bg-white py-20 sm:py-24">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.5 }}
-            className="mb-10"
-          >
+          <Reveal rootMargin="-80px 0px" className="mb-10">
             <h2 className="text-2xl sm:text-3xl font-bold text-navy mb-3">
               Articles &amp; Resources
             </h2>
             <p className="text-navy/60">
               Educational content on compounding, medications, and patient care.
             </p>
-          </motion.div>
+          </Reveal>
 
           {/* Category filters */}
           <div className="flex gap-2 overflow-x-auto pb-4 mb-8 -mx-1 px-1 scrollbar-hide">
@@ -190,17 +166,13 @@ export default function SupportPage() {
             ))}
           </div>
 
-          {/* Article grid */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeCategory}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.25 }}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-            >
-              {filtered.map((article) => (
+          {/* Article grid — `key` remounts on filter change, replaying the
+              CSS fade defined in globals.css. */}
+          <div
+            key={activeCategory}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in-up"
+          >
+            {filtered.map((article) => (
                 <Link
                   key={article.slug}
                   href={`/support/${article.slug}`}
@@ -229,8 +201,7 @@ export default function SupportPage() {
                   </div>
                 </Link>
               ))}
-            </motion.div>
-          </AnimatePresence>
+          </div>
         </div>
       </section>
     </>

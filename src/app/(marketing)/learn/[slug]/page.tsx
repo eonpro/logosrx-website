@@ -3,7 +3,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLearningArticle, learningArticles } from "@/data/learning";
 import { getProductBySlug } from "@/data/products";
-import { CONTACT, SITE } from "@/lib/constants";
+import { CONTACT } from "@/lib/constants";
+import {
+  buildMetadata,
+  graph,
+  articleSchema,
+  medicalWebPageSchema,
+} from "@/lib/seo";
+import JsonLd from "@/components/JsonLd";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import DosageChart from "@/components/learning/DosageChart";
 import Reveal from "@/components/Reveal";
 
@@ -19,15 +27,12 @@ export async function generateMetadata({
   const { slug } = await params;
   const article = getLearningArticle(slug);
   if (!article) return {};
-  return {
-    title: `${article.title} | ${SITE.name}`,
+  return buildMetadata({
+    title: article.title,
     description: article.subtitle,
-    openGraph: {
-      title: `${article.title} | ${SITE.name}`,
-      description: article.subtitle,
-      url: `${SITE.url}/learn/${article.slug}`,
-    },
-  };
+    path: `/learn/${article.slug}`,
+    type: "article",
+  });
 }
 
 export default async function LearningArticlePage({
@@ -41,8 +46,31 @@ export default async function LearningArticlePage({
 
   const relatedProduct = getProductBySlug(article.relatedProductSlug);
 
+  const path = `/learn/${article.slug}`;
+  const schema = graph(
+    medicalWebPageSchema({
+      name: article.title,
+      description: article.subtitle,
+      path,
+    }),
+    articleSchema({
+      headline: article.title,
+      description: article.subtitle,
+      path,
+      section: "Patient Education",
+    }),
+  );
+
   return (
     <article className="bg-white">
+      <JsonLd data={schema} />
+      <Breadcrumbs
+        items={[
+          { name: "Home", path: "/" },
+          { name: "Learn", path: "/support" },
+          { name: article.title, path },
+        ]}
+      />
       {/* Hero */}
       <section className="bg-gradient-to-b from-cream via-white to-white pt-12 sm:pt-20 pb-12 sm:pb-16">
         <div className="mx-auto max-w-5xl px-6 lg:px-8">

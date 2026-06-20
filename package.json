@@ -11,12 +11,19 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "lh": "npm run build && npx --yes @lhci/cli@latest autorun",
+    "schema:check": "tsx scripts/validate-schema.ts",
+    "schema:check:ci": "npm run build && tsx scripts/validate-schema.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "tsx scripts/db-push.ts",
     "db:studio": "drizzle-kit studio",
     "db:test": "tsx src/lib/db/test-connection.ts",
-    "db:setup": "tsx src/lib/db/setup.ts"
+    "db:setup": "tsx src/lib/db/setup.ts",
+    "db:seed-partners": "tsx scripts/seed-partners.ts",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:install": "playwright install chromium"
   },
   "dependencies": {
     "@aws-sdk/client-sesv2": "^3.1057.0",
@@ -38,11 +45,12 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^20",
+    "@types/node": "^20.19.43",
     "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",

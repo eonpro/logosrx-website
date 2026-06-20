@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { clinicSignups } from "@/lib/db/schema";
+import { resolveReferralCode } from "@/lib/partners/attribution";
+import { REF_COOKIE } from "@/lib/partners/referral";
 import { checkSameOrigin } from "@/lib/security/origin";
 import {
   HONEYPOT_FIELD,
@@ -67,6 +69,11 @@ export async function POST(req: NextRequest) {
       return bad("Invalid email address.");
     }
 
+    // Partner referral attribution from the /join/<code> cookie, if present.
+    const attribution = await resolveReferralCode(
+      req.cookies.get(REF_COOKIE)?.value,
+    );
+
     const [inserted] = await db
       .insert(clinicSignups)
       .values({
@@ -78,6 +85,9 @@ export async function POST(req: NextRequest) {
         state,
         specialty,
         message,
+        referralLinkId: attribution?.referralLinkId ?? null,
+        partnerOrgId: attribution?.partnerOrgId ?? null,
+        partnerRepId: attribution?.partnerRepId ?? null,
       })
       .returning({ id: clinicSignups.id });
 

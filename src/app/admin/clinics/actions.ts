@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { clerkClient } from "@clerk/nextjs/server";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
@@ -12,6 +11,7 @@ import {
   clinics,
 } from "@/lib/db/schema";
 import { ADMIN_ROLE, requireAdmin } from "@/lib/auth/admin";
+import { buildActivateUrl } from "@/lib/auth/clerk-users";
 import { decrypt } from "@/lib/onboarding/encryption";
 import { sendClinicApprovedEmail } from "@/lib/notifications/email";
 import { notifyClinicApproved } from "@/lib/notifications/slack";
@@ -33,29 +33,13 @@ function assertId(id: number, label = "id") {
 }
 
 /**
- * Mints a one-time activation link for a clinic's existing Clerk account. The
- * link carries a short-lived sign-in ticket; the `/activate` page consumes it
- * to sign the clinic in and let them set their own password + verify email.
- *
- * Returns `null` (and never throws) if the clinic has no Clerk account or the
- * ticket can't be minted, so approval/notification flow is never blocked.
+ * One-time activation link for a clinic's existing Clerk account (shared
+ * ticket flow in `@/lib/auth/clerk-users`; lands on the clinic dashboard).
  */
 async function buildClinicActivateUrl(
   clerkUserId: string | null,
 ): Promise<string | null> {
-  if (!clerkUserId) return null;
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.logosrx.com";
-  try {
-    const client = await clerkClient();
-    const token = await client.signInTokens.createSignInToken({
-      userId: clerkUserId,
-      // 7 days — long enough for a clinic to act on the approval email.
-      expiresInSeconds: 604800,
-    });
-    return `${base}/activate?ticket=${encodeURIComponent(token.token)}`;
-  } catch {
-    return null;
-  }
+  return buildActivateUrl(clerkUserId);
 }
 
 /**

@@ -1,13 +1,17 @@
 import Link from "next/link";
+import Image from "next/image";
 import { SITE } from "@/lib/constants";
 
 export default function NotFound() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center bg-white">
-      <Link href="/" className="mb-12">
-        <img
+      <Link href="/" className="mb-12" aria-label={`${SITE.name} home`}>
+        <Image
           src="/images/logo.svg"
           alt={SITE.name}
+          width={180}
+          height={57}
+          priority
           className="h-12 w-auto"
         />
       </Link>

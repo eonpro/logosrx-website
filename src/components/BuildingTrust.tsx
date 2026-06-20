@@ -11,6 +11,7 @@ export default function BuildingTrust() {
         src="/images/building-trust-bg.webp"
         alt=""
         fill
+        sizes="100vw"
         className="object-cover"
         priority
       />

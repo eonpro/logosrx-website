@@ -2,6 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { articles, getArticleBySlug } from "@/data/articles";
+import {
+  buildMetadata,
+  graph,
+  articleSchema,
+  medicalWebPageSchema,
+} from "@/lib/seo";
+import JsonLd from "@/components/JsonLd";
+import Breadcrumbs from "@/components/Breadcrumbs";
 
 export function generateStaticParams() {
   return articles.map((article) => ({ slug: article.slug }));
@@ -15,10 +23,13 @@ export async function generateMetadata({
   const { slug } = await params;
   const article = getArticleBySlug(slug);
   if (!article) return {};
-  return {
+  return buildMetadata({
     title: article.title,
     description: article.excerpt,
-  };
+    path: `/support/${article.slug}`,
+    type: "article",
+    publishedTime: article.date,
+  });
 }
 
 export default async function ArticlePage({
@@ -30,8 +41,32 @@ export default async function ArticlePage({
   const article = getArticleBySlug(slug);
   if (!article) notFound();
 
+  const path = `/support/${article.slug}`;
+  const crumbs = [
+    { name: "Home", path: "/" },
+    { name: "Support", path: "/support" },
+    { name: article.title, path },
+  ];
+  const schema = graph(
+    medicalWebPageSchema({
+      name: article.title,
+      description: article.excerpt,
+      path,
+      lastReviewed: article.date,
+    }),
+    articleSchema({
+      headline: article.title,
+      description: article.excerpt,
+      path,
+      datePublished: article.date,
+      section: article.category,
+    }),
+  );
+
   return (
     <article className="bg-white">
+      <JsonLd data={schema} />
+      <Breadcrumbs items={crumbs} />
       {/* Header */}
       <div className="bg-gradient-to-b from-cream to-white py-16 sm:py-20">
         <div className="mx-auto max-w-3xl px-6 lg:px-8">

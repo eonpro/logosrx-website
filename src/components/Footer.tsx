@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { CONTACT, HOURS, NAV_LINKS, LEGAL_LINKS, SITE, STATES_SERVED } from "@/lib/constants";
+import { cityLocations } from "@/data/locations";
 
 export default function Footer() {
   return (
@@ -30,8 +31,33 @@ export default function Footer() {
 
             <p className="text-sm text-white/80 leading-relaxed mb-4">
               {SITE.name} is a multi-state licensed 503A compounding pharmacy with
-              sterile and non-sterile compounding labs.
+              sterile and non-sterile compounding labs, serving Tampa Bay and{" "}
+              shipping to {STATES_SERVED.length} U.S. jurisdictions.
             </p>
+
+            <h4 className="text-sm font-semibold tracking-widest uppercase text-sky mb-3 mt-6">
+              Service Areas
+            </h4>
+            <ul className="flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-white/70">
+              {cityLocations.map((c) => (
+                <li key={c.slug}>
+                  <Link
+                    href={`/locations/fl/${c.slug}`}
+                    className="hover:text-white transition-colors"
+                  >
+                    {c.city}
+                  </Link>
+                </li>
+              ))}
+              <li>
+                <Link
+                  href="/locations"
+                  className="text-sky/80 hover:text-white transition-colors"
+                >
+                  All locations →
+                </Link>
+              </li>
+            </ul>
           </div>
 
           {/* Column 2 — Headquarters */}
@@ -56,13 +82,35 @@ export default function Footer() {
             </address>
           </div>
 
-          {/* Column 3 — Company */}
+          {/* Column 3 — Company + Resources */}
           <div>
             <h4 className="text-sm font-semibold tracking-widest uppercase text-sky mb-6">
               Company
             </h4>
             <ul className="space-y-3">
               {NAV_LINKS.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-sm text-white/70 hover:text-white transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+
+            <h4 className="text-sm font-semibold tracking-widest uppercase text-sky mb-4 mt-8">
+              Resources
+            </h4>
+            <ul className="space-y-3">
+              {[
+                { label: "Compounding services", href: "/services" },
+                { label: "Conditions & compounding", href: "/conditions" },
+                { label: "What is a compounding pharmacy?", href: "/compounding-pharmacy" },
+                { label: "503A vs. 503B", href: "/compounding-pharmacy/503a-vs-503b" },
+                { label: "Glossary", href: "/glossary" },
+              ].map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}

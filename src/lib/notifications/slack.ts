@@ -1,4 +1,5 @@
 import "server-only";
+import { SITE_URL } from "@/lib/constants";
 import { log } from "@/lib/observability/logger";
 
 /**
@@ -110,11 +111,36 @@ export async function notifyClinicApproved(args: {
   });
 }
 
+/** Notifies admins that a new affiliate partner application came in. */
+export async function notifyNewPartnerApplication(args: {
+  orgName: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  website: string;
+}): Promise<void> {
+  const base = SITE_URL;
+  await postToSlack({
+    header: "🤝 New partner application",
+    fields: [
+      { label: "Organization", value: args.orgName || "—" },
+      { label: "Contact", value: args.contactName || "—" },
+      { label: "Email", value: args.contactEmail || "—" },
+      { label: "Phone", value: args.contactPhone || "—" },
+      { label: "Website", value: args.website || "—" },
+    ],
+    contextLink: {
+      text: "Review in admin →",
+      url: `${base}/admin/partners`,
+    },
+  });
+}
+
 /** Notifies admins that a clinic finished onboarding and needs verification. */
 export async function notifyNewClinic(
   n: NewClinicNotification,
 ): Promise<void> {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.logosrx.com";
+  const base = SITE_URL;
   await postToSlack({
     header: "🏥 New clinic awaiting verification",
     fields: [

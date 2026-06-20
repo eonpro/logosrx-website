@@ -102,3 +102,24 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run build
+
+  schema:
+    name: Structured data (Rich Results)
+    needs: install
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Mirrors the build job — schema:check:ci builds, then validates the
+      # JSON-LD in every prerendered page (required props, FAQ/Breadcrumb
+      # shape, @id resolution, duplicate-node detection). Fails the gate on
+      # any malformed or duplicated structured data.
+      NEXT_TELEMETRY_DISABLED: "1"
+      SKIP_ENV_VALIDATION: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run schema:check:ci

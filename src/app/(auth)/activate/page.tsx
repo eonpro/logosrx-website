@@ -11,9 +11,15 @@ export const dynamic = "force-dynamic";
 export default async function ActivatePage({
   searchParams,
 }: {
-  searchParams: Promise<{ ticket?: string | string[] }>;
+  searchParams: Promise<{ ticket?: string | string[]; next?: string | string[] }>;
 }) {
-  const { ticket } = await searchParams;
+  const { ticket, next } = await searchParams;
   const value = Array.isArray(ticket) ? ticket[0] : ticket;
-  return <ActivateClient ticket={value ?? ""} />;
+  const rawNext = Array.isArray(next) ? next[0] : next;
+  // Only allow same-site relative destinations (default: clinic dashboard).
+  const safeNext =
+    rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//")
+      ? rawNext
+      : "/dashboard";
+  return <ActivateClient ticket={value ?? ""} next={safeNext} />;
 }

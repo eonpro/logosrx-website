@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { products, getProductBySlug, getRelatedProducts } from "@/data/products";
-import { SITE } from "@/lib/constants";
+import { buildMetadata } from "@/lib/seo";
 import ProductDetail from "@/components/ProductDetail";
 
 interface PageProps {
@@ -17,15 +17,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const product = getProductBySlug(slug);
   if (!product) return {};
 
-  return {
+  return buildMetadata({
     title: product.name,
     description: product.description,
-    openGraph: {
-      title: `${product.name} | ${SITE.name}`,
-      description: product.description,
-      url: `${SITE.url}/products/${product.slug}`,
-    },
-  };
+    path: `/products/${product.slug}`,
+    image: product.image,
+  });
 }
 
 export default async function ProductPage({ params }: PageProps) {
