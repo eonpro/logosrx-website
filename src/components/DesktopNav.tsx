@@ -20,6 +20,57 @@ const ABSTRACT_GRADIENTS = [
   "radial-gradient(85% 85% at 18% 14%, #E2637A 0%, transparent 52%), radial-gradient(80% 80% at 92% 32%, #5F86C4 0%, transparent 52%), radial-gradient(110% 110% at 60% 104%, #6E469B 0%, transparent 60%), linear-gradient(135deg, #C62E88, #1A1750)",
 ] as const;
 
+/**
+ * Decorative abstract shape artwork layered over each card's mesh gradient so
+ * the cards read as designed artwork (bubbles, rings, organic circles) rather
+ * than flat color. Three motifs cycled by card index. Purely presentational.
+ */
+function CardArtwork({ variant }: { variant: number }) {
+  const v = ((variant % 3) + 3) % 3;
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 240 220"
+      preserveAspectRatio="xMidYMid slice"
+      className="absolute inset-0 h-full w-full transition-transform duration-700 group-hover:scale-105"
+    >
+      {v === 0 && (
+        // Oil-bubble cluster
+        <g fill="#ffffff">
+          <circle cx="188" cy="44" r="50" fillOpacity="0.10" stroke="#ffffff" strokeOpacity="0.30" strokeWidth="1.5" />
+          <circle cx="150" cy="122" r="27" fillOpacity="0.10" stroke="#ffffff" strokeOpacity="0.28" strokeWidth="1.5" />
+          <circle cx="216" cy="134" r="18" fillOpacity="0.16" stroke="#ffffff" strokeOpacity="0.34" strokeWidth="1.5" />
+          <circle cx="116" cy="56" r="12" fillOpacity="0.18" stroke="#ffffff" strokeOpacity="0.34" strokeWidth="1.2" />
+          <circle cx="76" cy="158" r="23" fillOpacity="0.08" stroke="#ffffff" strokeOpacity="0.22" strokeWidth="1.5" />
+          <circle cx="184" cy="190" r="10" fillOpacity="0.18" stroke="#ffffff" strokeOpacity="0.34" strokeWidth="1.2" />
+        </g>
+      )}
+      {v === 1 && (
+        // Concentric rings + accent dots
+        <g fill="none" stroke="#ffffff" strokeWidth="1.5">
+          <circle cx="208" cy="30" r="24" strokeOpacity="0.38" />
+          <circle cx="208" cy="30" r="50" strokeOpacity="0.27" />
+          <circle cx="208" cy="30" r="78" strokeOpacity="0.18" />
+          <circle cx="208" cy="30" r="108" strokeOpacity="0.12" />
+          <circle cx="58" cy="150" r="30" strokeOpacity="0.30" />
+          <circle cx="58" cy="150" r="7" fill="#ffffff" fillOpacity="0.55" stroke="none" />
+          <circle cx="120" cy="120" r="4" fill="#ffffff" fillOpacity="0.5" stroke="none" />
+        </g>
+      )}
+      {v === 2 && (
+        // Overlapping translucent orbs with soft outlines
+        <g fill="#ffffff" stroke="#ffffff">
+          <circle cx="66" cy="58" r="66" fillOpacity="0.12" strokeOpacity="0.22" strokeWidth="1.5" />
+          <circle cx="184" cy="86" r="84" fillOpacity="0.10" strokeOpacity="0.18" strokeWidth="1.5" />
+          <circle cx="142" cy="192" r="58" fillOpacity="0.12" strokeOpacity="0.22" strokeWidth="1.5" />
+          <circle cx="38" cy="168" r="40" fillOpacity="0.10" strokeOpacity="0.2" strokeWidth="1.5" />
+          <circle cx="206" cy="184" r="16" fillOpacity="0.2" strokeOpacity="0.3" strokeWidth="1.2" />
+        </g>
+      )}
+    </svg>
+  );
+}
+
 interface DesktopNavProps {
   /** When the header is over a dark hero section, invert the trigger colors. */
   onDark: boolean;
@@ -201,7 +252,8 @@ function MegaPanel({ id, group, onMouseEnter, onMouseLeave, onItemClick }: MegaP
                     style={{ backgroundImage: ABSTRACT_GRADIENTS[i % ABSTRACT_GRADIENTS.length] }}
                     aria-hidden="true"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/55 via-transparent to-transparent" aria-hidden="true" />
+                  <CardArtwork variant={i} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/60 via-transparent to-transparent" aria-hidden="true" />
                   <div className="relative flex items-center justify-between gap-2 p-4">
                     <span className="text-sm font-semibold text-white">{card.label}</span>
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-colors group-hover:bg-magenta">
