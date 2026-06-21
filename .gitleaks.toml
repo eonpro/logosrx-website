@@ -1,0 +1,36 @@
+# gitleaks configuration for logos-rx.
+#
+# Extends gitleaks' built-in ruleset (AWS keys, private keys, generic
+# high-entropy assignments, provider tokens, etc.) and layers on a small,
+# explicit allowlist for values that are public-by-design or are obvious
+# documentation placeholders. Keep the allowlist tight: anything genuinely
+# secret (sk_... keys, AWS keys, private keys) must NEVER be allowlisted.
+
+title = "logos-rx gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Public-by-design values and documentation placeholders."
+
+regexes = [
+  # Clerk *publishable* keys are shipped to the browser by design and are not
+  # secrets. Clerk *secret* keys (sk_...) are intentionally NOT allowlisted.
+  '''pk_(test|live)_[A-Za-z0-9/+=]+''',
+  # Literal documentation placeholder in tests/e2e/README.md.
+  '''sk_(test|live)_\.\.\.''',
+  # Non-secret deterministic dev fallback string (see src/lib/security/secret.ts).
+  '''logos-dev-fallback-key''',
+  # Character-set constants used to GENERATE random quote tokens/passwords in
+  # src/lib/quotes/crypto.ts (TOKEN_ALPHABET / PASSWORD_ALPHABET). High entropy
+  # trips the generic-api-key rule, but these are public alphabets, not secrets.
+  # Matched as exact literals so real lowercase/uppercase secrets still trip.
+  '''abcdefghjkmnpqrstuvwxyz23456789''',
+  '''ABCDEFGHJKMNPQRSTUVWXYZ23456789''',
+]
+
+paths = [
+  # Lockfile integrity hashes are not secrets and produce noise.
+  '''package-lock\.json''',
+]
