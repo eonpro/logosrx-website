@@ -1,6 +1,8 @@
 export const dynamic = "force-dynamic";
 
+import type { Metadata } from "next";
 import Link from "next/link";
+import { auth } from "@clerk/nextjs/server";
 import { getPartnerContext } from "@/lib/auth/partner";
 import { formatBps, formatCents } from "@/lib/partners/commission";
 import { resolveDateRange } from "@/lib/partners/dates";
@@ -11,8 +13,15 @@ import {
   getUnpaidBalanceCents,
   listPartnerTransactions,
 } from "@/lib/partners/queries";
+import PartnerLanding from "./PartnerLanding";
 import PartnerNoAccess from "./PartnerNoAccess";
 import RangeFilter from "./RangeFilter";
+
+export const metadata: Metadata = {
+  title: "Partner Program",
+  description:
+    "Join the Logos RX affiliate partner program. Refer clinics, build your rep network, and earn commission on every transaction.",
+};
 
 export default async function PartnerDashboardPage({
   searchParams,
@@ -20,7 +29,13 @@ export default async function PartnerDashboardPage({
   searchParams: Promise<{ range?: string }>;
 }) {
   const ctx = await getPartnerContext();
-  if (!ctx) return <PartnerNoAccess />;
+  if (!ctx) {
+    // Anonymous visitors get the public marketing landing page (the funnel
+    // into Apply / Sign in). A signed-in user without an active partner
+    // identity instead sees the "under review / no access" explanation.
+    const { userId } = await auth();
+    return userId ? <PartnerNoAccess /> : <PartnerLanding />;
+  }
 
   const { range } = await searchParams;
   const resolved = resolveDateRange(range);

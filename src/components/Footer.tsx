@@ -110,6 +110,7 @@ export default function Footer() {
                 { label: "What is a compounding pharmacy?", href: "/compounding-pharmacy" },
                 { label: "503A vs. 503B", href: "/compounding-pharmacy/503a-vs-503b" },
                 { label: "Glossary", href: "/glossary" },
+                { label: "Partner program", href: "/partners" },
               ].map((link) => (
                 <li key={link.href}>
                   <Link

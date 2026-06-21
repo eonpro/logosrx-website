@@ -11,12 +11,14 @@ const isDashboardRoute = createRouteMatcher(["/dashboard(.*)"]);
 // verification check lives in the page (it needs the DB); here we only do the
 // edge fast-path: bounce anonymous visitors into account creation.
 const isCatalogRoute = createRouteMatcher(["/catalog(.*)"]);
-// Affiliate partner portal. `/partners/apply` (the public application form)
-// and `/partners/sign-in` stay open; everything else requires a session. The
-// partner-identity check (org owner vs rep, suspension) needs the DB, so it's
-// enforced server-side via `requirePartner()` in the pages, not here.
+// Affiliate partner portal. The `/partners` index (public marketing landing
+// page), `/partners/apply` (the application form), and `/partners/sign-in`
+// stay open; every other sub-route requires a session. The partner-identity
+// check (org owner vs rep, suspension) needs the DB, so it's enforced
+// server-side via `requirePartner()` in the pages, not here.
 const isPartnerRoute = createRouteMatcher(["/partners(.*)"]);
 const isPublicPartnerRoute = createRouteMatcher([
+  "/partners",
   "/partners/apply(.*)",
   "/partners/sign-in(.*)",
 ]);
