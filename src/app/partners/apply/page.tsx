@@ -4,7 +4,7 @@ import ApplyForm from "./ApplyForm";
 export const metadata: Metadata = {
   title: "Become a Partner",
   description:
-    "Apply to the Logos RX affiliate partner program. Refer clinics, build your rep network, and earn commission on every transaction.",
+    "Apply to the Logos RX marketing partner program. Provide bona fide marketing and brand-support services for a licensed compounding pharmacy and earn a fixed, fair-market-value fee under a Marketing Services Agreement.",
 };
 
 export default function PartnerApplyPage() {

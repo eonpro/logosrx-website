@@ -6,12 +6,20 @@ import { motion } from "framer-motion";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
 /**
- * Public marketing landing page for the affiliate partner program, shown at
+ * Public landing page for the Logos RX marketing partner program, shown at
  * `/partners` to anonymous visitors. Active partners get the dashboard and
  * signed-in non-partners get `PartnerNoAccess`; this is the top-of-funnel
  * entry point whose only job is to route people into the two CTAs:
  *   - Apply    → /partners/apply
  *   - Sign in  → /partners/sign-in
+ *
+ * COMPLIANCE: A pharmacy may not pay for referrals or pay compensation that
+ * varies with the volume/value of prescriptions or orders (Anti-Kickback
+ * Statute, EKRA, and state anti-kickback/fee-splitting laws). All copy here
+ * must describe a *bona fide marketing services* relationship paid via a
+ * *fixed, fair-market-value fee* under a Marketing Services Agreement — never
+ * referral commissions or a percentage of sales. Keep the disclaimer below in
+ * sync with the executed MSA, and route copy changes past legal.
  *
  * Styling intentionally mirrors `AuthShell` (deep-navy gradient, animated
  * magenta orbs) so the funnel — landing → apply/sign-in — feels continuous.
@@ -51,8 +59,8 @@ function GradientOrb({
 
 const VALUE_PROPS = [
   {
-    title: "Earn recurring commission",
-    body: "Get paid a transparent percentage of attributed revenue on every order your referred clinics place — month after month.",
+    title: "Fixed, fair-market-value fees",
+    body: "You're paid a predetermined, fair-market-value fee for bona fide marketing services — never a percentage of sales, prescriptions, orders, or referrals.",
     icon: (
       <path
         d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"
@@ -62,8 +70,8 @@ const VALUE_PROPS = [
     ),
   },
   {
-    title: "Build your rep network",
-    body: "Add reps under your organization, set their commission rates, and track every referral and payout from one place.",
+    title: "A genuine marketing partnership",
+    body: "Collaborate with our team on brand development, advertising, content, and general (non-clinical) audience promotion for the pharmacy.",
     icon: (
       <>
         <circle cx="9" cy="8" r="3.2" />
@@ -75,14 +83,17 @@ const VALUE_PROPS = [
     ),
   },
   {
-    title: "Track everything in real time",
-    body: "A live dashboard for revenue, commission earned, linked clinics, and unpaid balances — no spreadsheets, no guessing.",
+    title: "Clear, compliant agreements",
+    body: "Every engagement is governed by a written Marketing Services Agreement designed to comply with applicable federal and state healthcare laws.",
     icon: (
-      <path
-        d="M4 13h4v7H4zM10 7h4v13h-4zM16 3h4v17h-4z"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <>
+        <path
+          d="M6 2h8l4 4v14a1 1 0 01-1 1H6a1 1 0 01-1-1V3a1 1 0 011-1z"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path d="M13 2v5h5M8.5 13l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
+      </>
     ),
   },
 ];
@@ -91,17 +102,17 @@ const STEPS = [
   {
     n: "01",
     title: "Apply",
-    body: "Tell us about your organization and network. It takes a couple of minutes.",
+    body: "Tell us about your marketing capabilities and the brand-support services you can provide.",
   },
   {
     n: "02",
-    title: "Get approved",
-    body: "Our team reviews your application and sends an activation link to set up your portal.",
+    title: "Sign your agreement",
+    body: "We review your application and put a Marketing Services Agreement in place defining the scope of work and a fixed fee.",
   },
   {
     n: "03",
-    title: "Refer & earn",
-    body: "Share your referral links, onboard clinics, and watch commission roll in.",
+    title: "Deliver & get paid",
+    body: "Provide the agreed marketing and brand-support services and receive your fixed, fair-market-value fee.",
   },
 ];
 
@@ -163,7 +174,7 @@ export default function PartnerLanding() {
             transition={{ duration: 0.5 }}
             className="text-[11px] font-medium uppercase tracking-[0.25em] text-magenta-light"
           >
-            Partner Program
+            Marketing Partner Program
           </motion.p>
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
@@ -171,7 +182,7 @@ export default function PartnerLanding() {
             transition={{ duration: 0.6, delay: 0.05 }}
             className="mt-5 max-w-3xl text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl"
           >
-            Grow your revenue with{" "}
+            Market with{" "}
             <span className="bg-linear-to-r from-magenta-light to-magenta bg-clip-text text-transparent">
               Logos RX
             </span>
@@ -182,8 +193,9 @@ export default function PartnerLanding() {
             transition={{ duration: 0.6, delay: 0.12 }}
             className="mt-6 max-w-xl text-lg text-white/60"
           >
-            Refer clinics to a multi-state licensed compounding pharmacy, build
-            your rep network, and earn commission on every transaction.
+            Provide bona fide marketing and brand-support services for a
+            multi-state licensed 503A compounding pharmacy, and earn a fixed,
+            fair-market-value fee under a Marketing Services Agreement.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -276,7 +288,7 @@ export default function PartnerLanding() {
               How it works
             </h2>
             <p className="mx-auto mt-3 max-w-md text-sm text-white/50">
-              From application to your first commission in three simple steps.
+              From application to your first engagement in three simple steps.
             </p>
           </div>
           <div className="mt-12 grid gap-5 sm:grid-cols-3">
@@ -310,8 +322,8 @@ export default function PartnerLanding() {
               Ready to partner with Logos RX?
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-sm text-white/60">
-              Join the partner program today and start earning on every clinic
-              you refer.
+              Join our marketing partner program and provide brand-support
+              services under a clear, compliant agreement.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link
@@ -330,8 +342,19 @@ export default function PartnerLanding() {
           </div>
         </section>
 
+        {/* Compliance disclaimer — keep in sync with the executed MSA */}
+        <p className="mx-auto mt-16 max-w-3xl text-center text-[11px] leading-relaxed text-white/30">
+          Compensation under the Logos RX marketing partner program is a fixed,
+          fair-market-value fee for bona fide marketing services. It does not
+          vary with, and is not determined by, the volume or value of any
+          business, prescriptions, orders, or referrals generated. Partners do
+          not dispense, recommend, or direct any specific prescription, and all
+          engagements are governed by a written Marketing Services Agreement
+          intended to comply with applicable federal and state healthcare laws.
+        </p>
+
         {/* Footer */}
-        <footer className="mt-16 flex flex-col items-center gap-4 border-t border-white/10 pt-8 text-center">
+        <footer className="mt-12 flex flex-col items-center gap-4 border-t border-white/10 pt-8 text-center">
           <div className="flex items-center gap-6 text-white/25">
             <span className="flex items-center gap-1.5 text-[11px] tracking-wide">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">

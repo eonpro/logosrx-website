@@ -78,11 +78,11 @@ export default function ApplyForm() {
       <div className="flex flex-col gap-5">
         <div className="text-center">
           <h1 className="text-xl font-semibold text-white">
-            Become a Logos RX partner
+            Become a Logos RX marketing partner
           </h1>
           <p className="mt-1 text-sm text-white/55">
-            Refer clinics, build your rep network, and earn commission on
-            every transaction.
+            Provide bona fide marketing and brand-support services and earn a
+            fixed, fair-market-value fee under a Marketing Services Agreement.
           </p>
         </div>
 
@@ -144,12 +144,12 @@ export default function ApplyForm() {
               maxLength={255}
             />
           </Field>
-          <Field label="Tell us about your network">
+          <Field label="Tell us about your marketing capabilities">
             <textarea
               className={`${inputClass} h-24 resize-none py-3`}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Provider relationships, regions, team size…"
+              placeholder="Channels, audience, brand/marketing experience, team size…"
               maxLength={4000}
             />
           </Field>
@@ -170,6 +170,13 @@ export default function ApplyForm() {
           >
             {busy ? "Submitting…" : "Submit application"}
           </button>
+
+          <p className="text-[11px] leading-relaxed text-white/35">
+            Compensation is a fixed, fair-market-value fee for bona fide
+            marketing services and does not vary with the volume or value of any
+            prescriptions, orders, or referrals. All engagements are governed by
+            a Marketing Services Agreement.
+          </p>
         </form>
       </div>
     </AuthShell>

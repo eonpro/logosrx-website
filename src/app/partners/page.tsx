@@ -18,9 +18,9 @@ import PartnerNoAccess from "./PartnerNoAccess";
 import RangeFilter from "./RangeFilter";
 
 export const metadata: Metadata = {
-  title: "Partner Program",
+  title: "Marketing Partner Program",
   description:
-    "Join the Logos RX affiliate partner program. Refer clinics, build your rep network, and earn commission on every transaction.",
+    "Join the Logos RX marketing partner program. Provide bona fide marketing and brand-support services for a licensed compounding pharmacy and earn a fixed, fair-market-value fee under a Marketing Services Agreement.",
 };
 
 export default async function PartnerDashboardPage({
