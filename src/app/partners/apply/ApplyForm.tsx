@@ -81,8 +81,7 @@ export default function ApplyForm() {
             Become a Logos RX marketing partner
           </h1>
           <p className="mt-1 text-sm text-white/55">
-            Provide bona fide marketing and brand-support services and earn a
-            fixed, fair-market-value fee under a Marketing Services Agreement.
+            Provide marketing and brand-support services for Logos RX.
           </p>
         </div>
 
@@ -172,10 +171,9 @@ export default function ApplyForm() {
           </button>
 
           <p className="text-[11px] leading-relaxed text-white/35">
-            Compensation is a fixed, fair-market-value fee for bona fide
-            marketing services and does not vary with the volume or value of any
-            prescriptions, orders, or referrals. All engagements are governed by
-            a Marketing Services Agreement.
+            Partners are paid a set fee for marketing services — not for
+            referrals or any share of sales. Engagements are governed by a
+            Marketing Services Agreement.
           </p>
         </form>
       </div>

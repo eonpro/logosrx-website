@@ -20,7 +20,7 @@ import RangeFilter from "./RangeFilter";
 export const metadata: Metadata = {
   title: "Marketing Partner Program",
   description:
-    "Join the Logos RX marketing partner program. Provide bona fide marketing and brand-support services for a licensed compounding pharmacy and earn a fixed, fair-market-value fee under a Marketing Services Agreement.",
+    "Join the Logos RX marketing partner program. Provide marketing and brand-support services for a multi-state licensed compounding pharmacy.",
 };
 
 export default async function PartnerDashboardPage({

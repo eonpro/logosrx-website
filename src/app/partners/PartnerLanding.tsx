@@ -59,8 +59,8 @@ function GradientOrb({
 
 const VALUE_PROPS = [
   {
-    title: "Fixed, fair-market-value fees",
-    body: "You're paid a predetermined, fair-market-value fee for bona fide marketing services — never a percentage of sales, prescriptions, orders, or referrals.",
+    title: "Simple, set compensation",
+    body: "You're paid a set fee for the marketing services you provide — clear and predictable.",
     icon: (
       <path
         d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"
@@ -71,7 +71,7 @@ const VALUE_PROPS = [
   },
   {
     title: "A genuine marketing partnership",
-    body: "Collaborate with our team on brand development, advertising, content, and general (non-clinical) audience promotion for the pharmacy.",
+    body: "Collaborate with our team on brand development, advertising, content, and audience promotion for the pharmacy.",
     icon: (
       <>
         <circle cx="9" cy="8" r="3.2" />
@@ -83,8 +83,8 @@ const VALUE_PROPS = [
     ),
   },
   {
-    title: "Clear, compliant agreements",
-    body: "Every engagement is governed by a written Marketing Services Agreement designed to comply with applicable federal and state healthcare laws.",
+    title: "A clear agreement",
+    body: "Every engagement is covered by a straightforward Marketing Services Agreement.",
     icon: (
       <>
         <path
@@ -107,12 +107,12 @@ const STEPS = [
   {
     n: "02",
     title: "Sign your agreement",
-    body: "We review your application and put a Marketing Services Agreement in place defining the scope of work and a fixed fee.",
+    body: "We review your application and set up a Marketing Services Agreement covering the scope of work and your fee.",
   },
   {
     n: "03",
     title: "Deliver & get paid",
-    body: "Provide the agreed marketing and brand-support services and receive your fixed, fair-market-value fee.",
+    body: "Provide the agreed marketing and brand-support services and get paid for your work.",
   },
 ];
 
@@ -193,9 +193,8 @@ export default function PartnerLanding() {
             transition={{ duration: 0.6, delay: 0.12 }}
             className="mt-6 max-w-xl text-lg text-white/60"
           >
-            Provide bona fide marketing and brand-support services for a
-            multi-state licensed 503A compounding pharmacy, and earn a fixed,
-            fair-market-value fee under a Marketing Services Agreement.
+            Partner with a multi-state licensed 503A compounding pharmacy to
+            provide marketing and brand-support services.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -323,7 +322,7 @@ export default function PartnerLanding() {
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-sm text-white/60">
               Join our marketing partner program and provide brand-support
-              services under a clear, compliant agreement.
+              services for the pharmacy.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link
@@ -343,14 +342,10 @@ export default function PartnerLanding() {
         </section>
 
         {/* Compliance disclaimer — keep in sync with the executed MSA */}
-        <p className="mx-auto mt-16 max-w-3xl text-center text-[11px] leading-relaxed text-white/30">
-          Compensation under the Logos RX marketing partner program is a fixed,
-          fair-market-value fee for bona fide marketing services. It does not
-          vary with, and is not determined by, the volume or value of any
-          business, prescriptions, orders, or referrals generated. Partners do
-          not dispense, recommend, or direct any specific prescription, and all
-          engagements are governed by a written Marketing Services Agreement
-          intended to comply with applicable federal and state healthcare laws.
+        <p className="mx-auto mt-16 max-w-2xl text-center text-[11px] leading-relaxed text-white/30">
+          Partners are paid a set fee for bona fide marketing services — not for
+          referrals or any share of sales. All engagements are governed by a
+          Marketing Services Agreement.
         </p>
 
         {/* Footer */}
