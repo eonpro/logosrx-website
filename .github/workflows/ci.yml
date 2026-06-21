@@ -25,9 +25,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -41,8 +41,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -55,8 +55,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -69,8 +69,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -95,8 +95,8 @@ jobs:
       NEXT_TELEMETRY_DISABLED: "1"
       SKIP_ENV_VALIDATION: "true"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -108,17 +108,35 @@ jobs:
     needs: install
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Throwaway Postgres for the DB-backed specs. The app reaches it via
+    # DATABASE_URL (the non-IAM code path in src/lib/db/index.ts); production
+    # never sets DATABASE_URL, so this can't affect the real auth path.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: logos_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       # Clerk *test* instance keys. Even the public specs need them because the
       # partner/admin route groups mount <ClerkProvider> and the proxy uses
       # clerkMiddleware. Set these repo secrets to turn the gate on.
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.E2E_CLERK_PUBLISHABLE_KEY }}
       CLERK_SECRET_KEY: ${{ secrets.E2E_CLERK_SECRET_KEY }}
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/logos_test
       NEXT_TELEMETRY_DISABLED: "1"
       SKIP_ENV_VALIDATION: "true"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -137,6 +155,12 @@ jobs:
             echo "::notice title=E2E skipped::Set E2E_CLERK_PUBLISHABLE_KEY and E2E_CLERK_SECRET_KEY repo secrets to enable the E2E gate."
           fi
 
+      # Create the full schema in the throwaway Postgres from the Drizzle schema
+      # (source of truth). Fresh DB → only CREATEs → no data-loss prompt.
+      - name: Apply database schema
+        if: steps.creds.outputs.present == 'true'
+        run: npx drizzle-kit push
+
       - name: Install Playwright (chromium)
         if: steps.creds.outputs.present == 'true'
         run: npx playwright install --with-deps chromium
@@ -145,7 +169,7 @@ jobs:
         if: steps.creds.outputs.present == 'true'
         run: npm run build
 
-      - name: Run public E2E smoke
+      - name: Run E2E gate (DB-backed)
         if: steps.creds.outputs.present == 'true'
         env:
           # Run the built app for production-fidelity routing/middleware.
@@ -156,12 +180,15 @@ jobs:
             if curl -sf http://localhost:3000 >/dev/null; then break; fi
             sleep 1
           done
-          # Only DB-free specs run here. partners-public covers routing,
-          # middleware protection, and server-rendered chrome without a
-          # database. Quote-page and authenticated specs need a seeded DB and
-          # run against a real deploy via PLAYWRIGHT_BASE_URL (see tests/e2e).
+          # partners-public: routing, middleware protection, server-rendered
+          # chrome. quote-public: exercises the real DB path (token lookup →
+          # branded "not available" shell) against the Postgres service.
+          # Fully Clerk-authenticated journeys (partners-auth.spec.ts) stay
+          # self-gated behind E2E_PARTNER_AUTH=1; they need @clerk/testing
+          # session wiring + seed data and run against a preview deploy.
           npx playwright test --project=desktop-chrome \
-            tests/e2e/partners-public.spec.ts
+            tests/e2e/partners-public.spec.ts \
+            tests/e2e/quote-public.spec.ts
 
       - name: Upload Playwright report
         if: steps.creds.outputs.present == 'true' && always()
@@ -184,8 +211,8 @@ jobs:
       NEXT_TELEMETRY_DISABLED: "1"
       SKIP_ENV_VALIDATION: "true"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -200,7 +227,7 @@ jobs:
     steps:
       # Full history so the secret scan covers every commit in the ref, not
       # just the tip — a secret introduced and later "removed" still leaks.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -228,7 +255,7 @@ jobs:
       # Fails on any high/critical advisory not explicitly allowlisted in
       # scripts/audit-gate.ts. Needs node + the lockfile; install deps so the
       # tsx runner and an accurate `npm audit` tree are available.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm

@@ -42,30 +42,55 @@ async function getCachedAuthToken(): Promise<string> {
   return value;
 }
 
+// Tuning shared by both connection strategies. Pool size is PER serverless
+// instance: under Vercel fluid compute many instances run concurrently, so a
+// large per-instance pool multiplies into Aurora's global connection limit
+// (max_connections). Keep it small; a handful of connections comfortably serves
+// the in-instance concurrency. Idle connections are recycled so a long-lived
+// instance doesn't hold connections open indefinitely, and we fail fast instead
+// of hanging when the DB is unreachable.
+const POOL_TUNING = {
+  max: 10,
+  idleTimeoutMillis: 30_000,
+  connectionTimeoutMillis: 10_000,
+  keepAlive: true,
+} as const;
+
+/**
+ * Plain connection-string pool for environments that don't use RDS IAM auth —
+ * local development and CI (e.g. a throwaway Postgres service container). When
+ * `DATABASE_URL` is set we skip the IAM signer entirely. SSL is inferred from
+ * the URL (`?sslmode=require`); a local/CI Postgres runs without TLS.
+ *
+ * Production never sets `DATABASE_URL` (it uses PGHOST/PGUSER + AWS_ROLE_ARN),
+ * so this branch is dev/CI-only and cannot weaken the production auth path.
+ */
+function createUrlPool(connectionString: string): Pool {
+  const needsSsl = /sslmode=require/i.test(connectionString);
+  return new Pool({
+    connectionString,
+    ssl: needsSsl ? { rejectUnauthorized: false } : undefined,
+    ...POOL_TUNING,
+  });
+}
+
+/** RDS IAM-authenticated pool (production / preview). */
+function createIamPool(): Pool {
+  return new Pool({
+    host: process.env.PGHOST!,
+    user: process.env.PGUSER!,
+    database: process.env.PGDATABASE || "postgres",
+    password: getCachedAuthToken,
+    port: Number(process.env.PGPORT),
+    ssl: { rejectUnauthorized: false },
+    ...POOL_TUNING,
+  });
+}
+
 function getPool() {
   if (!_pool) {
-    _pool = new Pool({
-      host: process.env.PGHOST!,
-      user: process.env.PGUSER!,
-      database: process.env.PGDATABASE || "postgres",
-      password: getCachedAuthToken,
-      port: Number(process.env.PGPORT),
-      ssl: { rejectUnauthorized: false },
-      // Pool size is PER serverless instance. Under Vercel fluid compute many
-      // instances run concurrently, so a large per-instance pool multiplies
-      // into Aurora's global connection limit (max_connections). Keep this
-      // small; a handful of connections comfortably serves the in-instance
-      // concurrency. For high scale, front Aurora with RDS Proxy / a pooler
-      // and raise this only if instance-level contention shows up in metrics.
-      max: 10,
-      // Recycle idle connections so a long-lived serverless instance doesn't
-      // hold Aurora connections open indefinitely, and fail fast instead of
-      // hanging when the DB is unreachable.
-      idleTimeoutMillis: 30_000,
-      connectionTimeoutMillis: 10_000,
-      keepAlive: true,
-    });
-
+    const url = process.env.DATABASE_URL;
+    _pool = url ? createUrlPool(url) : createIamPool();
     attachDatabasePool(_pool);
   }
   return _pool;
