@@ -27,7 +27,7 @@ export async function setGoal(input: {
   period: string;
   targetDollars: number;
 }): Promise<GoalActionResult> {
-  const ctx = await requirePartner({ orgOnly: true });
+  const ctx = await requirePartner({ orgOnly: true, minRole: "admin" });
 
   if (!METRICS.includes(input.metric as GoalMetric)) {
     return { ok: false, error: "Invalid metric." };
@@ -85,7 +85,7 @@ export async function setGoal(input: {
 
 /** Deletes a goal (org owners only, must belong to the org). */
 export async function deleteGoal(goalId: number): Promise<GoalActionResult> {
-  const ctx = await requirePartner({ orgOnly: true });
+  const ctx = await requirePartner({ orgOnly: true, minRole: "admin" });
   if (!Number.isInteger(goalId) || goalId <= 0) {
     return { ok: false, error: "Invalid goal." };
   }

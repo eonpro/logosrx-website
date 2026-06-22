@@ -36,7 +36,7 @@ export async function inviteRep(input: {
   phone: string;
   ratePercent: number;
 }): Promise<RepActionResult> {
-  const ctx = await requirePartner({ orgOnly: true });
+  const ctx = await requirePartner({ orgOnly: true, minRole: "admin" });
 
   const name = input.name.trim().slice(0, 200);
   const email = input.email.trim().toLowerCase().slice(0, 255);
@@ -124,7 +124,7 @@ export async function setRepRate(
   repId: number,
   ratePercent: number,
 ): Promise<RepActionResult> {
-  const ctx = await requirePartner({ orgOnly: true });
+  const ctx = await requirePartner({ orgOnly: true, minRole: "admin" });
 
   const rateBps = percentToBps(ratePercent);
   const rateErr = validateRepRateBps(rateBps, ctx.org.commissionRateBps);
@@ -148,7 +148,7 @@ export async function setRepStatus(
   repId: number,
   status: "active" | "suspended",
 ): Promise<RepActionResult> {
-  const ctx = await requirePartner({ orgOnly: true });
+  const ctx = await requirePartner({ orgOnly: true, minRole: "admin" });
   if (status !== "active" && status !== "suspended") {
     return { ok: false, error: "Invalid status." };
   }
@@ -170,7 +170,7 @@ export async function setRepStatus(
 export async function resendRepInvite(
   repId: number,
 ): Promise<RepActionResult> {
-  const ctx = await requirePartner({ orgOnly: true });
+  const ctx = await requirePartner({ orgOnly: true, minRole: "admin" });
 
   const [rep] = await db
     .select()

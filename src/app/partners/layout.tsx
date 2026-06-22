@@ -42,6 +42,7 @@ export default async function PartnersLayout({
       ) : (
         <PartnersShell
           kind={ctx?.kind ?? null}
+          role={ctx?.role ?? null}
           orgName={ctx?.org.name ?? null}
           repName={ctx?.rep?.name ?? null}
           marginEnabled={ctx?.org.compensationModel === "margin"}

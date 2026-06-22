@@ -134,6 +134,12 @@ export const partnerGoalPeriodEnum = pgEnum("partner_goal_period", [
   "year",
 ]);
 
+/** Assignable role for an invited org teammate (owner is implicit on the org). */
+export const partnerOrgMemberRoleEnum = pgEnum("partner_org_member_role", [
+  "admin",
+  "viewer",
+]);
+
 /** Where a partner transaction row originated. */
 export const transactionSourceEnum = pgEnum("transaction_source", [
   "manual",
@@ -953,6 +959,37 @@ export const partnerGoals = pgTable(
   ],
 );
 
+/**
+ * Additional users on a partner organization beyond the owner (the owner is
+ * `partner_orgs.clerkUserId`). Each member is an invited teammate with a role:
+ * `admin` (full management) or `viewer` (read-only). Activates via the same
+ * one-time ticket flow as reps.
+ */
+export const partnerOrgMembers = pgTable(
+  "partner_org_members",
+  {
+    id: serial("id").primaryKey(),
+    orgId: integer("org_id")
+      .notNull()
+      .references(() => partnerOrgs.id, { onDelete: "cascade" }),
+    // Null until the member activates their account.
+    clerkUserId: varchar("clerk_user_id", { length: 64 }).unique(),
+    name: varchar("name", { length: 200 }).notNull(),
+    email: varchar("email", { length: 255 }).notNull(),
+    role: partnerOrgMemberRoleEnum("role").default("viewer").notNull(),
+    status: partnerStatusEnum("status").default("active").notNull(),
+    invitedBy: varchar("invited_by", { length: 64 }),
+    invitedAt: timestamp("invited_at").defaultNow().notNull(),
+    activatedAt: timestamp("activated_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("partner_org_members_org_idx").on(t.orgId),
+    uniqueIndex("partner_org_members_org_email_uniq").on(t.orgId, t.email),
+  ],
+);
+
 /** Who executed a partner agreement: the org owner or one of its reps. */
 export const partnerSignerKindEnum = pgEnum("partner_signer_kind", [
   "org",
@@ -1079,5 +1116,7 @@ export type NewPartnerClinicActivity =
   typeof partnerClinicActivity.$inferInsert;
 export type PartnerGoal = typeof partnerGoals.$inferSelect;
 export type NewPartnerGoal = typeof partnerGoals.$inferInsert;
+export type PartnerOrgMember = typeof partnerOrgMembers.$inferSelect;
+export type NewPartnerOrgMember = typeof partnerOrgMembers.$inferInsert;
 export type PartnerAgreement = typeof partnerAgreements.$inferSelect;
 export type NewPartnerAgreement = typeof partnerAgreements.$inferInsert;

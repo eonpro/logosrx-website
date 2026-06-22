@@ -57,7 +57,7 @@ export async function addClinicNote(
   clinicId: number,
   body: string,
 ): Promise<CrmActionResult> {
-  const ctx = await requirePartner();
+  const ctx = await requirePartner({ minRole: "admin" });
   if (!Number.isInteger(clinicId) || clinicId <= 0) {
     return { ok: false, error: "Invalid company." };
   }
@@ -89,7 +89,7 @@ export async function setClinicStage(
   clinicId: number,
   stage: string,
 ): Promise<CrmActionResult> {
-  const ctx = await requirePartner();
+  const ctx = await requirePartner({ minRole: "admin" });
   if (!STAGES.includes(stage as Stage)) {
     return { ok: false, error: "Invalid stage." };
   }
@@ -128,7 +128,7 @@ export async function setClinicTags(
   clinicId: number,
   tags: string[],
 ): Promise<CrmActionResult> {
-  const ctx = await requirePartner();
+  const ctx = await requirePartner({ minRole: "admin" });
   if (!(await assertClinicInScope(clinicId, ctx))) {
     return { ok: false, error: "Company not found in your book." };
   }

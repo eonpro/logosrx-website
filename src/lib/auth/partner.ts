@@ -2,11 +2,15 @@ import { auth } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
+  partnerOrgMembers,
   partnerOrgs,
   partnerReps,
   type PartnerOrg,
   type PartnerRep,
 } from "@/lib/db/schema";
+import { roleAtLeast, type PartnerRole } from "@/lib/auth/partner-roles";
+
+export type { PartnerRole } from "@/lib/auth/partner-roles";
 
 /**
  * Partner-portal access control.
@@ -28,6 +32,8 @@ export interface PartnerContext {
   org: PartnerOrg;
   /** Set only for rep sessions. */
   rep: PartnerRep | null;
+  /** Org role for `kind: "org"` (owner | admin | viewer); null for reps. */
+  role: PartnerRole | null;
 }
 
 export class PartnerForbiddenError extends Error {
@@ -47,6 +53,7 @@ export async function getPartnerContext(): Promise<PartnerContext | null> {
   const { userId } = await auth();
   if (!userId) return null;
 
+  // 1. Org owner (the account that was approved).
   const [org] = await db
     .select()
     .from(partnerOrgs)
@@ -54,9 +61,30 @@ export async function getPartnerContext(): Promise<PartnerContext | null> {
     .limit(1);
   if (org) {
     if (org.status !== "active") return null;
-    return { userId, kind: "org", org, rep: null };
+    return { userId, kind: "org", org, rep: null, role: "owner" };
   }
 
+  // 2. Invited org member (admin/viewer teammate).
+  const [member] = await db
+    .select({ member: partnerOrgMembers, org: partnerOrgs })
+    .from(partnerOrgMembers)
+    .innerJoin(partnerOrgs, eq(partnerOrgMembers.orgId, partnerOrgs.id))
+    .where(eq(partnerOrgMembers.clerkUserId, userId))
+    .limit(1);
+  if (member) {
+    if (member.member.status !== "active" || member.org.status !== "active") {
+      return null;
+    }
+    return {
+      userId,
+      kind: "org",
+      org: member.org,
+      rep: null,
+      role: member.member.role,
+    };
+  }
+
+  // 3. Rep.
   const [row] = await db
     .select({ rep: partnerReps, org: partnerOrgs })
     .from(partnerReps)
@@ -66,19 +94,31 @@ export async function getPartnerContext(): Promise<PartnerContext | null> {
   if (!row) return null;
   if (row.rep.status !== "active" || row.org.status !== "active") return null;
 
-  return { userId, kind: "rep", org: row.org, rep: row.rep };
+  return { userId, kind: "rep", org: row.org, rep: row.rep, role: null };
 }
 
 /**
  * Strict variant for server actions and mutations. Throws when the caller is
- * not an active partner; `orgOnly` additionally rejects rep sessions (e.g.
- * managing reps or their commission rates is owner-only).
+ * not an active partner.
+ *
+ *   - `orgOnly` rejects rep sessions (org-level features like rep/goal mgmt).
+ *   - `minRole` requires at least that org role. It only constrains org users;
+ *     reps (their own scoped data) are unaffected. So a management mutation
+ *     should use `{ minRole: "admin" }` to block org *viewers* while still
+ *     letting reps manage their own resources.
  */
 export async function requirePartner(
-  options: { orgOnly?: boolean } = {},
+  options: { orgOnly?: boolean; minRole?: PartnerRole } = {},
 ): Promise<PartnerContext> {
   const ctx = await getPartnerContext();
   if (!ctx) throw new PartnerForbiddenError();
   if (options.orgOnly && ctx.kind !== "org") throw new PartnerForbiddenError();
+  if (
+    options.minRole &&
+    ctx.kind === "org" &&
+    !roleAtLeast(ctx.role, options.minRole)
+  ) {
+    throw new PartnerForbiddenError();
+  }
   return ctx;
 }
