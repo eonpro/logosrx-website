@@ -4,6 +4,7 @@ import {
   buildActivateUrl,
   clerkErrorMessage,
   deriveUsername,
+  toE164,
 } from "@/lib/auth/clerk-users";
 
 /**
@@ -50,6 +51,31 @@ async function findClerkUserIdByEmail(
   }
 }
 
+/**
+ * Whether a Clerk user already exists with this phone number. The auth instance
+ * treats phone numbers as unique account identifiers, so the public application
+ * form uses this to reject a duplicate up front with a clear message. Returns
+ * `false` on any lookup error so a Clerk hiccup never blocks an application.
+ */
+export async function isClerkPhoneTaken(
+  phone: string | null | undefined,
+): Promise<boolean> {
+  const e164 = toE164(phone);
+  if (!e164) return false;
+  try {
+    const client = await clerkClient();
+    const res = (await client.users.getUserList({
+      phoneNumber: [e164],
+    })) as unknown;
+    const list = Array.isArray(res)
+      ? res
+      : ((res as { data?: unknown[] })?.data ?? []);
+    return list.length > 0;
+  } catch {
+    return false;
+  }
+}
+
 /** First Clerk error code + which identifier it was about, if any. */
 function clerkErrorInfo(err: unknown): { code?: string; param?: string; message?: string } {
   if (err && typeof err === "object" && "errors" in err) {
@@ -83,22 +109,22 @@ function clerkErrorInfo(err: unknown): { code?: string; param?: string; message?
  * failing. Only when no user exists do we create one (with a throwaway
  * password; activation sets the real one).
  *
- * Note: we deliberately do NOT send a phone number to Clerk. The instance does
- * not accept `phone_number` on user creation ("data doesn't match user
- * requirements set for this instance"), and the phone isn't needed for login —
- * it's already stored on the partner org. Throws `PartnerProvisionError` with a
+ * The auth instance requires (and uniquely indexes) a phone number, so we send
+ * the org's phone. Phone uniqueness is validated up front on the application
+ * form (`isClerkPhoneTaken`); if a duplicate still reaches here, we surface a
+ * clear "phone already in use" message. Throws `PartnerProvisionError` with a
  * safe, specific message on genuine failure.
  */
 export async function createPartnerClerkUser(args: {
   email: string;
   name: string;
-  /** Accepted for call-site compatibility; intentionally not sent to Clerk. */
   phone?: string | null;
 }): Promise<string> {
   const client = await clerkClient();
   const email = args.email.trim().toLowerCase();
   const [firstName, ...rest] = args.name.trim().split(/\s+/);
   const lastName = rest.join(" ");
+  const phoneNumber = toE164(args.phone);
 
   // Reuse an existing account if one already has this email.
   const existingId = await findClerkUserIdByEmail(client, email);
@@ -108,6 +134,7 @@ export async function createPartnerClerkUser(args: {
     const user = await client.users.createUser({
       emailAddress: [email],
       username: deriveUsername(email, "partner"),
+      phoneNumber: phoneNumber ? [phoneNumber] : undefined,
       password: randomPassword(),
       firstName: firstName || undefined,
       lastName: lastName || undefined,
@@ -121,6 +148,11 @@ export async function createPartnerClerkUser(args: {
 
     const info = clerkErrorInfo(err);
     console.error("[partners] createUser failed:", err);
+    if (info.code === "form_identifier_exists" && info.param === "phone_number") {
+      throw new PartnerProvisionError(
+        "Another account is already using this phone number. Update the partner's phone number to a unique one and try again.",
+      );
+    }
     // Surface the actual offending field so the cause is unambiguous.
     throw new PartnerProvisionError(
       info.message

@@ -5,11 +5,15 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { partnerOrgs } from "@/lib/db/schema";
 import { notifyNewPartnerApplication } from "@/lib/notifications/slack";
+import { isClerkPhoneTaken } from "@/lib/partners/provision";
 import { runAfterResponse } from "@/lib/runtime/after";
 import {
   clientKeyFromHeaders,
   rateLimitKey,
 } from "@/lib/security/rate-limit";
+
+const PHONE_IN_USE =
+  "Another account is already using this phone number. Please enter a different one.";
 
 export interface PartnerApplicationInput {
   orgName: string;
@@ -72,6 +76,14 @@ export async function submitPartnerApplication(
     return { ok: false, error: "Please enter a valid phone number." };
   }
 
+  // Phone numbers are unique account identifiers (enforced by the auth
+  // provider). Reject a duplicate at submission so the applicant can fix it
+  // here, rather than failing later at approval. Checked against existing
+  // partner applications/orgs and against existing accounts.
+  if (await isClerkPhoneTaken(phone)) {
+    return { ok: false, error: PHONE_IN_USE };
+  }
+
   try {
     const [existing] = await db
       .select({ id: partnerOrgs.id, status: partnerOrgs.status })
@@ -86,6 +98,15 @@ export async function submitPartnerApplication(
             ? "An application with this email is already under review."
             : "A partner account with this email already exists. Try signing in.",
       };
+    }
+
+    const [phoneOrg] = await db
+      .select({ id: partnerOrgs.id })
+      .from(partnerOrgs)
+      .where(eq(partnerOrgs.contactPhone, phone))
+      .limit(1);
+    if (phoneOrg) {
+      return { ok: false, error: PHONE_IN_USE };
     }
 
     await db.insert(partnerOrgs).values({
