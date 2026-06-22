@@ -169,12 +169,6 @@ export default function ApplyForm() {
           >
             {busy ? "Submitting…" : "Submit application"}
           </button>
-
-          <p className="text-[11px] leading-relaxed text-white/35">
-            Partners are paid a set fee for marketing services — not for
-            referrals or any share of sales. Engagements are governed by a
-            Marketing Services Agreement.
-          </p>
         </form>
       </div>
     </AuthShell>
