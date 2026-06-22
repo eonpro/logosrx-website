@@ -157,6 +157,14 @@ export interface Product {
   badges?: ProductBadge[];
   /** Footnote rendered under the badges (paired with `ProductBadge.footnoteMark`). */
   footnote?: string;
+  /**
+   * FDA 503A compounding availability disclaimer. When present, renders a
+   * prominent callout in the hero stating the medication is only available
+   * when the commercial product is unavailable or a prescriber determines a
+   * clinically significant difference for the patient. Required on compounded
+   * copies of commercially available drugs (e.g. semaglutide, tirzepatide).
+   */
+  compoundingDisclaimer?: string;
 
   /* Hero copy */
   /** One-liner that sits between the H1 and the description paragraphs. */
@@ -203,6 +211,13 @@ export interface Product {
 }
 
 /* ───────────────────────── Helpers ───────────────────────── */
+
+/**
+ * FDA 503A compounding availability disclaimer, applied to compounded copies
+ * of commercially available drugs (e.g. semaglutide, tirzepatide).
+ */
+const COMPOUNDING_DISCLAIMER =
+  "This compounded medication is only available when the commercially available product is unavailable or when a prescriber determines that there is a clinically significant difference for the patient.";
 
 /** Common how-to-take copy reused across injectables. */
 const SUBQ_HOW_TO_TAKE = [
@@ -624,6 +639,7 @@ export const products: Product[] = [
     modifierStyle: "plus",
     category: "Weight Loss",
     categoryKey: "Injectable",
+    compoundingDisclaimer: COMPOUNDING_DISCLAIMER,
     tagline:
       "An advanced GLP-1 receptor agonist formulation designed for effective weight management and metabolic optimization.",
     heroBullets: [
@@ -716,6 +732,7 @@ export const products: Product[] = [
     modifierStyle: "plus",
     category: "Weight Loss",
     categoryKey: "Injectable",
+    compoundingDisclaimer: COMPOUNDING_DISCLAIMER,
     tagline:
       "A next-generation GLP-1 and GIP dual-receptor agonist co-formulated with glycine for advanced weight management.",
     heroBullets: [
