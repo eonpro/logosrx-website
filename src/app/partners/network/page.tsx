@@ -5,7 +5,7 @@ import { getPartnerContext } from "@/lib/auth/partner";
 import { formatBps, formatCents } from "@/lib/partners/commission";
 import { getRepProduction, listBookOfBusiness } from "@/lib/partners/crm";
 import PartnerNoAccess from "../PartnerNoAccess";
-import { StageBadge, StatusBadge } from "../Kpi";
+import BookTable from "./BookTable";
 
 export default async function PartnerNetworkPage() {
   const ctx = await getPartnerContext();
@@ -100,69 +100,26 @@ export default async function PartnerNetworkPage() {
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-beige bg-white">
-          <div className="border-b border-beige px-5 py-4">
-            <h2 className="text-sm font-semibold text-navy">Companies</h2>
-          </div>
-          <table className="w-full min-w-[760px] text-left text-sm">
-            <thead className="bg-cream/60 text-xs uppercase tracking-wide text-navy/55">
-              <tr>
-                <th className="px-5 py-3 font-semibold">Company</th>
-                {ctx.kind === "org" && (
-                  <th className="px-5 py-3 font-semibold">Rep</th>
-                )}
-                <th className="px-5 py-3 font-semibold">Stage</th>
-                <th className="px-5 py-3 font-semibold">Status</th>
-                <th className="px-5 py-3 font-semibold text-right">Revenue</th>
-                <th className="px-5 py-3 font-semibold text-right">Commission</th>
-                <th className="px-5 py-3 font-semibold">Last activity</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-beige text-navy">
-              {book.map((c) => (
-                <tr key={c.id} className="hover:bg-cream/40">
-                  <td className="px-5 py-3">
-                    <Link
-                      href={`/partners/clinics/${c.id}`}
-                      className="font-medium text-navy hover:text-magenta"
-                    >
-                      {c.clinicName ?? `Clinic #${c.id}`}
-                    </Link>
-                    {c.contactName && (
-                      <span className="block text-xs text-navy/55">
-                        {c.contactName}
-                      </span>
-                    )}
-                  </td>
-                  {ctx.kind === "org" && (
-                    <td className="px-5 py-3">{c.repName ?? "Organization"}</td>
-                  )}
-                  <td className="px-5 py-3">
-                    <StageBadge stage={c.stage} />
-                  </td>
-                  <td className="px-5 py-3">
-                    <StatusBadge status={c.verificationStatus} />
-                  </td>
-                  <td className="px-5 py-3 text-right tabular-nums">
-                    {formatCents(c.revenueCents)}
-                  </td>
-                  <td className="px-5 py-3 text-right tabular-nums font-semibold">
-                    {formatCents(c.commissionCents)}
-                  </td>
-                  <td className="px-5 py-3 whitespace-nowrap text-navy/70">
-                    {c.lastTransactionDate
-                      ? c.lastTransactionDate.toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })
-                      : "—"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <BookTable
+          kind={ctx.kind}
+          rows={book.map((c) => ({
+            id: c.id,
+            clinicName: c.clinicName,
+            contactName: c.contactName,
+            repName: c.repName,
+            stage: c.stage,
+            verificationStatus: c.verificationStatus,
+            revenueCents: c.revenueCents,
+            commissionCents: c.commissionCents,
+            lastActivityLabel: c.lastTransactionDate
+              ? c.lastTransactionDate.toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })
+              : null,
+          }))}
+        />
       )}
     </div>
   );

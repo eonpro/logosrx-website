@@ -309,6 +309,14 @@ function lastNMonthKeys(n: number, now = new Date()): string[] {
   return keys;
 }
 
+/** Whole-portfolio revenue + commission by month for the caller's scope. */
+export async function getPartnerTrend(
+  ctx: PartnerContext,
+  months = 12,
+): Promise<MonthPoint[]> {
+  return monthlyTrend(ctx, undefined, months);
+}
+
 async function monthlyTrend(
   ctx: PartnerContext,
   extraClinic: SQL | undefined,
