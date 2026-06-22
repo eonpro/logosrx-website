@@ -31,9 +31,30 @@ export class PartnerProvisionError extends Error {
   }
 }
 
+/** Returns the id of an existing Clerk user with this email, or null. */
+async function findClerkUserIdByEmail(
+  client: Awaited<ReturnType<typeof clerkClient>>,
+  email: string,
+): Promise<string | null> {
+  try {
+    const res = await client.users.getUserList({ emailAddress: [email] });
+    // Clerk Backend SDK returns a paginated `{ data, totalCount }` object.
+    const user = res?.data?.[0];
+    return user?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Creates the Clerk user backing a partner login. Throws
- * `PartnerProvisionError` with a safe, user-facing message on failure.
+ * Provisions (or reuses) the Clerk user backing a partner login.
+ *
+ * Approval/invite must be idempotent: if a Clerk account already exists for the
+ * email — a prior approval attempt, a re-application, or because the person
+ * already has a Logos account — we link to that existing user instead of
+ * failing with "an account with this email already exists". Only when no user
+ * exists do we create one (with a throwaway password; activation sets the real
+ * one). Throws `PartnerProvisionError` with a safe message on genuine failure.
  */
 export async function createPartnerClerkUser(args: {
   email: string;
@@ -41,14 +62,19 @@ export async function createPartnerClerkUser(args: {
   phone?: string | null;
 }): Promise<string> {
   const client = await clerkClient();
+  const email = args.email.trim().toLowerCase();
   const [firstName, ...rest] = args.name.trim().split(/\s+/);
   const lastName = rest.join(" ");
   const phoneNumber = toE164(args.phone);
 
+  // Reuse an existing account if one already has this email.
+  const existingId = await findClerkUserIdByEmail(client, email);
+  if (existingId) return existingId;
+
   try {
     const user = await client.users.createUser({
-      emailAddress: [args.email.trim().toLowerCase()],
-      username: deriveUsername(args.email, "partner"),
+      emailAddress: [email],
+      username: deriveUsername(email, "partner"),
       phoneNumber: phoneNumber ? [phoneNumber] : undefined,
       password: randomPassword(),
       firstName: firstName || undefined,
@@ -57,7 +83,11 @@ export async function createPartnerClerkUser(args: {
     });
     return user.id;
   } catch (err) {
-    console.error("[partners] createUser failed");
+    // A concurrent/duplicate create can still race the lookup above; if the
+    // email now exists, link to it rather than surfacing an error.
+    const linked = await findClerkUserIdByEmail(client, email);
+    if (linked) return linked;
+    console.error("[partners] createUser failed:", err);
     throw new PartnerProvisionError(
       clerkErrorMessage(err, "Could not create the account."),
     );
