@@ -37,13 +37,42 @@ async function findClerkUserIdByEmail(
   email: string,
 ): Promise<string | null> {
   try {
-    const res = await client.users.getUserList({ emailAddress: [email] });
-    // Clerk Backend SDK returns a paginated `{ data, totalCount }` object.
-    const user = res?.data?.[0];
-    return user?.id ?? null;
+    // Clerk Backend SDK returns a paginated `{ data, totalCount }` object;
+    // older shapes returned a bare array — handle both defensively.
+    const res = (await client.users.getUserList({
+      emailAddress: [email],
+    })) as unknown;
+    const list = Array.isArray(res)
+      ? res
+      : ((res as { data?: Array<{ id: string }> })?.data ?? []);
+    return list[0]?.id ?? null;
   } catch {
     return null;
   }
+}
+
+/** First Clerk error code + which identifier it was about, if any. */
+function clerkErrorInfo(err: unknown): { code?: string; param?: string; message?: string } {
+  if (err && typeof err === "object" && "errors" in err) {
+    const first = (
+      err as {
+        errors?: Array<{
+          code?: string;
+          message?: string;
+          longMessage?: string;
+          meta?: { paramName?: string };
+        }>;
+      }
+    ).errors?.[0];
+    if (first) {
+      return {
+        code: first.code,
+        param: first.meta?.paramName,
+        message: first.longMessage || first.message,
+      };
+    }
+  }
+  return {};
 }
 
 /**
@@ -71,25 +100,61 @@ export async function createPartnerClerkUser(args: {
   const existingId = await findClerkUserIdByEmail(client, email);
   if (existingId) return existingId;
 
+  const baseUser = {
+    emailAddress: [email],
+    password: randomPassword(),
+    firstName: firstName || undefined,
+    lastName: lastName || undefined,
+    skipLegalChecks: true,
+  };
+
   try {
     const user = await client.users.createUser({
-      emailAddress: [email],
+      ...baseUser,
       username: deriveUsername(email, "partner"),
       phoneNumber: phoneNumber ? [phoneNumber] : undefined,
-      password: randomPassword(),
-      firstName: firstName || undefined,
-      lastName: lastName || undefined,
-      skipLegalChecks: true,
     });
     return user.id;
   } catch (err) {
-    // A concurrent/duplicate create can still race the lookup above; if the
-    // email now exists, link to it rather than surfacing an error.
+    // The email now exists (a race with another approval) — link to it.
     const linked = await findClerkUserIdByEmail(client, email);
     if (linked) return linked;
+
+    const info = clerkErrorInfo(err);
+
+    // The conflict is the PHONE NUMBER, not the email (the same test phone is
+    // often reused). The phone is non-essential for a partner login and is
+    // already stored on the org, so retry without it.
+    if (
+      info.code === "form_identifier_exists" &&
+      phoneNumber &&
+      info.param !== "email_address"
+    ) {
+      try {
+        const user = await client.users.createUser({
+          ...baseUser,
+          username: deriveUsername(email, "partner"),
+        });
+        return user.id;
+      } catch (err2) {
+        const linked2 = await findClerkUserIdByEmail(client, email);
+        if (linked2) return linked2;
+        console.error("[partners] createUser retry (no phone) failed:", err2);
+        const i2 = clerkErrorInfo(err2);
+        throw new PartnerProvisionError(
+          i2.message
+            ? `Could not create the account: ${i2.message}${i2.param ? ` (${i2.param})` : ""}`
+            : clerkErrorMessage(err2, "Could not create the account."),
+        );
+      }
+    }
+
     console.error("[partners] createUser failed:", err);
+    // Surface the actual conflicting field so the cause is unambiguous.
     throw new PartnerProvisionError(
-      clerkErrorMessage(err, "Could not create the account."),
+      info.message
+        ? `Could not create the account: ${info.message}${info.param ? ` (${info.param})` : ""}`
+        : clerkErrorMessage(err, "Could not create the account."),
     );
   }
 }
