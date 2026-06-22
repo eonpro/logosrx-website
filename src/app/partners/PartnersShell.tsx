@@ -69,6 +69,18 @@ const navItems: PartnerNavItem[] = [
     ),
   },
   {
+    label: "Goals",
+    href: "/partners/goals",
+    only: "org",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <circle cx="10" cy="10" r="7" />
+        <circle cx="10" cy="10" r="3" />
+        <circle cx="10" cy="10" r="0.5" fill="currentColor" />
+      </svg>
+    ),
+  },
+  {
     label: "Referral Links",
     href: "/partners/links",
     icon: (

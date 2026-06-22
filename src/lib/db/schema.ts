@@ -121,6 +121,19 @@ export const partnerClinicActivityTypeEnum = pgEnum(
   ["note", "stage_change", "tag_change"],
 );
 
+/** What a sales goal/quota measures. */
+export const partnerGoalMetricEnum = pgEnum("partner_goal_metric", [
+  "revenue",
+  "commission",
+]);
+
+/** The recurring period a goal/quota resets over. */
+export const partnerGoalPeriodEnum = pgEnum("partner_goal_period", [
+  "month",
+  "quarter",
+  "year",
+]);
+
 /** Where a partner transaction row originated. */
 export const transactionSourceEnum = pgEnum("transaction_source", [
   "manual",
@@ -905,6 +918,41 @@ export const partnerClinicActivity = pgTable(
   ],
 );
 
+/**
+ * Recurring sales goal / quota. `repId` null = an org-wide goal; otherwise the
+ * target applies to that rep. One goal per (org, rep, metric, period); progress
+ * is measured against the current period's attributed actuals.
+ */
+export const partnerGoals = pgTable(
+  "partner_goals",
+  {
+    id: serial("id").primaryKey(),
+    orgId: integer("org_id")
+      .notNull()
+      .references(() => partnerOrgs.id, { onDelete: "cascade" }),
+    repId: integer("rep_id").references(() => partnerReps.id, {
+      onDelete: "cascade",
+    }),
+    metric: partnerGoalMetricEnum("metric").notNull(),
+    period: partnerGoalPeriodEnum("period").notNull(),
+    targetCents: integer("target_cents").notNull(),
+    createdBy: varchar("created_by", { length: 64 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    // At most one goal per scope + metric + period. `repId` NULL (org goal)
+    // is treated as distinct by Postgres, so a partial unique index covers it.
+    uniqueIndex("partner_goals_org_rep_metric_period_uniq").on(
+      t.orgId,
+      t.repId,
+      t.metric,
+      t.period,
+    ),
+    index("partner_goals_org_idx").on(t.orgId),
+  ],
+);
+
 /** Who executed a partner agreement: the org owner or one of its reps. */
 export const partnerSignerKindEnum = pgEnum("partner_signer_kind", [
   "org",
@@ -1029,5 +1077,7 @@ export type NewPartnerClinicMeta = typeof partnerClinicMeta.$inferInsert;
 export type PartnerClinicActivity = typeof partnerClinicActivity.$inferSelect;
 export type NewPartnerClinicActivity =
   typeof partnerClinicActivity.$inferInsert;
+export type PartnerGoal = typeof partnerGoals.$inferSelect;
+export type NewPartnerGoal = typeof partnerGoals.$inferInsert;
 export type PartnerAgreement = typeof partnerAgreements.$inferSelect;
 export type NewPartnerAgreement = typeof partnerAgreements.$inferInsert;

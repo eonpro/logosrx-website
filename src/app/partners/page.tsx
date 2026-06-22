@@ -14,9 +14,11 @@ import {
   getUnpaidBalanceCents,
   listPartnerTransactions,
 } from "@/lib/partners/queries";
+import { getViewerGoalProgress } from "@/lib/partners/goals";
 import PartnerLanding from "./PartnerLanding";
 import PartnerNoAccess from "./PartnerNoAccess";
 import RangeFilter from "./RangeFilter";
+import GoalProgressBars from "./GoalProgressBars";
 
 export const metadata: Metadata = {
   title: "Marketing Partner Program",
@@ -41,15 +43,23 @@ export default async function PartnerDashboardPage({
   const { range } = await searchParams;
   const resolved = resolveDateRange(range);
 
-  const [revenue, commission, unpaidCents, awaitingCents, clinicCount, recent] =
-    await Promise.all([
-      getRevenueSummary(ctx, resolved.from),
-      getCommissionSummary(ctx, resolved.from),
-      getUnpaidBalanceCents(ctx),
-      getAwaitingApprovalCents(ctx),
-      countNetworkClinics(ctx),
-      listPartnerTransactions(ctx, resolved.from, 8),
-    ]);
+  const [
+    revenue,
+    commission,
+    unpaidCents,
+    awaitingCents,
+    clinicCount,
+    recent,
+    goals,
+  ] = await Promise.all([
+    getRevenueSummary(ctx, resolved.from),
+    getCommissionSummary(ctx, resolved.from),
+    getUnpaidBalanceCents(ctx),
+    getAwaitingApprovalCents(ctx),
+    countNetworkClinics(ctx),
+    listPartnerTransactions(ctx, resolved.from, 8),
+    getViewerGoalProgress(ctx),
+  ]);
 
   const rateBps =
     ctx.kind === "rep"
@@ -109,6 +119,23 @@ export default async function PartnerDashboardPage({
           }
         />
       </div>
+
+      {goals.length > 0 && (
+        <div className="mt-6 rounded-2xl border border-beige bg-white p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-navy">Goal progress</h2>
+            {ctx.kind === "org" && (
+              <Link
+                href="/partners/goals"
+                className="text-xs font-medium text-magenta hover:underline"
+              >
+                Manage goals →
+              </Link>
+            )}
+          </div>
+          <GoalProgressBars goals={goals} />
+        </div>
+      )}
 
       <div className="mt-8 rounded-2xl border border-beige bg-white">
         <div className="flex items-center justify-between border-b border-beige px-6 py-4">
