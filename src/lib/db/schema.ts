@@ -104,6 +104,23 @@ export const commissionEntryKindEnum = pgEnum("commission_entry_kind", [
   "reversal",
 ]);
 
+/**
+ * Relationship stage for a company in a partner's book of business (CRM view,
+ * separate from the clinic's admin `verificationStatus`).
+ */
+export const partnerClinicStageEnum = pgEnum("partner_clinic_stage", [
+  "lead",
+  "active",
+  "at_risk",
+  "dormant",
+]);
+
+/** Kind of entry in a company's partner activity timeline. */
+export const partnerClinicActivityTypeEnum = pgEnum(
+  "partner_clinic_activity_type",
+  ["note", "stage_change", "tag_change"],
+);
+
 /** Where a partner transaction row originated. */
 export const transactionSourceEnum = pgEnum("transaction_source", [
   "manual",
@@ -830,6 +847,64 @@ export const commissionEntries = pgTable("commission_entries", {
   index("commission_entries_payout_id_idx").on(t.payoutId),
 ]);
 
+/**
+ * Partner-side CRM relationship record for a company. One row per (org,
+ * clinic): the relationship `stage` and free-form `tags` a sales org manages
+ * for an account, independent of the clinic's admin verification status. The
+ * org and its reps share this record; reps may only edit their own clinics.
+ */
+export const partnerClinicMeta = pgTable(
+  "partner_clinic_meta",
+  {
+    id: serial("id").primaryKey(),
+    orgId: integer("org_id")
+      .notNull()
+      .references(() => partnerOrgs.id, { onDelete: "cascade" }),
+    clinicId: integer("clinic_id")
+      .notNull()
+      .references(() => clinics.id, { onDelete: "cascade" }),
+    stage: partnerClinicStageEnum("stage").default("active").notNull(),
+    tags: jsonb("tags").$type<string[]>().default([]).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("partner_clinic_meta_org_clinic_uniq").on(t.orgId, t.clinicId),
+    index("partner_clinic_meta_clinic_idx").on(t.clinicId),
+  ],
+);
+
+/**
+ * Append-only partner activity timeline for a company: notes written by the
+ * partner plus logged stage/tag changes. Transactions are merged in at read
+ * time from `partner_transactions`; this table holds the human-authored and
+ * relationship-management events.
+ */
+export const partnerClinicActivity = pgTable(
+  "partner_clinic_activity",
+  {
+    id: serial("id").primaryKey(),
+    orgId: integer("org_id")
+      .notNull()
+      .references(() => partnerOrgs.id, { onDelete: "cascade" }),
+    clinicId: integer("clinic_id")
+      .notNull()
+      .references(() => clinics.id, { onDelete: "cascade" }),
+    // The rep who authored it (null for org-owner actions).
+    repId: integer("rep_id").references(() => partnerReps.id, {
+      onDelete: "set null",
+    }),
+    actorKind: commissionPayeeEnum("actor_kind").notNull(),
+    actorName: varchar("actor_name", { length: 200 }),
+    type: partnerClinicActivityTypeEnum("type").notNull(),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("partner_clinic_activity_clinic_idx").on(t.clinicId, t.createdAt),
+  ],
+);
+
 /** Who executed a partner agreement: the org owner or one of its reps. */
 export const partnerSignerKindEnum = pgEnum("partner_signer_kind", [
   "org",
@@ -949,5 +1024,10 @@ export type CommissionEntry = typeof commissionEntries.$inferSelect;
 export type NewCommissionEntry = typeof commissionEntries.$inferInsert;
 export type Payout = typeof payouts.$inferSelect;
 export type NewPayout = typeof payouts.$inferInsert;
+export type PartnerClinicMeta = typeof partnerClinicMeta.$inferSelect;
+export type NewPartnerClinicMeta = typeof partnerClinicMeta.$inferInsert;
+export type PartnerClinicActivity = typeof partnerClinicActivity.$inferSelect;
+export type NewPartnerClinicActivity =
+  typeof partnerClinicActivity.$inferInsert;
 export type PartnerAgreement = typeof partnerAgreements.$inferSelect;
 export type NewPartnerAgreement = typeof partnerAgreements.$inferInsert;

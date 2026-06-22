@@ -5,7 +5,7 @@ import { getPartnerContext } from "@/lib/auth/partner";
 import { formatBps, formatCents } from "@/lib/partners/commission";
 import { getRepProduction, listBookOfBusiness } from "@/lib/partners/crm";
 import PartnerNoAccess from "../PartnerNoAccess";
-import { StatusBadge } from "../Kpi";
+import { StageBadge, StatusBadge } from "../Kpi";
 
 export default async function PartnerNetworkPage() {
   const ctx = await getPartnerContext();
@@ -111,6 +111,7 @@ export default async function PartnerNetworkPage() {
                 {ctx.kind === "org" && (
                   <th className="px-5 py-3 font-semibold">Rep</th>
                 )}
+                <th className="px-5 py-3 font-semibold">Stage</th>
                 <th className="px-5 py-3 font-semibold">Status</th>
                 <th className="px-5 py-3 font-semibold text-right">Revenue</th>
                 <th className="px-5 py-3 font-semibold text-right">Commission</th>
@@ -136,6 +137,9 @@ export default async function PartnerNetworkPage() {
                   {ctx.kind === "org" && (
                     <td className="px-5 py-3">{c.repName ?? "Organization"}</td>
                   )}
+                  <td className="px-5 py-3">
+                    <StageBadge stage={c.stage} />
+                  </td>
                   <td className="px-5 py-3">
                     <StatusBadge status={c.verificationStatus} />
                   </td>

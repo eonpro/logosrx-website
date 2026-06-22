@@ -4,10 +4,16 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPartnerContext } from "@/lib/auth/partner";
 import { formatCents } from "@/lib/partners/commission";
-import { getClinicDetail } from "@/lib/partners/crm";
+import {
+  getClinicDetail,
+  getClinicMeta,
+  getClinicTimeline,
+} from "@/lib/partners/crm";
 import PartnerNoAccess from "../../PartnerNoAccess";
 import MonthlyTrend from "../../MonthlyTrend";
-import { KpiCard, StatusBadge } from "../../Kpi";
+import { KpiCard, StageBadge, StatusBadge } from "../../Kpi";
+import ClinicRelationship from "./ClinicRelationship";
+import ActivityTimeline from "./ActivityTimeline";
 
 export default async function PartnerClinicDetailPage({
   params,
@@ -24,6 +30,11 @@ export default async function PartnerClinicDetailPage({
   const clinic = await getClinicDetail(ctx, clinicId);
   if (!clinic) notFound();
 
+  const [meta, timeline] = await Promise.all([
+    getClinicMeta(ctx, clinicId),
+    getClinicTimeline(ctx, clinicId, clinic.createdAt),
+  ]);
+
   return (
     <div>
       <div className="mb-6">
@@ -37,6 +48,7 @@ export default async function PartnerClinicDetailPage({
           <h1 className="text-2xl font-bold text-navy">
             {clinic.clinicName ?? `Clinic #${clinic.id}`}
           </h1>
+          <StageBadge stage={meta.stage} />
           <StatusBadge status={clinic.verificationStatus} />
         </div>
         <p className="mt-1 text-sm text-navy/70">
@@ -96,6 +108,15 @@ export default async function PartnerClinicDetailPage({
 
       <div className="mt-6">
         <MonthlyTrend data={clinic.trend} />
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <ClinicRelationship
+          clinicId={clinic.id}
+          stage={meta.stage}
+          tags={meta.tags}
+        />
+        <ActivityTimeline events={timeline} />
       </div>
 
       <div className="mt-6 overflow-x-auto rounded-2xl border border-beige bg-white">

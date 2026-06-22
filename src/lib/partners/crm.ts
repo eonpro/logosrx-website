@@ -4,10 +4,14 @@ import { db } from "@/lib/db";
 import {
   clinics,
   commissionEntries,
+  partnerClinicActivity,
+  partnerClinicMeta,
   partnerReps,
   partnerTransactions,
 } from "@/lib/db/schema";
 import type { PartnerContext } from "@/lib/auth/partner";
+
+export type ClinicStage = "lead" | "active" | "at_risk" | "dormant";
 
 /**
  * CRM read models for the partner portal: per-company (clinic) and per-rep
@@ -54,6 +58,7 @@ export interface BookRow {
   contactEmail: string | null;
   repName: string | null;
   verificationStatus: "pending" | "verified" | "rejected";
+  stage: ClinicStage;
   revenueCents: number;
   commissionCents: number;
   txCount: number;
@@ -80,10 +85,18 @@ export async function listBookOfBusiness(
       contactEmail: clinics.contactEmail,
       verificationStatus: clinics.verificationStatus,
       repName: partnerReps.name,
+      stage: partnerClinicMeta.stage,
       createdAt: clinics.createdAt,
     })
     .from(clinics)
     .leftJoin(partnerReps, eq(clinics.partnerRepId, partnerReps.id))
+    .leftJoin(
+      partnerClinicMeta,
+      and(
+        eq(partnerClinicMeta.clinicId, clinics.id),
+        eq(partnerClinicMeta.orgId, ctx.org.id),
+      ),
+    )
     .where(clinicScope(ctx))
     .orderBy(desc(clinics.createdAt))
     .limit(1000);
@@ -137,6 +150,7 @@ export async function listBookOfBusiness(
       contactEmail: c.contactEmail,
       repName: c.repName,
       verificationStatus: c.verificationStatus,
+      stage: (c.stage as ClinicStage | null) ?? "active",
       revenueCents: rev?.revenueCents ?? 0,
       commissionCents: commByClinic.get(c.id) ?? 0,
       txCount: rev?.txCount ?? 0,
@@ -144,6 +158,132 @@ export async function listBookOfBusiness(
       createdAt: c.createdAt,
     };
   });
+}
+
+// ---------------------------------------------------------------------------
+// Relationship CRM: meta (stage/tags) + activity timeline
+// ---------------------------------------------------------------------------
+
+export interface ClinicMeta {
+  stage: ClinicStage;
+  tags: string[];
+}
+
+/** A company's relationship record (stage + tags), with sane defaults. */
+export async function getClinicMeta(
+  ctx: PartnerContext,
+  clinicId: number,
+): Promise<ClinicMeta> {
+  const [row] = await db
+    .select({ stage: partnerClinicMeta.stage, tags: partnerClinicMeta.tags })
+    .from(partnerClinicMeta)
+    .where(
+      and(
+        eq(partnerClinicMeta.orgId, ctx.org.id),
+        eq(partnerClinicMeta.clinicId, clinicId),
+      ),
+    )
+    .limit(1);
+  return {
+    stage: (row?.stage as ClinicStage | undefined) ?? "active",
+    tags: row?.tags ?? [],
+  };
+}
+
+export type TimelineKind =
+  | "note"
+  | "stage_change"
+  | "tag_change"
+  | "transaction"
+  | "joined";
+
+export interface TimelineEvent {
+  id: string;
+  kind: TimelineKind;
+  date: Date;
+  title: string;
+  detail?: string | null;
+  actor?: string | null;
+}
+
+/**
+ * Merged, newest-first activity feed for a company: the join event, recorded
+ * transactions, and partner-authored notes / logged stage & tag changes.
+ */
+export async function getClinicTimeline(
+  ctx: PartnerContext,
+  clinicId: number,
+  joinedAt?: Date,
+): Promise<TimelineEvent[]> {
+  const [activity, txs] = await Promise.all([
+    db
+      .select({
+        id: partnerClinicActivity.id,
+        type: partnerClinicActivity.type,
+        body: partnerClinicActivity.body,
+        actorName: partnerClinicActivity.actorName,
+        createdAt: partnerClinicActivity.createdAt,
+      })
+      .from(partnerClinicActivity)
+      .where(
+        and(
+          eq(partnerClinicActivity.orgId, ctx.org.id),
+          eq(partnerClinicActivity.clinicId, clinicId),
+        ),
+      )
+      .orderBy(desc(partnerClinicActivity.createdAt))
+      .limit(200),
+    db
+      .select({
+        id: partnerTransactions.id,
+        date: partnerTransactions.transactionDate,
+        revenueCents: partnerTransactions.revenueCents,
+        description: partnerTransactions.description,
+      })
+      .from(partnerTransactions)
+      .where(eq(partnerTransactions.clinicId, clinicId))
+      .orderBy(desc(partnerTransactions.transactionDate))
+      .limit(100),
+  ]);
+
+  const events: TimelineEvent[] = [];
+
+  for (const a of activity) {
+    events.push({
+      id: `a${a.id}`,
+      kind: a.type as TimelineKind,
+      date: a.createdAt,
+      title:
+        a.type === "note"
+          ? "Note"
+          : a.type === "stage_change"
+            ? "Stage changed"
+            : "Tags updated",
+      detail: a.body,
+      actor: a.actorName,
+    });
+  }
+
+  for (const t of txs) {
+    events.push({
+      id: `t${t.id}`,
+      kind: "transaction",
+      date: t.date,
+      title: "Transaction recorded",
+      detail: t.description,
+    });
+  }
+
+  if (joinedAt) {
+    events.push({
+      id: "joined",
+      kind: "joined",
+      date: joinedAt,
+      title: "Joined your network",
+    });
+  }
+
+  return events.sort((a, b) => b.date.getTime() - a.date.getTime());
 }
 
 // ---------------------------------------------------------------------------
