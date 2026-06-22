@@ -168,8 +168,9 @@ export async function listPartnerTransactions(
 }
 
 /** Viewer's unpaid balance (pending + approved entries), all time. */
-export async function getUnpaidBalanceCents(
+async function sumEntriesByStatus(
   ctx: PartnerContext,
+  statuses: ("pending" | "approved" | "paid")[],
 ): Promise<number> {
   const conditions =
     ctx.kind === "org"
@@ -190,13 +191,25 @@ export async function getUnpaidBalanceCents(
         ),
     })
     .from(commissionEntries)
-    .where(
-      and(...conditions, inArray(commissionEntries.status, [
-        "pending",
-        "approved",
-      ])),
-    );
+    .where(and(...conditions, inArray(commissionEntries.status, statuses)));
   return row?.totalCents ?? 0;
+}
+
+/**
+ * Payable-now balance: net of APPROVED entries (approved earnings minus
+ * approved clawbacks). This is exactly what a payout will settle.
+ */
+export async function getUnpaidBalanceCents(
+  ctx: PartnerContext,
+): Promise<number> {
+  return sumEntriesByStatus(ctx, ["approved"]);
+}
+
+/** Earned but not yet approved by Logos RX (awaiting the approval gate). */
+export async function getAwaitingApprovalCents(
+  ctx: PartnerContext,
+): Promise<number> {
+  return sumEntriesByStatus(ctx, ["pending"]);
 }
 
 export interface PayoutRow {

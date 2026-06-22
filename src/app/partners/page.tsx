@@ -10,6 +10,7 @@ import {
   countNetworkClinics,
   getCommissionSummary,
   getRevenueSummary,
+  getAwaitingApprovalCents,
   getUnpaidBalanceCents,
   listPartnerTransactions,
 } from "@/lib/partners/queries";
@@ -40,11 +41,12 @@ export default async function PartnerDashboardPage({
   const { range } = await searchParams;
   const resolved = resolveDateRange(range);
 
-  const [revenue, commission, unpaidCents, clinicCount, recent] =
+  const [revenue, commission, unpaidCents, awaitingCents, clinicCount, recent] =
     await Promise.all([
       getRevenueSummary(ctx, resolved.from),
       getCommissionSummary(ctx, resolved.from),
       getUnpaidBalanceCents(ctx),
+      getAwaitingApprovalCents(ctx),
       countNetworkClinics(ctx),
       listPartnerTransactions(ctx, resolved.from, 8),
     ]);
@@ -89,9 +91,13 @@ export default async function PartnerDashboardPage({
           accent
         />
         <StatCard
-          label="Unpaid balance (all time)"
+          label="Payable now"
           value={formatCents(unpaidCents)}
-          sub="Pending payout"
+          sub={
+            awaitingCents > 0
+              ? `+ ${formatCents(awaitingCents)} awaiting approval`
+              : "Approved, pending payout"
+          }
         />
         <StatCard
           label="Linked clinics"

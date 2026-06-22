@@ -20,6 +20,14 @@ export class TransactionError extends Error {
   }
 }
 
+/** Thrown when a transaction with the same external reference already exists. */
+export class DuplicateReferenceError extends Error {
+  constructor(public readonly reference: string) {
+    super(`A transaction with reference "${reference}" already exists.`);
+    this.name = "DuplicateReferenceError";
+  }
+}
+
 export interface CreateTransactionInput {
   clinicId: number;
   date: Date;
@@ -46,6 +54,18 @@ export async function createTransactionWithCommission(
 ): Promise<number> {
   if (!Number.isInteger(input.revenueCents) || input.revenueCents < 0) {
     throw new TransactionError("Revenue must be a non-negative amount.");
+  }
+
+  // Idempotency: a non-null external reference (e.g. a LifeFile order id) is
+  // unique, so re-importing the same file can't double-record a sale.
+  const reference = input.reference?.trim() || null;
+  if (reference) {
+    const [dup] = await db
+      .select({ id: partnerTransactions.id })
+      .from(partnerTransactions)
+      .where(eq(partnerTransactions.reference, reference))
+      .limit(1);
+    if (dup) throw new DuplicateReferenceError(reference);
   }
 
   const [clinic] = await db
@@ -121,7 +141,7 @@ export async function createTransactionWithCommission(
         clinicId: clinic.id,
         transactionDate: input.date,
         description: input.description,
-        reference: input.reference,
+        reference,
         revenueCents: input.revenueCents,
         costCents,
         source: input.source,

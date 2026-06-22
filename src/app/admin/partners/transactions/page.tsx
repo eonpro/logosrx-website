@@ -12,6 +12,7 @@ import {
 import { requireAdmin } from "@/lib/auth/admin";
 import { formatCents } from "@/lib/partners/commission";
 import TransactionEntry from "./TransactionEntry";
+import RefundButton from "./RefundButton";
 
 export default async function AdminPartnerTransactionsPage() {
   await requireAdmin();
@@ -27,6 +28,7 @@ export default async function AdminPartnerTransactionsPage() {
         description: partnerTransactions.description,
         reference: partnerTransactions.reference,
         revenueCents: partnerTransactions.revenueCents,
+        refundedCents: partnerTransactions.refundedCents,
         source: partnerTransactions.source,
         commissionCents:
           sql<number>`coalesce(sum(${commissionEntries.amountCents}), 0)`.mapWith(
@@ -111,6 +113,7 @@ export default async function AdminPartnerTransactionsPage() {
                 <th className="px-5 py-3 font-semibold text-right">
                   Commission
                 </th>
+                <th className="px-5 py-3 font-semibold text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-beige text-navy">
@@ -140,9 +143,20 @@ export default async function AdminPartnerTransactionsPage() {
                   <td className="px-5 py-3 uppercase text-xs">{tx.source}</td>
                   <td className="px-5 py-3 text-right tabular-nums">
                     {formatCents(tx.revenueCents)}
+                    {tx.refundedCents > 0 && (
+                      <span className="block text-xs font-medium text-red-600">
+                        −{formatCents(tx.refundedCents)} refunded
+                      </span>
+                    )}
                   </td>
                   <td className="px-5 py-3 text-right tabular-nums font-semibold">
                     {formatCents(tx.commissionCents)}
+                  </td>
+                  <td className="px-5 py-3 text-right">
+                    <RefundButton
+                      transactionId={tx.id}
+                      remainingCents={tx.revenueCents - tx.refundedCents}
+                    />
                   </td>
                 </tr>
               ))}

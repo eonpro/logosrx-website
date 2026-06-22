@@ -81,6 +81,7 @@ export default async function AdminPartnerDetailPage({
       .select({
         payee: commissionEntries.payee,
         repId: commissionEntries.repId,
+        status: commissionEntries.status,
         totalCents:
           sql<number>`coalesce(sum(${commissionEntries.amountCents}), 0)`.mapWith(
             Number,
@@ -93,7 +94,11 @@ export default async function AdminPartnerDetailPage({
           inArray(commissionEntries.status, ["pending", "approved"]),
         ),
       )
-      .groupBy(commissionEntries.payee, commissionEntries.repId),
+      .groupBy(
+        commissionEntries.payee,
+        commissionEntries.repId,
+        commissionEntries.status,
+      ),
     db
       .select({
         id: payouts.id,
@@ -112,13 +117,20 @@ export default async function AdminPartnerDetailPage({
       .limit(100),
   ]);
 
-  const orgUnpaidCents =
-    unpaidRows.find((r) => r.payee === "org")?.totalCents ?? 0;
-  const repUnpaidById = new Map(
-    unpaidRows
-      .filter((r) => r.payee === "rep" && r.repId != null)
-      .map((r) => [r.repId!, r.totalCents]),
-  );
+  // Payable = approved net (what a payout settles); awaiting = pending earnings.
+  const orgPayableCents = unpaidRows
+    .filter((r) => r.payee === "org" && r.status === "approved")
+    .reduce((s, r) => s + r.totalCents, 0);
+  const orgAwaitingCents = unpaidRows
+    .filter((r) => r.payee === "org" && r.status === "pending")
+    .reduce((s, r) => s + r.totalCents, 0);
+  const repUnpaidById = new Map<number, number>();
+  for (const r of unpaidRows) {
+    if (r.payee === "rep" && r.repId != null && r.status === "approved") {
+      repUnpaidById.set(r.repId, (repUnpaidById.get(r.repId) ?? 0) + r.totalCents);
+    }
+  }
+  const hasPending = unpaidRows.some((r) => r.status === "pending");
 
   return (
     <div>
@@ -162,7 +174,9 @@ export default async function AdminPartnerDetailPage({
           compensationModel: org.compensationModel,
           ratePercent: bpsToPercent(org.commissionRateBps),
           hasAccount: Boolean(org.clerkUserId),
-          unpaidCents: orgUnpaidCents,
+          unpaidCents: orgPayableCents,
+          awaitingCents: orgAwaitingCents,
+          hasPending,
         }}
         reps={reps.map((r) => ({
           id: r.id,

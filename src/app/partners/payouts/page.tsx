@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { getPartnerContext } from "@/lib/auth/partner";
 import { formatCents } from "@/lib/partners/commission";
 import {
+  getAwaitingApprovalCents,
   getUnpaidBalanceCents,
   listPayouts,
 } from "@/lib/partners/queries";
@@ -12,8 +13,9 @@ export default async function PartnerPayoutsPage() {
   const ctx = await getPartnerContext();
   if (!ctx) return <PartnerNoAccess />;
 
-  const [unpaidCents, payoutList] = await Promise.all([
+  const [unpaidCents, awaitingCents, payoutList] = await Promise.all([
     getUnpaidBalanceCents(ctx),
+    getAwaitingApprovalCents(ctx),
     listPayouts(ctx),
   ]);
 
@@ -31,16 +33,27 @@ export default async function PartnerPayoutsPage() {
         </p>
       </div>
 
-      <div className="mb-8 grid gap-4 sm:grid-cols-2">
+      <div className="mb-8 grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-magenta/20 bg-magenta/5 p-6">
           <p className="text-xs font-medium uppercase tracking-wide text-navy/55">
-            Unpaid balance
+            Payable now
           </p>
           <p className="mt-2 text-2xl font-bold tabular-nums text-navy">
             {formatCents(unpaidCents)}
           </p>
           <p className="mt-1 text-xs text-navy/60">
-            Earned commission awaiting payout
+            Approved, awaiting payout
+          </p>
+        </div>
+        <div className="rounded-2xl border border-beige bg-white p-6">
+          <p className="text-xs font-medium uppercase tracking-wide text-navy/55">
+            Awaiting approval
+          </p>
+          <p className="mt-2 text-2xl font-bold tabular-nums text-navy">
+            {formatCents(awaitingCents)}
+          </p>
+          <p className="mt-1 text-xs text-navy/60">
+            Earned, pending Logos RX review
           </p>
         </div>
         <div className="rounded-2xl border border-beige bg-white p-6">

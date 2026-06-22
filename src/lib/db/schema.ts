@@ -95,6 +95,15 @@ export const commissionEntryStatusEnum = pgEnum("commission_entry_status", [
   "paid",
 ]);
 
+/**
+ * Whether a ledger row is a positive `earning` or a negative `reversal`
+ * (clawback) created when a transaction is refunded/voided.
+ */
+export const commissionEntryKindEnum = pgEnum("commission_entry_kind", [
+  "earning",
+  "reversal",
+]);
+
 /** Where a partner transaction row originated. */
 export const transactionSourceEnum = pgEnum("transaction_source", [
   "manual",
@@ -625,6 +634,10 @@ export const partnerOrgs = pgTable("partner_orgs", {
   // Org-level commission rate in basis points (100 = 1%). Set by an admin.
   // Used in `commission` mode. (In `margin` mode the org earns the full spread.)
   commissionRateBps: integer("commission_rate_bps").default(0).notNull(),
+  // Set when the org owner executes the Marketing Services Agreement. The
+  // portal is gated on this: an active org owner who hasn't signed is routed
+  // to the signing flow. The full executed record lives in `partner_agreements`.
+  msaSignedAt: timestamp("msa_signed_at"),
   approvedAt: timestamp("approved_at"),
   // Clerk user id of the admin who approved/suspended the org.
   approvedBy: varchar("approved_by", { length: 64 }),
@@ -654,6 +667,9 @@ export const partnerReps = pgTable("partner_reps", {
   status: partnerStatusEnum("status").default("pending").notNull(),
   // Rep's share in basis points; must be ≤ the org's rate at assignment time.
   commissionRateBps: integer("commission_rate_bps").default(0).notNull(),
+  // Set when the rep executes (acknowledges) the Marketing Services Agreement.
+  // Reps are gated on this too — they sign before accessing the portal.
+  msaSignedAt: timestamp("msa_signed_at"),
   invitedAt: timestamp("invited_at").defaultNow().notNull(),
   activatedAt: timestamp("activated_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -733,6 +749,9 @@ export const partnerTransactions = pgTable("partner_transactions", {
   // Wholesale cost (floor total) of the sale — set for `margin`-model orgs so
   // earnings = revenue − cost. Null for `commission`-model transactions.
   costCents: integer("cost_cents"),
+  // How much of this transaction's revenue has been refunded/clawed back so
+  // far (0..revenueCents). Drives the reversal ledger entries.
+  refundedCents: integer("refunded_cents").default(0).notNull(),
   source: transactionSourceEnum("source").default("manual").notNull(),
   // Clerk user id of the admin who recorded the row.
   createdBy: varchar("created_by", { length: 64 }).notNull(),
@@ -740,6 +759,10 @@ export const partnerTransactions = pgTable("partner_transactions", {
 }, (t) => [
   index("partner_transactions_clinic_id_idx").on(t.clinicId),
   index("partner_transactions_date_idx").on(t.transactionDate),
+  // De-duplicate imports: a non-null external reference (e.g. LifeFile order
+  // id) is unique. Postgres treats NULLs as distinct, so manual rows without a
+  // reference are unaffected.
+  uniqueIndex("partner_transactions_reference_uniq").on(t.reference),
 ]);
 
 /**
@@ -788,8 +811,11 @@ export const commissionEntries = pgTable("commission_entries", {
     onDelete: "set null",
   }),
   payee: commissionPayeeEnum("payee").notNull(),
+  // `earning` (positive) or `reversal` (negative clawback on a refund/void).
+  kind: commissionEntryKindEnum("kind").default("earning").notNull(),
   // Snapshot of the effective rate this entry was computed at (basis points).
   rateBps: integer("rate_bps").notNull(),
+  // Positive for earnings, negative for reversals.
   amountCents: integer("amount_cents").notNull(),
   status: commissionEntryStatusEnum("status").default("pending").notNull(),
   payoutId: integer("payout_id").references(() => payouts.id, {
@@ -802,6 +828,70 @@ export const commissionEntries = pgTable("commission_entries", {
   index("commission_entries_rep_id_idx").on(t.repId),
   index("commission_entries_transaction_id_idx").on(t.transactionId),
   index("commission_entries_payout_id_idx").on(t.payoutId),
+]);
+
+/** Who executed a partner agreement: the org owner or one of its reps. */
+export const partnerSignerKindEnum = pgEnum("partner_signer_kind", [
+  "org",
+  "rep",
+]);
+
+/**
+ * Immutable record of an executed partner Marketing Services Agreement (MSA).
+ *
+ * One row is written each time an org owner or a rep e-signs. The row snapshots
+ * everything needed to reproduce exactly what was agreed to — the document
+ * version, a hash of the rendered text, the signer's identity/title, the legal
+ * entity, the captured signature image, and request metadata (IP/user-agent).
+ * The denormalized `partner_orgs.msa_signed_at` / `partner_reps.msa_signed_at`
+ * flags drive the cheap portal gate; this table is the system of record and the
+ * "copy on file" surfaced to both the pharmacy (admin) and the partner.
+ *
+ * Append-only by convention: never updated or deleted. A new MSA version that a
+ * partner must re-accept simply writes a new row.
+ */
+export const partnerAgreements = pgTable("partner_agreements", {
+  id: serial("id").primaryKey(),
+  orgId: integer("org_id")
+    .notNull()
+    .references(() => partnerOrgs.id, { onDelete: "cascade" }),
+  // Set when a rep signed; null for an org-owner signature.
+  repId: integer("rep_id").references(() => partnerReps.id, {
+    onDelete: "cascade",
+  }),
+  signerKind: partnerSignerKindEnum("signer_kind").notNull(),
+  // Clerk user id of the person who signed.
+  clerkUserId: varchar("clerk_user_id", { length: 64 }).notNull(),
+  // Versioned document identity + integrity.
+  documentVersion: varchar("document_version", { length: 40 }).notNull(),
+  documentTitle: varchar("document_title", { length: 200 }).notNull(),
+  // SHA-256 (hex) of the exact rendered agreement text the signer saw.
+  documentHash: varchar("document_hash", { length: 64 }).notNull(),
+  // Full text snapshot of the agreement as presented at signing.
+  documentText: text("document_text").notNull(),
+  // Signer-supplied identity captured at signing.
+  legalEntityName: varchar("legal_entity_name", { length: 200 }),
+  signerName: varchar("signer_name", { length: 200 }).notNull(),
+  signerTitle: varchar("signer_title", { length: 120 }),
+  signerEmail: varchar("signer_email", { length: 255 }),
+  // PNG data URL from the signature pad (the drawn signature).
+  signatureImage: text("signature_image").notNull(),
+  // Best-effort request context for evidentiary value.
+  signedIp: varchar("signed_ip", { length: 64 }),
+  signedUserAgent: varchar("signed_user_agent", { length: 400 }),
+  signedAt: timestamp("signed_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => [
+  index("partner_agreements_org_id_idx").on(t.orgId),
+  index("partner_agreements_rep_id_idx").on(t.repId),
+  // One executed row per signer per document version (re-signs use a new
+  // version). Postgres treats NULL repId as distinct, so org-owner rows
+  // (repId NULL) are keyed by (orgId, NULL, version).
+  uniqueIndex("partner_agreements_signer_version_uniq").on(
+    t.orgId,
+    t.repId,
+    t.documentVersion,
+  ),
 ]);
 
 export interface ProviderLicense {
@@ -859,3 +949,5 @@ export type CommissionEntry = typeof commissionEntries.$inferSelect;
 export type NewCommissionEntry = typeof commissionEntries.$inferInsert;
 export type Payout = typeof payouts.$inferSelect;
 export type NewPayout = typeof payouts.$inferInsert;
+export type PartnerAgreement = typeof partnerAgreements.$inferSelect;
+export type NewPartnerAgreement = typeof partnerAgreements.$inferInsert;

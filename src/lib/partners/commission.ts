@@ -177,6 +177,32 @@ export function computeMarginSplit(input: {
 }
 
 /**
+ * Computes the additional clawback (positive cents) to record for one payee
+ * when a transaction's cumulative refunded total changes.
+ *
+ * The target cumulative reversal is proportional to how much of the revenue is
+ * refunded: `round(earning × refundedTotal / revenue)`. We return the delta
+ * since what's already been reversed, clamped at 0 (never "un-reverse"). A full
+ * refund (`refundedTotal === revenue`) targets the entire earning, so reversals
+ * net the payee's earning to exactly zero.
+ */
+export function reversalDelta(input: {
+  earningCents: number;
+  alreadyReversedCents: number;
+  revenueCents: number;
+  refundedTotalCents: number;
+}): number {
+  const { earningCents, alreadyReversedCents, revenueCents, refundedTotalCents } =
+    input;
+  if (revenueCents <= 0 || earningCents <= 0) return 0;
+  const target = Math.round(
+    (earningCents * refundedTotalCents) / revenueCents,
+  );
+  const delta = target - alreadyReversedCents;
+  return delta > 0 ? delta : 0;
+}
+
+/**
  * Validates a clinic selling price against an org's wholesale floor for a SKU.
  * Returns an error message, or null when the price is valid (≥ floor).
  */
