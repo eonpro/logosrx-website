@@ -4,7 +4,6 @@ import {
   buildActivateUrl,
   clerkErrorMessage,
   deriveUsername,
-  toE164,
 } from "@/lib/auth/clerk-users";
 
 /**
@@ -81,38 +80,38 @@ function clerkErrorInfo(err: unknown): { code?: string; param?: string; message?
  * Approval/invite must be idempotent: if a Clerk account already exists for the
  * email — a prior approval attempt, a re-application, or because the person
  * already has a Logos account — we link to that existing user instead of
- * failing with "an account with this email already exists". Only when no user
- * exists do we create one (with a throwaway password; activation sets the real
- * one). Throws `PartnerProvisionError` with a safe message on genuine failure.
+ * failing. Only when no user exists do we create one (with a throwaway
+ * password; activation sets the real one).
+ *
+ * Note: we deliberately do NOT send a phone number to Clerk. The instance does
+ * not accept `phone_number` on user creation ("data doesn't match user
+ * requirements set for this instance"), and the phone isn't needed for login —
+ * it's already stored on the partner org. Throws `PartnerProvisionError` with a
+ * safe, specific message on genuine failure.
  */
 export async function createPartnerClerkUser(args: {
   email: string;
   name: string;
+  /** Accepted for call-site compatibility; intentionally not sent to Clerk. */
   phone?: string | null;
 }): Promise<string> {
   const client = await clerkClient();
   const email = args.email.trim().toLowerCase();
   const [firstName, ...rest] = args.name.trim().split(/\s+/);
   const lastName = rest.join(" ");
-  const phoneNumber = toE164(args.phone);
 
   // Reuse an existing account if one already has this email.
   const existingId = await findClerkUserIdByEmail(client, email);
   if (existingId) return existingId;
 
-  const baseUser = {
-    emailAddress: [email],
-    password: randomPassword(),
-    firstName: firstName || undefined,
-    lastName: lastName || undefined,
-    skipLegalChecks: true,
-  };
-
   try {
     const user = await client.users.createUser({
-      ...baseUser,
+      emailAddress: [email],
       username: deriveUsername(email, "partner"),
-      phoneNumber: phoneNumber ? [phoneNumber] : undefined,
+      password: randomPassword(),
+      firstName: firstName || undefined,
+      lastName: lastName || undefined,
+      skipLegalChecks: true,
     });
     return user.id;
   } catch (err) {
@@ -121,36 +120,8 @@ export async function createPartnerClerkUser(args: {
     if (linked) return linked;
 
     const info = clerkErrorInfo(err);
-
-    // The conflict is the PHONE NUMBER, not the email (the same test phone is
-    // often reused). The phone is non-essential for a partner login and is
-    // already stored on the org, so retry without it.
-    if (
-      info.code === "form_identifier_exists" &&
-      phoneNumber &&
-      info.param !== "email_address"
-    ) {
-      try {
-        const user = await client.users.createUser({
-          ...baseUser,
-          username: deriveUsername(email, "partner"),
-        });
-        return user.id;
-      } catch (err2) {
-        const linked2 = await findClerkUserIdByEmail(client, email);
-        if (linked2) return linked2;
-        console.error("[partners] createUser retry (no phone) failed:", err2);
-        const i2 = clerkErrorInfo(err2);
-        throw new PartnerProvisionError(
-          i2.message
-            ? `Could not create the account: ${i2.message}${i2.param ? ` (${i2.param})` : ""}`
-            : clerkErrorMessage(err2, "Could not create the account."),
-        );
-      }
-    }
-
     console.error("[partners] createUser failed:", err);
-    // Surface the actual conflicting field so the cause is unambiguous.
+    // Surface the actual offending field so the cause is unambiguous.
     throw new PartnerProvisionError(
       info.message
         ? `Could not create the account: ${info.message}${info.param ? ` (${info.param})` : ""}`
