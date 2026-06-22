@@ -182,7 +182,7 @@ export default function PartnerLanding() {
             transition={{ duration: 0.6, delay: 0.05 }}
             className="mt-5 max-w-3xl text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl"
           >
-            Market with{" "}
+            Work with{" "}
             <span className="bg-linear-to-r from-magenta-light to-magenta bg-clip-text text-transparent">
               Logos RX
             </span>
@@ -341,15 +341,8 @@ export default function PartnerLanding() {
           </div>
         </section>
 
-        {/* Compliance disclaimer — keep in sync with the executed MSA */}
-        <p className="mx-auto mt-16 max-w-2xl text-center text-[11px] leading-relaxed text-white/30">
-          Partners are paid a set fee for bona fide marketing services — not for
-          referrals or any share of sales. All engagements are governed by a
-          Marketing Services Agreement.
-        </p>
-
         {/* Footer */}
-        <footer className="mt-12 flex flex-col items-center gap-4 border-t border-white/10 pt-8 text-center">
+        <footer className="mt-16 flex flex-col items-center gap-4 border-t border-white/10 pt-8 text-center">
           <div className="flex items-center gap-6 text-white/25">
             <span className="flex items-center gap-1.5 text-[11px] tracking-wide">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
