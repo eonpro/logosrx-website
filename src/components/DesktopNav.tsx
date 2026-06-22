@@ -169,6 +169,9 @@ interface MegaPanelProps {
 }
 
 function MegaPanel({ id, group, groupIndex, onMouseEnter, onMouseLeave, onItemClick }: MegaPanelProps) {
+  // Which feature card is hovered/focused — the active card expands its width
+  // while the siblings shrink (accordion effect).
+  const [activeCard, setActiveCard] = useState<number | null>(null);
   return (
     <motion.div
       id={id}
@@ -210,8 +213,13 @@ function MegaPanel({ id, group, groupIndex, onMouseEnter, onMouseLeave, onItemCl
                     key={card.href + card.label}
                     href={card.href}
                     onClick={onItemClick}
+                    onMouseEnter={() => setActiveCard(i)}
+                    onMouseLeave={() => setActiveCard(null)}
+                    onFocus={() => setActiveCard(i)}
+                    onBlur={() => setActiveCard(null)}
+                    style={{ flexGrow: activeCard === i ? 2.6 : 1, transition: "flex-grow 500ms cubic-bezier(0.32,0.72,0,1)" }}
                     {...(card.newTab ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                    className="group relative flex flex-1 flex-col justify-end overflow-hidden rounded-xl bg-navy min-h-[190px] focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta focus-visible:ring-offset-2"
+                    className="group relative flex flex-1 basis-0 flex-col justify-end overflow-hidden rounded-xl bg-navy min-h-[190px] focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta focus-visible:ring-offset-2"
                   >
                     <Image
                       src={CARD_IMAGES[design]}
