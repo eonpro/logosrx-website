@@ -15,7 +15,7 @@ export const SITE = {
    * confidence to cite us. Read by `llms.txt`, schema, and answer-first blocks.
    */
   entityDescription:
-    "Logos RX is a 503A compounding pharmacy headquartered in Tampa, Florida, licensed in 25 U.S. jurisdictions, operating sterile and non-sterile compounding labs to prepare personalized medications prescribed by licensed providers.",
+    "Logos RX is a 503A compounding pharmacy headquartered in Tampa, Florida, licensed across multiple U.S. states, operating sterile and non-sterile compounding labs to prepare personalized medications prescribed by licensed providers.",
   url: "https://www.logosrx.com",
   // Internal provider intake. "New Provider" CTAs point here. The wizard itself
   // creates the clinic's account from the submitted info on the final step.
@@ -101,19 +101,20 @@ export const CREDENTIALS = [
 ] as const;
 
 /**
- * Full names of the 25 served jurisdictions, keyed by USPS code. Drives state
+ * Full names of the served jurisdictions, keyed by USPS code. Drives state
  * landing pages (Phase 2), `areaServed` schema entities, and human-readable
  * copy. `STATES_SERVED` (codes) remains the canonical served-list; this is the
  * display layer over it.
  */
 export const STATE_NAMES: Record<string, string> = {
-  AZ: "Arizona", CO: "Colorado", DE: "Delaware", FL: "Florida",
-  GA: "Georgia", HI: "Hawaii", ID: "Idaho", IL: "Illinois",
-  MN: "Minnesota", MO: "Missouri", MT: "Montana", NH: "New Hampshire",
-  NJ: "New Jersey", NM: "New Mexico", NY: "New York", ND: "North Dakota",
+  AZ: "Arizona", CO: "Colorado", CT: "Connecticut", DE: "Delaware",
+  FL: "Florida", GA: "Georgia", HI: "Hawaii", IA: "Iowa",
+  ID: "Idaho", IL: "Illinois", ME: "Maine", MN: "Minnesota",
+  MO: "Missouri", MT: "Montana", ND: "North Dakota", NH: "New Hampshire",
+  NJ: "New Jersey", NM: "New Mexico", NV: "Nevada", NY: "New York",
   OH: "Ohio", PA: "Pennsylvania", RI: "Rhode Island", SD: "South Dakota",
-  UT: "Utah", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
-  DC: "District of Columbia",
+  UT: "Utah", VT: "Vermont", WA: "Washington", WI: "Wisconsin",
+  WY: "Wyoming", DC: "District of Columbia",
 } as const;
 
 export const NAV_LINKS = [
@@ -316,7 +317,8 @@ export const LEGAL_LINKS = [
 export const ADMIN_LIST_LIMIT = 500;
 
 export const STATES_SERVED = [
-  "AZ", "CO", "DE", "FL", "GA", "HI", "ID", "IL",
-  "MN", "MO", "MT", "NH", "NJ", "NM", "NY", "ND",
-  "OH", "PA", "RI", "SD", "UT", "WV", "WI", "WY", "DC",
+  "AZ", "CO", "CT", "DE", "FL", "GA", "HI", "IA",
+  "ID", "IL", "ME", "MN", "MO", "MT", "ND", "NH",
+  "NJ", "NM", "NV", "NY", "OH", "PA", "RI", "SD",
+  "UT", "VT", "WA", "WI", "WY", "DC",
 ] as const;

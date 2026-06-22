@@ -14,7 +14,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 export const metadata: Metadata = buildMetadata({
   title: "Locations & Service Areas",
   description:
-    "Logos RX is a compounding pharmacy in Tampa, Florida serving the Tampa Bay metro and shipping personalized medications to 25 U.S. jurisdictions. Find your area.",
+    "Logos RX is a compounding pharmacy in Tampa, Florida serving the Tampa Bay metro and shipping personalized medications to multiple U.S. states. Find your area.",
   path: "/locations",
 });
 
@@ -30,7 +30,7 @@ export default function LocationsHub() {
     medicalWebPageSchema({
       name: "Locations & Service Areas",
       description:
-        "Logos RX compounding pharmacy locations and service areas, headquartered in Tampa, Florida and licensed in 25 U.S. jurisdictions.",
+        "Logos RX compounding pharmacy locations and service areas, headquartered in Tampa, Florida and licensed across multiple U.S. states.",
       path: "/locations",
     }),
   );
@@ -55,7 +55,7 @@ export default function LocationsHub() {
                 Logos RX is a 503A compounding pharmacy headquartered in Tampa,
                 Florida. We serve the entire Tampa Bay metro from our local sterile
                 and non-sterile labs, and ship personalized, prescription-only
-                compounded medications to {STATES_SERVED.length} U.S. jurisdictions
+                compounded medications to multiple U.S. states
                 nationwide.
               </p>
             </div>
@@ -103,7 +103,7 @@ export default function LocationsHub() {
             </h2>
             <p className="text-navy/65 mb-8 max-w-2xl">
               Logos RX is licensed to compound and ship to providers and patients in
-              these {STATES_SERVED.length} U.S. jurisdictions. Contact us to confirm
+              the U.S. states listed below. Contact us to confirm
               availability for a specific medication in your state.
             </p>
             <ul className="flex flex-wrap gap-2">

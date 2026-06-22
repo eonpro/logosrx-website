@@ -51,7 +51,7 @@ export default function ServicesHub() {
                 Logos RX is a 503A compounding pharmacy in Tampa, Florida that prepares
                 personalized medications to a provider&rsquo;s prescription across several
                 therapeutic areas. Every preparation is made per patient under USP
-                standards and shipped within our 25 licensed states.
+                standards and shipped within our licensed states.
               </p>
             </div>
           </div>

@@ -48,7 +48,7 @@ const badges = [
   },
   {
     title: "503A Licensed",
-    description: "Federally compliant compounding across 25+ states.",
+    description: "Federally compliant compounding across multiple states.",
     // Award medal with ribbon — state licensure / certification.
     icon: (
       <svg {...iconProps}>

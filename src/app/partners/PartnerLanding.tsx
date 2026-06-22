@@ -238,9 +238,8 @@ export default function PartnerLanding() {
             </span>
             <span className="h-1 w-1 rounded-full bg-white/20" />
             <span className="text-sm">
-              Licensed in{" "}
-              <span className="font-semibold text-white/70">25</span>{" "}
-              jurisdictions
+              <span className="font-semibold text-white/70">Multi-state</span>{" "}
+              licensed
             </span>
             <span className="h-1 w-1 rounded-full bg-white/20" />
             <span className="text-sm">LegitScript &amp; NABP accredited</span>

@@ -1,7 +1,7 @@
 /**
  * Per-state landing-page content — the Tier 2 (state) layer of the SEO/GEO
  * architecture, targeting "compounding pharmacy that ships to [state]" intent
- * for all 25 licensed jurisdictions.
+ * for all licensed jurisdictions.
  *
  * Logos RX is ONE pharmacy in Tampa shipping nationwide within its licensed
  * states — a service-area model. So each state page is a `MedicalWebPage` +
@@ -488,23 +488,128 @@ export const stateLocations: StateLocation[] = [
     ],
   },
   {
-    code: "WV",
-    name: "West Virginia",
-    region: "Appalachia",
-    majorCities: ["Charleston", "Huntington", "Morgantown", "Parkersburg", "Wheeling"],
-    metaTitle: "Compounding Pharmacy Serving West Virginia",
+    code: "CT",
+    name: "Connecticut",
+    region: "New England",
+    majorCities: ["Hartford", "New Haven", "Stamford", "Bridgeport", "Waterbury", "Norwalk"],
+    metaTitle: "Compounding Pharmacy Serving Connecticut",
     metaDescription:
-      "Logos RX ships personalized 503A compounded medications to West Virginia — Charleston, Huntington, Morgantown. Custom formulations by prescription.",
-    headline: "Compounding Pharmacy Serving West Virginia",
+      "Logos RX ships personalized 503A compounded medications to Connecticut — Hartford, New Haven, Stamford, Bridgeport. Custom HRT, weight management, and peptide formulations by prescription.",
+    headline: "Compounding Pharmacy Serving Connecticut",
     answerFirst:
-      "Logos RX is licensed to compound and ship personalized, prescription-only medications to West Virginia, reaching providers and patients in Charleston, Huntington, Morgantown, and across the state from its Tampa, Florida labs.",
+      "Logos RX is licensed to compound and ship personalized, prescription-only medications to Connecticut, reaching providers and patients in Hartford, New Haven, Stamford, Bridgeport, and across the state from its Tampa, Florida labs.",
     note:
-      "Across West Virginia's mountainous terrain, shipped compounding extends specialty access to rural communities.",
+      "Connecticut's dense network of integrative and wellness practices along the I-95 and Hartford corridors relies on compounding to individualize therapy.",
     faqs: [
       {
-        question: "Do you serve rural West Virginia?",
+        question: "Is Logos RX licensed in Connecticut?",
         answer:
-          "Yes. Because we ship statewide, patients throughout West Virginia's rural counties can access compounded medications.",
+          "Yes. Logos RX is licensed to compound and ship prescription-only medications to providers and patients throughout Connecticut.",
+      },
+    ],
+  },
+  {
+    code: "IA",
+    name: "Iowa",
+    region: "the Midwest",
+    majorCities: ["Des Moines", "Cedar Rapids", "Davenport", "Sioux City", "Iowa City", "Ames"],
+    metaTitle: "Compounding Pharmacy Serving Iowa",
+    metaDescription:
+      "Logos RX ships personalized 503A compounded medications to Iowa — Des Moines, Cedar Rapids, Davenport, Iowa City. Custom formulations by prescription.",
+    headline: "Compounding Pharmacy Serving Iowa",
+    answerFirst:
+      "Logos RX compounds and ships personalized, prescription-only medications to Iowa, serving providers and patients in Des Moines, Cedar Rapids, Davenport, Iowa City, and statewide from its Tampa, Florida labs.",
+    note:
+      "From the Des Moines metro to Iowa's many rural communities, mail-order compounding keeps specialty preparations within reach statewide.",
+    faqs: [
+      {
+        question: "Do you ship to rural Iowa?",
+        answer:
+          "Yes. Because we ship statewide, patients across Iowa's rural counties get the same access to compounded medications as those in Des Moines.",
+      },
+    ],
+  },
+  {
+    code: "ME",
+    name: "Maine",
+    region: "New England",
+    majorCities: ["Portland", "Lewiston", "Bangor", "South Portland", "Auburn", "Augusta"],
+    metaTitle: "Compounding Pharmacy Serving Maine",
+    metaDescription:
+      "Logos RX ships personalized 503A compounded medications to Maine — Portland, Lewiston, Bangor, Augusta. Custom HRT, weight management, and peptide formulations by prescription.",
+    headline: "Compounding Pharmacy Serving Maine",
+    answerFirst:
+      "Logos RX is licensed to compound and ship personalized, prescription-only medications to Maine, reaching providers and patients in Portland, Lewiston, Bangor, Augusta, and across the state from its Tampa, Florida labs.",
+    note:
+      "Across Maine's wide rural geography, shipped compounding gives patients access to specialty preparations without long drives to a compounding pharmacy.",
+    faqs: [
+      {
+        question: "Do you ship throughout Maine?",
+        answer:
+          "Yes — we ship compounded prescriptions statewide, from Portland and the southern coast to Bangor and northern Maine.",
+      },
+    ],
+  },
+  {
+    code: "NV",
+    name: "Nevada",
+    region: "the Southwest",
+    majorCities: ["Las Vegas", "Henderson", "Reno", "North Las Vegas", "Sparks", "Carson City"],
+    metaTitle: "Compounding Pharmacy Serving Nevada",
+    metaDescription:
+      "Logos RX ships personalized 503A compounded medications to Nevada — Las Vegas, Henderson, Reno, Carson City. Custom formulations by prescription.",
+    headline: "Compounding Pharmacy Serving Nevada",
+    answerFirst:
+      "Logos RX compounds and ships personalized, prescription-only medications to Nevada, serving providers and patients in Las Vegas, Henderson, Reno, Carson City, and statewide from its Tampa, Florida labs.",
+    note:
+      "Nevada's fast-growing Las Vegas and Reno wellness and longevity clinics frequently prescribe hormone and peptide compounding.",
+    faqs: [
+      {
+        question: "How fast can Nevada patients get refills?",
+        answer:
+          "Once a refill is authorized, we compound and ship promptly — usually within 24–48 hours — to your Nevada address.",
+      },
+    ],
+  },
+  {
+    code: "VT",
+    name: "Vermont",
+    region: "New England",
+    majorCities: ["Burlington", "South Burlington", "Rutland", "Montpelier", "Essex", "Barre"],
+    metaTitle: "Compounding Pharmacy Serving Vermont",
+    metaDescription:
+      "Logos RX ships personalized 503A compounded medications to Vermont — Burlington, Rutland, Montpelier. Custom HRT, weight management, and peptide formulations by prescription.",
+    headline: "Compounding Pharmacy Serving Vermont",
+    answerFirst:
+      "Logos RX is licensed to compound and ship personalized, prescription-only medications to Vermont, reaching providers and patients in Burlington, Rutland, Montpelier, and across the state from its Tampa, Florida labs.",
+    note:
+      "In largely rural Vermont, mail-order compounding ensures patients aren't limited by the in-house capacity of a local pharmacy.",
+    faqs: [
+      {
+        question: "Is a Vermont prescription required?",
+        answer:
+          "Yes. A valid prescription from a licensed provider is required for every compounded medication shipped to Vermont.",
+      },
+    ],
+  },
+  {
+    code: "WA",
+    name: "Washington",
+    region: "the Pacific Northwest",
+    majorCities: ["Seattle", "Spokane", "Tacoma", "Vancouver", "Bellevue", "Everett"],
+    metaTitle: "Compounding Pharmacy Serving Washington State",
+    metaDescription:
+      "Logos RX ships personalized 503A compounded medications to Washington State — Seattle, Spokane, Tacoma, Bellevue. Custom formulations by prescription.",
+    headline: "Compounding Pharmacy Serving Washington State",
+    answerFirst:
+      "Logos RX compounds and ships personalized, prescription-only medications to Washington State, serving providers and patients in Seattle, Spokane, Tacoma, Bellevue, and statewide from its Tampa, Florida labs.",
+    note:
+      "Washington's large Puget Sound medical community prescribes compounding across hormone, weight-management, and longevity specialties.",
+    faqs: [
+      {
+        question: "Does Logos RX serve the Seattle metro?",
+        answer:
+          "Yes — Seattle, Bellevue, Tacoma, and the wider Puget Sound region are all served by shipped compounded prescriptions.",
       },
     ],
   },

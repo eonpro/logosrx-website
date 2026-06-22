@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { services } from "@/data/services";
-import { CONTACT, SITE, STATES_SERVED } from "@/lib/constants";
+import { CONTACT, SITE } from "@/lib/constants";
 import {
   buildMetadata,
   graph,
@@ -15,7 +15,7 @@ import TrackedLink from "@/components/TrackedLink";
 export const metadata: Metadata = buildMetadata({
   title: "For Providers & Clinics",
   description:
-    "Prescribe compounded medications through Logos RX, a 503A compounding pharmacy in Tampa licensed in 25 states. Provider onboarding, formulary, and the LifeFile portal.",
+    "Prescribe compounded medications through Logos RX, a 503A compounding pharmacy in Tampa licensed across multiple states. Provider onboarding, formulary, and the LifeFile portal.",
   path: "/providers",
 });
 
@@ -32,7 +32,8 @@ const providerFaqs = [
   },
   {
     question: "Which states can you ship to?",
-    answer: `Logos RX is licensed in ${STATES_SERVED.length} U.S. jurisdictions and ships compounded prescriptions to providers and patients within those states.`,
+    answer:
+      "Logos RX is a multi-state licensed pharmacy and ships compounded prescriptions to providers and patients within its licensed states.",
   },
   {
     question: "What quality standards do you follow?",
@@ -92,8 +93,8 @@ export default function ProvidersHub() {
             </h1>
             <div className="mt-6 rounded-2xl border border-sky/30 bg-sky/5 px-6 py-5">
               <p className="text-base sm:text-lg leading-relaxed text-navy/85">
-                Logos RX is a 503A compounding pharmacy in Tampa, Florida, licensed in{" "}
-                {STATES_SERVED.length} U.S. jurisdictions, with sterile and non-sterile
+                Logos RX is a 503A compounding pharmacy in Tampa, Florida, licensed
+                across multiple U.S. states, with sterile and non-sterile
                 labs. Providers prescribe through the LifeFile portal; we compound each
                 preparation to specification and ship it within our licensed states.
               </p>

@@ -28,7 +28,7 @@ export const homeFaqs: Faq[] = [
   {
     question: "What states do you serve?",
     answer:
-      "Logos RX is a multi-state licensed 503A compounding pharmacy currently serving providers and patients in over 25 states across the U.S., with more states coming soon. Contact us to confirm availability in your state.",
+      "Logos RX is a multi-state licensed 503A compounding pharmacy currently serving providers and patients in states across the U.S., with more states coming soon. Contact us to confirm availability in your state.",
   },
   {
     question: "Does insurance cover compounded medications?",

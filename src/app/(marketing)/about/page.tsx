@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CONTACT, CREDENTIALS, HOURS, SITE, STATES_SERVED } from "@/lib/constants";
+import { CONTACT, CREDENTIALS, HOURS, SITE } from "@/lib/constants";
 import { teamMembers } from "@/data/team";
 import {
   buildMetadata,
@@ -14,7 +14,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 export const metadata: Metadata = buildMetadata({
   title: "About Logos RX",
   description:
-    "Logos RX is a 503A compounding pharmacy in Tampa, Florida, licensed in 25 states, operating sterile and non-sterile labs under USP 795/797/800 standards.",
+    "Logos RX is a 503A compounding pharmacy in Tampa, Florida, licensed across multiple states, operating sterile and non-sterile labs under USP 795/797/800 standards.",
   path: "/about",
 });
 
@@ -44,7 +44,7 @@ export default function AboutPage() {
     medicalWebPageSchema({
       name: "About Logos RX",
       description:
-        "Logos RX is a 503A compounding pharmacy in Tampa, Florida, licensed in 25 states, operating sterile and non-sterile labs under USP standards.",
+        "Logos RX is a 503A compounding pharmacy in Tampa, Florida, licensed across multiple states, operating sterile and non-sterile labs under USP standards.",
       path: "/about",
     }),
   );
@@ -102,7 +102,7 @@ export default function AboutPage() {
                   </div>
                   <div>
                     <dt className="text-navy/50">Licensed jurisdictions</dt>
-                    <dd className="font-semibold text-navy">{STATES_SERVED.length} U.S. states</dd>
+                    <dd className="font-semibold text-navy">Multiple U.S. states</dd>
                   </div>
                   <div>
                     <dt className="text-navy/50">Labs</dt>

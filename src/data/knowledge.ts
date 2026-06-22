@@ -119,7 +119,7 @@ export const pillars: Pillar[] = [
       {
         heading: "How Logos RX fits in",
         body: [
-          "Logos RX is a 503A compounding pharmacy in Tampa, Florida, operating both sterile and non-sterile labs and licensed in 25 U.S. jurisdictions. Providers prescribe through our portal; we compound the preparation to specification and ship it nationwide within our licensed states. Every medication is made to order against a valid prescription.",
+          "Logos RX is a 503A compounding pharmacy in Tampa, Florida, operating both sterile and non-sterile labs and licensed across multiple U.S. states. Providers prescribe through our portal; we compound the preparation to specification and ship it nationwide within our licensed states. Every medication is made to order against a valid prescription.",
         ],
       },
     ],

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { CityLocation } from "@/data/locations";
 import { getCityLocation, LOCATION_SERVICES, LOCATION_FACTS } from "@/data/locations";
-import { CONTACT, SITE, STATES_SERVED } from "@/lib/constants";
+import { CONTACT, SITE } from "@/lib/constants";
 import Reveal from "@/components/Reveal";
 
 /**
@@ -98,7 +98,7 @@ export default function LocationPage({ location }: { location: CityLocation }) {
                     <div>
                       <dt className="text-navy/55">Licensed in</dt>
                       <dd className="font-semibold text-navy">
-                        {STATES_SERVED.length} U.S. jurisdictions
+                        Multiple U.S. states
                       </dd>
                     </div>
                   </dl>

@@ -63,36 +63,36 @@ export default function QuoteView({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-beige-dark bg-white p-8">
-        <p className="text-xs font-medium uppercase tracking-wider text-magenta">
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm">
+        <p className="text-xs font-medium uppercase tracking-wider text-magenta-light">
           Custom pricing quote
         </p>
-        <h1 className="mt-2 text-2xl font-bold text-navy">
+        <h1 className="mt-2 text-2xl font-bold text-white">
           {clinicName?.trim() || "Your clinic"}
         </h1>
         {intro?.trim() ? (
-          <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-navy/70">
+          <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-white/60">
             {intro.trim()}
           </p>
         ) : (
-          <p className="mt-4 text-sm leading-relaxed text-navy/70">
+          <p className="mt-4 text-sm leading-relaxed text-white/60">
             {greetingName ? `Hi ${greetingName} — ` : ""}here is the custom
             pricing we&apos;ve prepared for your practice. Accept below to create
             your account and lock it in.
           </p>
         )}
         {discountPct > 0 && (
-          <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-magenta/10 px-3 py-1 text-xs font-semibold text-magenta">
+          <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-magenta/15 px-3 py-1 text-xs font-semibold text-magenta-light ring-1 ring-magenta/30">
             {discountPct}% off standard pricing across the catalog
           </p>
         )}
       </div>
 
       {items.length > 0 && (
-        <div className="overflow-hidden rounded-2xl border border-beige-dark bg-white">
+        <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-beige-dark bg-beige/40 text-xs uppercase tracking-wider text-navy/55">
+              <tr className="border-b border-white/10 bg-white/3 text-xs uppercase tracking-wider text-white/40">
                 <th className="px-5 py-3 font-medium">Product</th>
                 <th className="px-5 py-3 text-right font-medium">
                   Standard
@@ -106,11 +106,11 @@ export default function QuoteView({
                 return (
                   <tr
                     key={it.id}
-                    className="border-b border-beige-dark/60 last:border-0"
+                    className="border-b border-white/8 last:border-0"
                   >
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-beige-dark/50 bg-beige/40">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/10 bg-white/5">
                           {it.imageUrl ? (
                             <Image
                               src={it.imageUrl}
@@ -127,7 +127,7 @@ export default function QuoteView({
                               fill="none"
                               stroke="currentColor"
                               strokeWidth="1.5"
-                              className="text-navy/25"
+                              className="text-white/25"
                             >
                               <rect x="3" y="3" width="18" height="18" rx="2" />
                               <path d="M3 15l5-5 4 4 3-3 6 6" strokeLinecap="round" strokeLinejoin="round" />
@@ -136,14 +136,14 @@ export default function QuoteView({
                           )}
                         </div>
                         <div>
-                          <div className="font-medium text-navy">{it.name}</div>
+                          <div className="font-medium text-white">{it.name}</div>
                           {it.unit && (
-                            <div className="text-xs text-navy/50">{it.unit}</div>
+                            <div className="text-xs text-white/45">{it.unit}</div>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-right text-navy/45">
+                    <td className="px-5 py-4 text-right text-white/40">
                       {it.standardCents !== null ? (
                         <span className="line-through">
                           {formatCents(it.standardCents)}
@@ -153,11 +153,11 @@ export default function QuoteView({
                       )}
                     </td>
                     <td className="px-5 py-4 text-right">
-                      <div className="font-semibold text-navy">
+                      <div className="font-semibold text-white">
                         {formatCents(it.priceCents)}
                       </div>
                       {save > 0 && (
-                        <div className="text-xs font-medium text-magenta">
+                        <div className="text-xs font-medium text-magenta-light">
                           Save {save}%
                         </div>
                       )}

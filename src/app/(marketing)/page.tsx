@@ -17,7 +17,7 @@ import PatientRefill from "@/components/PatientRefill";
 
 export const metadata: Metadata = buildMetadata({
   description:
-    "Logos RX is a 503A compounding pharmacy in Tampa, Florida, licensed in 25 states, with sterile and non-sterile labs preparing personalized medications prescribed by licensed providers.",
+    "Logos RX is a 503A compounding pharmacy in Tampa, Florida, licensed across multiple states, with sterile and non-sterile labs preparing personalized medications prescribed by licensed providers.",
   path: "/",
 });
 

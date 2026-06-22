@@ -1,7 +1,7 @@
 /**
  * Geographic landing-page content — the Tier 1 (local) layer of the SEO/GEO
  * architecture. One physical pharmacy in Tampa serves the whole Tampa Bay metro
- * (and 25 states), so this is modeled as a single **service-area business**:
+ * (and multiple states), so this is modeled as a single **service-area business**:
  * the global `LocalBusiness` schema owns the entity, and each city page is a
  * `MedicalWebPage` + `FAQPage` that targets that city's intent.
  *
@@ -87,7 +87,7 @@ export const cityLocations: CityLocation[] = [
       "Logos RX is a 503A compounding pharmacy in Tampa, Florida, with sterile and non-sterile labs. Personalized HRT, weight management, and peptide compounding — by prescription.",
     headline: "Compounding Pharmacy in Tampa, Florida",
     answerFirst:
-      "Logos RX is a 503A compounding pharmacy headquartered in Tampa, Florida at 7543 W. Waters Ave, operating both sterile and non-sterile compounding labs. We prepare personalized, prescription-only medications — including hormone therapy, medical weight management, and peptide formulations — for providers and patients across Tampa Bay, and ship to 25 U.S. jurisdictions.",
+      "Logos RX is a 503A compounding pharmacy headquartered in Tampa, Florida at 7543 W. Waters Ave, operating both sterile and non-sterile compounding labs. We prepare personalized, prescription-only medications — including hormone therapy, medical weight management, and peptide formulations — for providers and patients across Tampa Bay, and ship to multiple U.S. states.",
     intro: [
       "As a Tampa-based compounding pharmacy, Logos RX prepares medications that aren't available off the shelf: custom strengths, alternative dosage forms, allergen-free bases, and combination formulations a provider tailors to one patient. Our facility on W. Waters Ave houses dedicated sterile (USP <797>) and non-sterile (USP <795>) compounding suites, with hazardous-drug handling under USP <800>.",
       "Tampa patients and clinics work with us two ways. Providers prescribe directly through our portal and we compound and dispatch the preparation; patients who don't yet have a prescriber can contact us and we'll help connect them with a provider who prescribes compounded therapy. Either way, every compounded medication requires a valid prescription.",

@@ -45,7 +45,7 @@ export const services: Service[] = [
       "Logos RX compounds personalized hormone replacement therapy — custom strengths and dosage forms prescribed by your provider. 503A compounding in Tampa, shipped nationwide.",
     headline: "Compounded Hormone Replacement Therapy",
     answerFirst:
-      "Logos RX compounds personalized hormone replacement therapy (HRT/BHRT) to a provider's prescription, preparing custom strengths and dosage forms — capsules, troches, topical creams, and injectables — that commercial products may not offer. As a 503A pharmacy in Tampa, we compound each preparation per patient and ship within our 25 licensed states. All HRT requires a prescription.",
+      "Logos RX compounds personalized hormone replacement therapy (HRT/BHRT) to a provider's prescription, preparing custom strengths and dosage forms — capsules, troches, topical creams, and injectables — that commercial products may not offer. As a 503A pharmacy in Tampa, we compound each preparation per patient and ship within our licensed states. All HRT requires a prescription.",
     intro: [
       "Hormone needs are individual, and a one-size-fits-all commercial product doesn't always match what a provider wants to prescribe. Compounding lets the prescriber specify the exact hormone, strength, and delivery form for each patient — and lets Logos RX prepare it to that specification.",
       "We compound bioidentical hormone formulations in multiple dosage forms so providers can tailor therapy to the patient's preference and clinical plan. Every preparation is made to order under USP standards and requires a valid prescription.",
@@ -86,7 +86,7 @@ export const services: Service[] = [
       "Logos RX compounds personalized weight-management formulations prescribed by your provider — custom strengths and combinations. 503A compounding in Tampa, shipped nationwide.",
     headline: "Compounded Weight Management Formulations",
     answerFirst:
-      "Logos RX compounds personalized medical weight-management formulations to a provider's prescription, including custom strengths and combinations prepared per patient. As a 503A pharmacy in Tampa with sterile and non-sterile labs, we prepare each formulation under USP standards and ship within our 25 licensed states. These are prescription-only and not FDA-approved.",
+      "Logos RX compounds personalized medical weight-management formulations to a provider's prescription, including custom strengths and combinations prepared per patient. As a 503A pharmacy in Tampa with sterile and non-sterile labs, we prepare each formulation under USP standards and ship within our licensed states. These are prescription-only and not FDA-approved.",
     intro: [
       "Providers managing weight increasingly use compounded formulations to tailor therapy — adjusting strengths, simplifying regimens by combining supportive ingredients, or preparing patient-friendly delivery forms. Logos RX compounds these to the exact prescription.",
       "Weight management is a clinical decision made between a patient and their provider. Our role is to compound the prescribed formulation accurately and safely; we don't provide medical advice or determine therapy.",
@@ -125,7 +125,7 @@ export const services: Service[] = [
       "Logos RX compounds personalized peptide formulations prescribed by your provider — sterile injectables prepared under USP <797>. 503A compounding in Tampa, shipped nationwide.",
     headline: "Compounded Peptide Therapy",
     answerFirst:
-      "Logos RX compounds personalized peptide formulations to a provider's prescription, typically as sterile injectables prepared under USP <797> in our dedicated sterile lab. As a 503A pharmacy in Tampa, we prepare each peptide preparation per patient and ship within our 25 licensed states. Peptide therapy is prescription-only and not FDA-approved.",
+      "Logos RX compounds personalized peptide formulations to a provider's prescription, typically as sterile injectables prepared under USP <797> in our dedicated sterile lab. As a 503A pharmacy in Tampa, we prepare each peptide preparation per patient and ship within our licensed states. Peptide therapy is prescription-only and not FDA-approved.",
     intro: [
       "Peptides are short chains of amino acids that providers prescribe as part of individualized treatment plans. Because many peptide preparations are injectable, they require sterile compounding — which Logos RX performs in a dedicated USP <797> lab.",
       "We compound peptide formulations to the prescriber's exact specification, with sterility and potency handled under our quality program. A valid prescription is required.",
@@ -193,7 +193,7 @@ export const services: Service[] = [
       "Logos RX compounds personalized dermatology formulations prescribed by your provider — custom topical strengths and combinations. 503A compounding in Tampa, shipped nationwide.",
     headline: "Compounded Dermatology Formulations",
     answerFirst:
-      "Logos RX compounds personalized dermatology formulations to a provider's prescription — primarily custom topical preparations in strengths and combinations commercial products may not offer. As a 503A pharmacy in Tampa, we prepare each per patient under USP <795> and ship within our 25 licensed states. Prescription required; not FDA-approved.",
+      "Logos RX compounds personalized dermatology formulations to a provider's prescription — primarily custom topical preparations in strengths and combinations commercial products may not offer. As a 503A pharmacy in Tampa, we prepare each per patient under USP <795> and ship within our licensed states. Prescription required; not FDA-approved.",
     intro: [
       "Dermatology is a classic use case for compounding: providers frequently want a specific active strength, a combination of actives in one base, or a vehicle suited to a particular skin type — none of which may exist as a commercial product. Logos RX prepares these to the prescription.",
       "Topical dermatology preparations are non-sterile and compounded under USP <795> in our dedicated lab.",

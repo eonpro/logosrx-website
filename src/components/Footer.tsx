@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { CONTACT, HOURS, NAV_LINKS, LEGAL_LINKS, SITE, STATES_SERVED } from "@/lib/constants";
+import { CONTACT, HOURS, NAV_LINKS, LEGAL_LINKS, SITE } from "@/lib/constants";
 import { cityLocations } from "@/data/locations";
 
 export default function Footer() {
@@ -32,7 +32,7 @@ export default function Footer() {
             <p className="text-sm text-white/80 leading-relaxed mb-4">
               {SITE.name} is a multi-state licensed 503A compounding pharmacy with
               sterile and non-sterile compounding labs, serving Tampa Bay and{" "}
-              shipping to {STATES_SERVED.length} U.S. jurisdictions.
+              shipping to patients across multiple U.S. states.
             </p>
 
             <h4 className="text-sm font-semibold tracking-widest uppercase text-sky mb-3 mt-6">

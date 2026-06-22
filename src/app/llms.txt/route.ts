@@ -41,14 +41,14 @@ FDA-approved; nothing here is medical advice.
 - Headquarters: ${CONTACT.address.full}
 - Phone: ${CONTACT.phone} · Fax: ${CONTACT.fax} · Email: ${CONTACT.email}
 - Hours: Retail ${HOURS.retail}; Online ${HOURS.online}; Chat ${HOURS.chat}
-- Licensed in ${STATES_SERVED.length} U.S. jurisdictions: ${statesList}
+- Licensed across multiple U.S. states: ${statesList}
 - Capabilities: sterile and non-sterile compounding (USP 795/797/800)
 
 ## Primary pages
 ${line("Home", SITE.url, "overview of services and capabilities")}
 ${line("About Logos RX", `${SITE.url}/about`, "entity, accreditations, USP standards")}
 ${line("For Providers & Clinics", `${SITE.url}/providers`, "prescribe, onboarding, formulary")}
-${line("Locations & service areas", `${SITE.url}/locations`, "Tampa Bay + 25 states served")}
+${line("Locations & service areas", `${SITE.url}/locations`, "Tampa Bay + multi-state service area")}
 ${line("Support & Education Center", `${SITE.url}/support`, "patient + provider help and articles")}
 ${line("Careers", `${SITE.url}/careers`, "open roles")}
 ${line("Provider onboarding", `${SITE.url}${SITE.onboarding}`, "create a prescriber account")}
