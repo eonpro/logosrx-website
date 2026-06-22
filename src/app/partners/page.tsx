@@ -20,10 +20,21 @@ import PartnerNoAccess from "./PartnerNoAccess";
 import RangeFilter from "./RangeFilter";
 import GoalProgressBars from "./GoalProgressBars";
 
+const PARTNER_TITLE = "Logos RX Partner Program";
+const PARTNER_DESCRIPTION =
+  "Partner with a multi-state licensed 503A compounding pharmacy to provide marketing and brand-support services.";
+
 export const metadata: Metadata = {
   title: "Marketing Partner Program",
-  description:
-    "Join the Logos RX marketing partner program. Provide marketing and brand-support services for a multi-state licensed compounding pharmacy.",
+  description: PARTNER_DESCRIPTION,
+  openGraph: {
+    title: PARTNER_TITLE,
+    description: PARTNER_DESCRIPTION,
+  },
+  twitter: {
+    title: PARTNER_TITLE,
+    description: PARTNER_DESCRIPTION,
+  },
 };
 
 export default async function PartnerDashboardPage({

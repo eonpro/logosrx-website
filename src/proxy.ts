@@ -21,6 +21,10 @@ const isPublicPartnerRoute = createRouteMatcher([
   "/partners",
   "/partners/apply(.*)",
   "/partners/sign-in(.*)",
+  // Open Graph / Twitter card images must be fetchable by link-preview
+  // crawlers (iMessage, Slack, etc.), which are unauthenticated.
+  "/partners/opengraph-image(.*)",
+  "/partners/twitter-image(.*)",
 ]);
 
 // Sensitive route groups that handle auth and/or customer data. These are all
