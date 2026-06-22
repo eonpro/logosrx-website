@@ -9,6 +9,8 @@ import {
   isValidReferralCode,
   type ReferralAttribution,
 } from "@/lib/partners/referral";
+import { dispatchPartnerEvent } from "@/lib/partners/webhooks";
+import { runAfterResponse } from "@/lib/runtime/after";
 
 /**
  * Server-side referral attribution. The `/join/<code>` redirect drops the
@@ -77,6 +79,15 @@ export async function stampClinicAttribution(
         .update(referralLinks)
         .set({ signupCount: sql`${referralLinks.signupCount} + 1` })
         .where(eq(referralLinks.id, attribution.referralLinkId));
+
+      // Notify partner webhooks (best-effort, non-blocking).
+      runAfterResponse(
+        dispatchPartnerEvent(attribution.partnerOrgId, "clinic.attributed", {
+          clinicId: stamped[0].id,
+          referralLinkId: attribution.referralLinkId,
+          repId: attribution.partnerRepId,
+        }),
+      );
     }
   } catch {
     // Attribution is bonus data — never let it break account creation.

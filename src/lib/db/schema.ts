@@ -140,6 +140,53 @@ export const partnerOrgMemberRoleEnum = pgEnum("partner_org_member_role", [
   "viewer",
 ]);
 
+/**
+ * Partner API key (for the read-only partner API). Only a SHA-256 hash of the
+ * key is stored; the plaintext key is shown once at creation. `keyPrefix` is a
+ * short, non-secret identifier for display in the UI.
+ */
+export const partnerApiKeys = pgTable(
+  "partner_api_keys",
+  {
+    id: serial("id").primaryKey(),
+    orgId: integer("org_id")
+      .notNull()
+      .references(() => partnerOrgs.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 120 }).notNull(),
+    keyPrefix: varchar("key_prefix", { length: 24 }).notNull(),
+    keyHash: varchar("key_hash", { length: 64 }).notNull().unique(),
+    lastUsedAt: timestamp("last_used_at"),
+    revokedAt: timestamp("revoked_at"),
+    createdBy: varchar("created_by", { length: 64 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [index("partner_api_keys_org_idx").on(t.orgId)],
+);
+
+/**
+ * Partner webhook subscription. Delivers HMAC-signed JSON to `url` for the
+ * subscribed `events`. `secret` is the signing secret shared with the partner
+ * (surfaced once in the UI so they can verify signatures).
+ */
+export const partnerWebhooks = pgTable(
+  "partner_webhooks",
+  {
+    id: serial("id").primaryKey(),
+    orgId: integer("org_id")
+      .notNull()
+      .references(() => partnerOrgs.id, { onDelete: "cascade" }),
+    url: varchar("url", { length: 500 }).notNull(),
+    secret: varchar("secret", { length: 80 }).notNull(),
+    events: jsonb("events").$type<string[]>().default([]).notNull(),
+    active: boolean("active").default(true).notNull(),
+    lastDeliveryAt: timestamp("last_delivery_at"),
+    lastStatus: integer("last_status"),
+    createdBy: varchar("created_by", { length: 64 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [index("partner_webhooks_org_idx").on(t.orgId)],
+);
+
 /** Where a partner transaction row originated. */
 export const transactionSourceEnum = pgEnum("transaction_source", [
   "manual",
@@ -1118,5 +1165,9 @@ export type PartnerGoal = typeof partnerGoals.$inferSelect;
 export type NewPartnerGoal = typeof partnerGoals.$inferInsert;
 export type PartnerOrgMember = typeof partnerOrgMembers.$inferSelect;
 export type NewPartnerOrgMember = typeof partnerOrgMembers.$inferInsert;
+export type PartnerApiKey = typeof partnerApiKeys.$inferSelect;
+export type NewPartnerApiKey = typeof partnerApiKeys.$inferInsert;
+export type PartnerWebhook = typeof partnerWebhooks.$inferSelect;
+export type NewPartnerWebhook = typeof partnerWebhooks.$inferInsert;
 export type PartnerAgreement = typeof partnerAgreements.$inferSelect;
 export type NewPartnerAgreement = typeof partnerAgreements.$inferInsert;
