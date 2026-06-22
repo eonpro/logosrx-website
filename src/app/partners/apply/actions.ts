@@ -97,8 +97,8 @@ export async function submitPartnerApplication(
       notes: notes || null,
       status: "pending",
     });
-  } catch {
-    console.error("[partners] application insert failed");
+  } catch (err) {
+    console.error("[partners] application insert failed:", err);
     return {
       ok: false,
       error: "Could not submit your application. Please try again.",
