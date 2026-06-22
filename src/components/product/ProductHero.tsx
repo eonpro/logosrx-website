@@ -164,6 +164,21 @@ export default function ProductHero({ product }: ProductHeroProps) {
                 {product.footnote}
               </p>
             ) : null}
+
+            {product.compoundingDisclaimer ? (
+              <aside
+                role="note"
+                aria-label="Compounding disclaimer"
+                className="mt-8 max-w-xl rounded-2xl border border-beige bg-cream/60 px-5 py-4"
+              >
+                <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-navy/50 mb-1.5">
+                  Disclaimer
+                </p>
+                <p className="text-sm leading-relaxed text-navy/70">
+                  {product.compoundingDisclaimer}
+                </p>
+              </aside>
+            ) : null}
           </div>
 
           {/* Right column — product image / placeholder */}
