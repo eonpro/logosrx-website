@@ -1,6 +1,6 @@
 import "server-only";
 import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
-import { SITE_URL } from "@/lib/constants";
+import { CONTACT, SITE_URL } from "@/lib/constants";
 import { log } from "@/lib/observability/logger";
 
 /**
@@ -238,6 +238,75 @@ export async function sendPayoutRecordedEmail(args: {
   return sendEmail({
     to: args.to,
     subject: `Your Logos RX commission payout: ${args.amountLabel}`,
+    html,
+    text,
+  });
+}
+
+/**
+ * Confirmation sent to a partner (org owner or rep) right after they execute
+ * the Marketing Services Agreement. Points them to their portal, where the
+ * fully executed copy is available to view/print at any time.
+ */
+export async function sendPartnerMsaSignedEmail(args: {
+  to: string;
+  signerName: string;
+  orgName: string;
+}): Promise<boolean> {
+  const base = SITE_URL;
+  const greetingName = args.signerName?.trim() || "there";
+  const org = args.orgName?.trim() || "your organization";
+  const url = `${base}/partners/agreement`;
+
+  const html = `
+  <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:560px;margin:0 auto;color:#262262">
+    <h1 style="font-size:20px;color:#262262">Your Marketing Services Agreement is signed</h1>
+    <p>Hi ${escapeHtml(greetingName)},</p>
+    <p>Thanks — your Marketing Services Agreement with Logos RX${args.orgName ? ` for <strong>${escapeHtml(org)}</strong>` : ""} has been signed and recorded. A copy is kept on file for both you and the pharmacy.</p>
+    <p>You can view or print your executed copy any time from your partner portal:</p>
+    <p><a href="${url}" style="display:inline-block;background:#E6007E;color:#fff;text-decoration:none;padding:12px 20px;border-radius:9999px;font-weight:600">View your signed agreement</a></p>
+    <p style="color:#262262;opacity:.7;font-size:13px">If you didn't sign this, contact us immediately by replying to this email.</p>
+    <p style="color:#262262;opacity:.7;font-size:13px">— The Logos RX Team</p>
+  </div>`;
+
+  const text = `Your Marketing Services Agreement is signed\n\nHi ${greetingName},\n\nYour Marketing Services Agreement with Logos RX${args.orgName ? ` for ${org}` : ""} has been signed and recorded. A copy is kept on file for both you and the pharmacy.\n\nView or print your executed copy: ${url}\n\nIf you didn't sign this, contact us immediately.\n\n— The Logos RX Team`;
+
+  return sendEmail({
+    to: args.to,
+    subject: "Your Logos RX Marketing Services Agreement is signed",
+    html,
+    text,
+  });
+}
+
+/**
+ * Internal notification to the pharmacy that a partner executed their MSA, so
+ * the pharmacy keeps its own record of the event. Links to the admin partner
+ * detail page where the executed copy can be reviewed/downloaded.
+ */
+export async function sendPharmacyMsaSignedNotification(args: {
+  orgName: string;
+  signerName: string;
+  signerTitle: string;
+  signerKind: "org" | "rep";
+  orgId: number;
+}): Promise<boolean> {
+  const base = SITE_URL;
+  const url = `${base}/admin/partners/${args.orgId}`;
+  const who = args.signerKind === "org" ? "organization owner" : "rep";
+
+  const html = `
+  <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:560px;margin:0 auto;color:#262262">
+    <h1 style="font-size:18px;color:#262262">Partner MSA signed</h1>
+    <p><strong>${escapeHtml(args.orgName)}</strong> — the ${who} <strong>${escapeHtml(args.signerName)}</strong>${args.signerTitle ? ` (${escapeHtml(args.signerTitle)})` : ""} has executed the Marketing Services Agreement.</p>
+    <p><a href="${url}" style="display:inline-block;background:#262262;color:#fff;text-decoration:none;padding:10px 18px;border-radius:9999px;font-weight:600">Review in admin</a></p>
+  </div>`;
+
+  const text = `Partner MSA signed\n\n${args.orgName} — the ${who} ${args.signerName}${args.signerTitle ? ` (${args.signerTitle})` : ""} has executed the Marketing Services Agreement.\n\nReview in admin: ${url}`;
+
+  return sendEmail({
+    to: CONTACT.email,
+    subject: `Partner MSA signed — ${args.orgName}`,
     html,
     text,
   });

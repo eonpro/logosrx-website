@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import {
   clinics,
   commissionEntries,
+  partnerAgreements,
   partnerOrgs,
   partnerReps,
   payouts,
@@ -41,7 +42,8 @@ export default async function AdminPartnerDetailPage({
     ([productId, f]) => [productId, f.floorCents] as const,
   );
 
-  const [reps, clinicRows, links, unpaidRows, payoutRows] = await Promise.all([
+  const [reps, clinicRows, links, unpaidRows, payoutRows, agreements] =
+    await Promise.all([
     db
       .select({
         id: partnerReps.id,
@@ -50,6 +52,7 @@ export default async function AdminPartnerDetailPage({
         status: partnerReps.status,
         commissionRateBps: partnerReps.commissionRateBps,
         activatedAt: partnerReps.activatedAt,
+        msaSignedAt: partnerReps.msaSignedAt,
         clinicCount: count(clinics.id),
       })
       .from(partnerReps)
@@ -115,6 +118,20 @@ export default async function AdminPartnerDetailPage({
       .where(eq(payouts.orgId, orgId))
       .orderBy(desc(payouts.paidAt))
       .limit(100),
+    db
+      .select({
+        id: partnerAgreements.id,
+        signerKind: partnerAgreements.signerKind,
+        signerName: partnerAgreements.signerName,
+        signerTitle: partnerAgreements.signerTitle,
+        documentVersion: partnerAgreements.documentVersion,
+        signedAt: partnerAgreements.signedAt,
+        repName: partnerReps.name,
+      })
+      .from(partnerAgreements)
+      .leftJoin(partnerReps, eq(partnerAgreements.repId, partnerReps.id))
+      .where(eq(partnerAgreements.orgId, orgId))
+      .orderBy(desc(partnerAgreements.signedAt)),
   ]);
 
   // Payable = approved net (what a payout settles); awaiting = pending earnings.
@@ -165,6 +182,21 @@ export default async function AdminPartnerDetailPage({
             {org.notes}
           </p>
         )}
+        <p className="mt-3 text-sm">
+          <span className="text-navy/55">Marketing Services Agreement: </span>
+          {org.msaSignedAt ? (
+            <span className="font-medium text-emerald-700">
+              Signed{" "}
+              {org.msaSignedAt.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </span>
+          ) : (
+            <span className="font-medium text-amber-700">Not signed yet</span>
+          )}
+        </p>
       </div>
 
       <PartnerOrgManager
@@ -220,6 +252,7 @@ export default async function AdminPartnerDetailPage({
                 <tr>
                   <th className="px-5 py-3 font-semibold">Rep</th>
                   <th className="px-5 py-3 font-semibold">Status</th>
+                  <th className="px-5 py-3 font-semibold">MSA</th>
                   <th className="px-5 py-3 font-semibold text-right">Rate</th>
                   <th className="px-5 py-3 font-semibold text-right">Clinics</th>
                   <th className="px-5 py-3 font-semibold text-right">Unpaid</th>
@@ -238,6 +271,13 @@ export default async function AdminPartnerDetailPage({
                       {rep.status === "active" && !rep.activatedAt
                         ? "Invited"
                         : rep.status}
+                    </td>
+                    <td className="px-5 py-3">
+                      {rep.msaSignedAt ? (
+                        <span className="text-emerald-700">Signed</span>
+                      ) : (
+                        <span className="text-navy/40">—</span>
+                      )}
                     </td>
                     <td className="px-5 py-3 text-right tabular-nums">
                       {formatBps(rep.commissionRateBps)}
@@ -297,6 +337,68 @@ export default async function AdminPartnerDetailPage({
           )}
         </section>
       </div>
+
+      <section className="mt-8 overflow-x-auto rounded-2xl border border-beige bg-white">
+        <div className="border-b border-beige px-5 py-4">
+          <h2 className="text-sm font-semibold text-navy">
+            Signed agreements ({agreements.length})
+          </h2>
+        </div>
+        {agreements.length === 0 ? (
+          <p className="px-5 py-8 text-center text-sm text-navy/65">
+            No executed agreements yet.
+          </p>
+        ) : (
+          <table className="w-full min-w-[640px] text-left text-sm">
+            <thead className="bg-cream/60 text-xs uppercase tracking-wide text-navy/55">
+              <tr>
+                <th className="px-5 py-3 font-semibold">Signer</th>
+                <th className="px-5 py-3 font-semibold">Role</th>
+                <th className="px-5 py-3 font-semibold">Version</th>
+                <th className="px-5 py-3 font-semibold">Signed</th>
+                <th className="px-5 py-3 font-semibold text-right">Copy</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-beige text-navy">
+              {agreements.map((a) => (
+                <tr key={a.id}>
+                  <td className="px-5 py-3">
+                    <span className="font-medium">{a.signerName}</span>
+                    {a.signerTitle && (
+                      <span className="block text-xs text-navy/55">
+                        {a.signerTitle}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-5 py-3">
+                    {a.signerKind === "org"
+                      ? "Organization"
+                      : (a.repName ?? "Rep")}
+                  </td>
+                  <td className="px-5 py-3 font-mono text-xs">
+                    {a.documentVersion}
+                  </td>
+                  <td className="px-5 py-3 whitespace-nowrap">
+                    {a.signedAt.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </td>
+                  <td className="px-5 py-3 text-right">
+                    <Link
+                      href={`/admin/partners/${orgId}/agreement/${a.id}`}
+                      className="font-medium text-magenta hover:underline"
+                    >
+                      View
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
 
       <section className="mt-8 overflow-x-auto rounded-2xl border border-beige bg-white">
         <div className="border-b border-beige px-5 py-4">

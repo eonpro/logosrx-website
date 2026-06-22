@@ -1,6 +1,7 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import { headers } from "next/headers";
 import { getPartnerContext } from "@/lib/auth/partner";
+import PartnerMsaGate from "./PartnerMsaGate";
 import PartnersShell from "./PartnersShell";
 
 /**
@@ -19,16 +20,35 @@ export default async function PartnersLayout({
   const ctx = await getPartnerContext();
   const nonce = (await headers()).get("x-nonce") ?? undefined;
 
+  // MSA gate: an active partner (org owner or rep) who hasn't executed the
+  // Marketing Services Agreement is blocked from the portal until they sign.
+  // This wraps every partner route, so the signing screen replaces all portal
+  // chrome; anonymous routes (ctx null) are unaffected.
+  const needsMsa = Boolean(
+    ctx && (ctx.kind === "org" ? !ctx.org.msaSignedAt : !ctx.rep?.msaSignedAt),
+  );
+
   return (
     <ClerkProvider afterSignOutUrl="/" nonce={nonce}>
-      <PartnersShell
-        kind={ctx?.kind ?? null}
-        orgName={ctx?.org.name ?? null}
-        repName={ctx?.rep?.name ?? null}
-        marginEnabled={ctx?.org.compensationModel === "margin"}
-      >
-        {children}
-      </PartnersShell>
+      {needsMsa && ctx ? (
+        <PartnerMsaGate
+          signerKind={ctx.kind}
+          defaultSignerName={
+            ctx.kind === "rep" ? ctx.rep?.name ?? "" : ctx.org.contactName ?? ""
+          }
+          defaultEntityName={ctx.org.name}
+          orgName={ctx.org.name}
+        />
+      ) : (
+        <PartnersShell
+          kind={ctx?.kind ?? null}
+          orgName={ctx?.org.name ?? null}
+          repName={ctx?.rep?.name ?? null}
+          marginEnabled={ctx?.org.compensationModel === "margin"}
+        >
+          {children}
+        </PartnersShell>
+      )}
     </ClerkProvider>
   );
 }
