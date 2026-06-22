@@ -26,8 +26,10 @@ import {
 } from "@/lib/partners/provision";
 import {
   createTransactionWithCommission,
+  DuplicateReferenceError,
   TransactionError,
 } from "@/lib/partners/transactions";
+import { refundTransaction, RefundError } from "@/lib/partners/refunds";
 import {
   sendPartnerApprovedEmail,
   sendPayoutRecordedEmail,
@@ -333,6 +335,12 @@ export async function addPartnerTransaction(input: {
       createdBy: ctx.userId,
     });
   } catch (err) {
+    if (err instanceof DuplicateReferenceError) {
+      return {
+        ok: false,
+        error: "A transaction with this reference already exists.",
+      };
+    }
     if (err instanceof TransactionError) {
       return { ok: false, error: err.message };
     }
@@ -344,6 +352,81 @@ export async function addPartnerTransaction(input: {
     type: "clinic",
     id: input.clinicId,
   }, { revenueCents: Math.round(input.amountDollars * 100), costCents });
+
+  revalidatePath("/admin/partners/transactions");
+  return { ok: true };
+}
+
+/** Approves all pending earning entries for an org, making them payable. */
+export async function approvePartnerCommission(
+  orgId: number,
+): Promise<AdminPartnerResult> {
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(orgId, "orgId");
+
+  const updated = await db
+    .update(commissionEntries)
+    .set({ status: "approved" })
+    .where(
+      and(
+        eq(commissionEntries.orgId, orgId),
+        eq(commissionEntries.status, "pending"),
+      ),
+    )
+    .returning({ id: commissionEntries.id });
+
+  await recordAdminAudit(
+    ctx,
+    "partner.commission_approve",
+    { type: "partner_org", id: orgId },
+    { approvedCount: updated.length },
+  );
+
+  revalidateOrg(orgId);
+  revalidatePath("/admin/partners/transactions");
+  return { ok: true };
+}
+
+/**
+ * Records a refund/chargeback against a transaction, writing the matching
+ * commission clawbacks. `refundDollars` null = full refund of the remaining
+ * revenue.
+ */
+export async function refundPartnerTransaction(input: {
+  transactionId: number;
+  refundDollars: number | null;
+}): Promise<AdminPartnerResult> {
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(input.transactionId, "transactionId");
+
+  let refundCents: number | null = null;
+  if (input.refundDollars != null) {
+    if (!Number.isFinite(input.refundDollars) || input.refundDollars <= 0) {
+      return { ok: false, error: "Enter a valid refund amount." };
+    }
+    refundCents = Math.round(input.refundDollars * 100);
+  }
+
+  try {
+    const result = await refundTransaction({
+      transactionId: input.transactionId,
+      refundCents,
+      recordedBy: ctx.userId,
+    });
+    await recordAdminAudit(
+      ctx,
+      "partner.transaction_refund",
+      { type: "partner_transaction", id: input.transactionId },
+      {
+        refundedCents: result.refundedCents,
+        reversedCents: result.reversedCents,
+      },
+    );
+  } catch (err) {
+    if (err instanceof RefundError) return { ok: false, error: err.message };
+    console.error("[admin/partners] refundPartnerTransaction failed");
+    return { ok: false, error: "Could not record the refund." };
+  }
 
   revalidatePath("/admin/partners/transactions");
   return { ok: true };
@@ -403,9 +486,15 @@ export async function importPartnerTransactionsCsv(
       });
       imported++;
     } catch (err) {
-      errors.push(
-        `Line ${row.line}: ${err instanceof TransactionError ? err.message : "could not record the transaction."}`,
-      );
+      if (err instanceof DuplicateReferenceError) {
+        errors.push(
+          `Line ${row.line}: duplicate reference "${row.reference}" — skipped.`,
+        );
+      } else {
+        errors.push(
+          `Line ${row.line}: ${err instanceof TransactionError ? err.message : "could not record the transaction."}`,
+        );
+      }
     }
   }
 
@@ -430,17 +519,19 @@ export async function recordPartnerPayout(input: {
   if (input.repId != null) assertId(input.repId, "repId");
 
   const payee = input.repId != null ? ("rep" as const) : ("org" as const);
+  // Only APPROVED entries are payable. Reversals (clawbacks) are created
+  // approved, so they net against the payable balance here.
   const entryScope = and(
     eq(commissionEntries.orgId, input.orgId),
     eq(commissionEntries.payee, payee),
     ...(input.repId != null ? [eq(commissionEntries.repId, input.repId)] : []),
-    inArray(commissionEntries.status, ["pending", "approved"]),
+    eq(commissionEntries.status, "approved"),
   );
 
   try {
     const result = await db.transaction(async (tx) => {
-      // Lock the unpaid entries so two concurrent payouts can't double-pay.
-      const unpaid = await tx
+      // Lock the payable entries so two concurrent payouts can't double-pay.
+      const payable = await tx
         .select({
           id: commissionEntries.id,
           amountCents: commissionEntries.amountCents,
@@ -449,8 +540,11 @@ export async function recordPartnerPayout(input: {
         .where(entryScope)
         .for("update");
 
-      if (unpaid.length === 0) return null;
-      const amountCents = unpaid.reduce((sum, e) => sum + e.amountCents, 0);
+      if (payable.length === 0) return null;
+      const amountCents = payable.reduce((sum, e) => sum + e.amountCents, 0);
+      // Net is zero or negative (clawbacks ≥ earnings): nothing to pay. Leave
+      // the entries approved so the negative carries into the next payout.
+      if (amountCents <= 0) return 0;
 
       const [payout] = await tx
         .insert(payouts)
@@ -473,15 +567,19 @@ export async function recordPartnerPayout(input: {
         .where(
           inArray(
             commissionEntries.id,
-            unpaid.map((e) => e.id),
+            payable.map((e) => e.id),
           ),
         );
 
       return amountCents;
     });
 
-    if (result == null) {
-      return { ok: false, error: "No unpaid commission for this payee." };
+    if (result == null || result <= 0) {
+      return {
+        ok: false,
+        error:
+          "No payable commission for this payee (nothing approved, or clawbacks offset the balance).",
+      };
     }
 
     await recordAdminAudit(ctx, "partner.payout", {

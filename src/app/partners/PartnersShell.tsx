@@ -48,6 +48,16 @@ const navItems: PartnerNavItem[] = [
     ),
   },
   {
+    label: "Reports",
+    href: "/partners/reports",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M3 3v14h14" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M6 12l3-3 2 2 4-5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
     label: "Reps",
     href: "/partners/reps",
     only: "org",
@@ -55,6 +65,18 @@ const navItems: PartnerNavItem[] = [
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
         <circle cx="7" cy="7" r="3" />
         <path d="M2 17c0-2.8 2.2-5 5-5s5 2.2 5 5M14 8a2.5 2.5 0 100-5M13.5 12c2.5.3 4.5 2.4 4.5 5" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    label: "Goals",
+    href: "/partners/goals",
+    only: "org",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <circle cx="10" cy="10" r="7" />
+        <circle cx="10" cy="10" r="3" />
+        <circle cx="10" cy="10" r="0.5" fill="currentColor" />
       </svg>
     ),
   },
@@ -96,6 +118,16 @@ const navItems: PartnerNavItem[] = [
         <rect x="2" y="5" width="16" height="11" rx="2" strokeLinecap="round" />
         <circle cx="10" cy="10.5" r="2.5" />
         <path d="M2 8h16" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    label: "Agreement",
+    href: "/partners/agreement",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M5 2h7l3 3v13a1 1 0 01-1 1H5a1 1 0 01-1-1V3a1 1 0 011-1z" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M11 2v4h4M7 12l1.5 1.5L12 10" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
   },

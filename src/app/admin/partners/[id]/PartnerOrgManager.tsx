@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { formatCents } from "@/lib/partners/commission";
 import {
+  approvePartnerCommission,
   approvePartnerOrg,
   recordPartnerPayout,
   resendPartnerActivation,
@@ -17,7 +18,12 @@ interface OrgProps {
   compensationModel: "commission" | "margin";
   ratePercent: number;
   hasAccount: boolean;
+  /** Approved, payable balance (what a payout settles). */
   unpaidCents: number;
+  /** Earned but not yet approved. */
+  awaitingCents: number;
+  /** Whether any pending entries exist to approve. */
+  hasPending: boolean;
 }
 
 interface RepOption {
@@ -194,11 +200,37 @@ export default function PartnerOrgManager({
         </span>
       </div>
 
+      <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-beige pt-4">
+        <span className="text-xs font-medium text-navy/60">
+          Commission approval
+        </span>
+        <span className="text-xs text-navy/55">
+          {org.awaitingCents > 0
+            ? `${formatCents(org.awaitingCents)} earned and awaiting approval before it's payable.`
+            : "Nothing awaiting approval."}
+        </span>
+        {org.hasPending && (
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() =>
+              run(
+                () => approvePartnerCommission(org.id),
+                "Pending commission approved — now payable.",
+              )
+            }
+            className="rounded-full bg-navy px-4 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+          >
+            Approve all pending
+          </button>
+        )}
+      </div>
+
       <div className="mt-6 border-t border-beige pt-6">
         <h3 className="text-sm font-semibold text-navy">Record a payout</h3>
         <p className="mt-1 text-xs text-navy/60">
-          Pays out the payee&rsquo;s full unpaid balance and marks the covered
-          commission entries as paid.
+          Pays out the payee&rsquo;s approved (payable) balance and marks the
+          covered commission entries as paid. Clawbacks net against it.
         </p>
         <form
           className="mt-4 flex flex-wrap items-end gap-3"
@@ -225,11 +257,11 @@ export default function PartnerOrgManager({
               className={`${inputClass} w-64`}
             >
               <option value="org">
-                Organization — {formatCents(org.unpaidCents)} unpaid
+                Organization — {formatCents(org.unpaidCents)} payable
               </option>
               {reps.map((rep) => (
                 <option key={rep.id} value={rep.id}>
-                  {rep.name} — {formatCents(rep.unpaidCents)} unpaid
+                  {rep.name} — {formatCents(rep.unpaidCents)} payable
                 </option>
               ))}
             </select>

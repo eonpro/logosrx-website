@@ -6,6 +6,7 @@ import {
   formatBps,
   formatCents,
   percentToBps,
+  reversalDelta,
   summarizeCommissionRows,
   validateOrgRateBps,
   validateRepRateBps,
@@ -197,6 +198,83 @@ describe("computeMarginSplit", () => {
     expect(() =>
       computeMarginSplit({ marginCents: 100, repRateBps: 10_001 }),
     ).toThrow();
+  });
+});
+
+describe("reversalDelta (refund clawbacks)", () => {
+  it("claws back the full earning on a full refund", () => {
+    expect(
+      reversalDelta({
+        earningCents: 10_000,
+        alreadyReversedCents: 0,
+        revenueCents: 100_000,
+        refundedTotalCents: 100_000,
+      }),
+    ).toBe(10_000);
+  });
+
+  it("claws back proportionally on a partial refund", () => {
+    // 25% of revenue refunded → 25% of the earning clawed back.
+    expect(
+      reversalDelta({
+        earningCents: 10_000,
+        alreadyReversedCents: 0,
+        revenueCents: 100_000,
+        refundedTotalCents: 25_000,
+      }),
+    ).toBe(2_500);
+  });
+
+  it("is exact across sequential partial refunds (sums to the earning)", () => {
+    const earningCents = 999;
+    const revenueCents = 3_000;
+    // Refund in three steps: 1000, 1000, 1000 (cumulative).
+    let already = 0;
+    let total = 0;
+    const deltas: number[] = [];
+    for (const step of [1_000, 1_000, 1_000]) {
+      total += step;
+      const d = reversalDelta({
+        earningCents,
+        alreadyReversedCents: already,
+        revenueCents,
+        refundedTotalCents: total,
+      });
+      deltas.push(d);
+      already += d;
+    }
+    // Fully refunded → cumulative reversal equals the whole earning, exactly.
+    expect(deltas.reduce((a, b) => a + b, 0)).toBe(earningCents);
+  });
+
+  it("never returns a negative delta", () => {
+    expect(
+      reversalDelta({
+        earningCents: 10_000,
+        alreadyReversedCents: 10_000,
+        revenueCents: 100_000,
+        refundedTotalCents: 100_000,
+      }),
+    ).toBe(0);
+  });
+
+  it("returns 0 for zero revenue or zero earning", () => {
+    expect(
+      reversalDelta({
+        earningCents: 0,
+        alreadyReversedCents: 0,
+        revenueCents: 100,
+        refundedTotalCents: 100,
+      }),
+    ).toBe(0);
+    expect(
+      reversalDelta({
+        earningCents: 100,
+        alreadyReversedCents: 0,
+        revenueCents: 0,
+        refundedTotalCents: 0,
+      }),
+    ).toBe(0);
   });
 });
 
