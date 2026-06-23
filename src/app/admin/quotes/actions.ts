@@ -77,6 +77,59 @@ export async function createQuote(
   return result;
 }
 
+export interface UpdateQuoteRecipientInput {
+  clinicName: string;
+  contactName: string;
+  email: string;
+}
+
+export interface UpdateQuoteRecipientResult {
+  ok: boolean;
+  error?: string;
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Updates the recipient details (clinic name, contact name, email) on a quote.
+ * These prefill onboarding and label the quote; they aren't used for auth, so a
+ * claimed quote can still be corrected. Email is normalized and validated.
+ */
+export async function updateQuoteRecipient(
+  id: number,
+  input: UpdateQuoteRecipientInput,
+): Promise<UpdateQuoteRecipientResult> {
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(id);
+
+  const email = (input.email ?? "").trim().toLowerCase();
+  if (!email || !EMAIL_RE.test(email)) {
+    return { ok: false, error: "A valid recipient email is required." };
+  }
+  const clinicName = (input.clinicName ?? "").trim().slice(0, 200) || null;
+  const contactName = (input.contactName ?? "").trim().slice(0, 200) || null;
+
+  const [existing] = await db
+    .select({ id: pricingQuotes.id })
+    .from(pricingQuotes)
+    .where(eq(pricingQuotes.id, id))
+    .limit(1);
+  if (!existing) return { ok: false, error: "Quote not found." };
+
+  await db
+    .update(pricingQuotes)
+    .set({ clinicName, contactName, email, updatedAt: new Date() })
+    .where(eq(pricingQuotes.id, id));
+
+  await recordAdminAudit(ctx, "quote.update_recipient", { type: "quote", id }, {
+    email,
+  });
+
+  revalidatePath("/admin/quotes");
+  revalidatePath(`/admin/quotes/${id}`);
+  return { ok: true };
+}
+
 export interface RegenerateResult {
   ok: boolean;
   error?: string;
