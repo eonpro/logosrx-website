@@ -4,13 +4,13 @@ import { auth } from "@clerk/nextjs/server";
 import { getClinicGate } from "@/lib/onboarding/data";
 import {
   CATALOG_CONFIG,
-  catalogProducts,
   filterCatalog,
   getFilterCounts,
   paginateCatalog,
   parseCatalogSearchParams,
   sortCatalog,
 } from "@/data/catalog";
+import { getCatalogProducts } from "@/lib/catalog/store";
 import CatalogHero from "@/components/catalog/CatalogHero";
 import CatalogFiltersSidebar from "@/components/catalog/CatalogFiltersSidebar";
 import CatalogMobileFilters from "@/components/catalog/CatalogMobileFilters";
@@ -64,6 +64,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
   const params = await searchParams;
   const filters = parseCatalogSearchParams(params);
 
+  const catalogProducts = await getCatalogProducts();
   const matched = filterCatalog(catalogProducts, filters);
   const sorted = sortCatalog(matched, filters.sort, filters.tier);
   const pageData = paginateCatalog(sorted, filters.page, CATALOG_CONFIG.pageSize);

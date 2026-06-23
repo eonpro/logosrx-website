@@ -99,6 +99,17 @@ const navItems: PartnerNavItem[] = [
     ),
   },
   {
+    label: "API & Webhooks",
+    href: "/partners/api",
+    only: "org",
+    adminOnly: true,
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M7 5l-4 5 4 5M13 5l4 5-4 5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
     label: "Referral Links",
     href: "/partners/links",
     icon: (

@@ -16,7 +16,8 @@ import {
 import { requireAdmin } from "@/lib/auth/admin";
 import { bpsToPercent, formatBps, formatCents } from "@/lib/partners/commission";
 import { getOrgFloorMap } from "@/lib/partners/pricing";
-import { catalogProducts, standardCatalogPrice } from "@/data/catalog";
+import { standardCatalogPrice } from "@/data/catalog";
+import { getCatalogProducts } from "@/lib/catalog/store";
 import PartnerOrgManager from "./PartnerOrgManager";
 import OrgFloorManager from "./OrgFloorManager";
 
@@ -148,6 +149,8 @@ export default async function AdminPartnerDetailPage({
     }
   }
   const hasPending = unpaidRows.some((r) => r.status === "pending");
+
+  const catalogProducts = await getCatalogProducts();
 
   return (
     <div>

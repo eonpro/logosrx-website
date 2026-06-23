@@ -12,6 +12,8 @@ import {
   computeCommissionSplit,
   computeMarginSplit,
 } from "@/lib/partners/commission";
+import { dispatchPartnerEvent } from "@/lib/partners/webhooks";
+import { runAfterResponse } from "@/lib/runtime/after";
 
 export class TransactionError extends Error {
   constructor(message: string) {
@@ -134,7 +136,7 @@ export async function createTransactionWithCommission(
     });
   }
 
-  return db.transaction(async (tx) => {
+  const transactionId = await db.transaction(async (tx) => {
     const [created] = await tx
       .insert(partnerTransactions)
       .values({
@@ -164,4 +166,16 @@ export async function createTransactionWithCommission(
 
     return created.id;
   });
+
+  // Notify partner webhooks (best-effort, non-blocking).
+  runAfterResponse(
+    dispatchPartnerEvent(org.id, "transaction.recorded", {
+      transactionId,
+      clinicId: clinic.id,
+      revenueCents: input.revenueCents,
+      reference,
+    }),
+  );
+
+  return transactionId;
 }

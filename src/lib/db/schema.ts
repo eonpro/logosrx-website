@@ -140,6 +140,53 @@ export const partnerOrgMemberRoleEnum = pgEnum("partner_org_member_role", [
   "viewer",
 ]);
 
+/**
+ * Partner API key (for the read-only partner API). Only a SHA-256 hash of the
+ * key is stored; the plaintext key is shown once at creation. `keyPrefix` is a
+ * short, non-secret identifier for display in the UI.
+ */
+export const partnerApiKeys = pgTable(
+  "partner_api_keys",
+  {
+    id: serial("id").primaryKey(),
+    orgId: integer("org_id")
+      .notNull()
+      .references(() => partnerOrgs.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 120 }).notNull(),
+    keyPrefix: varchar("key_prefix", { length: 24 }).notNull(),
+    keyHash: varchar("key_hash", { length: 64 }).notNull().unique(),
+    lastUsedAt: timestamp("last_used_at"),
+    revokedAt: timestamp("revoked_at"),
+    createdBy: varchar("created_by", { length: 64 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [index("partner_api_keys_org_idx").on(t.orgId)],
+);
+
+/**
+ * Partner webhook subscription. Delivers HMAC-signed JSON to `url` for the
+ * subscribed `events`. `secret` is the signing secret shared with the partner
+ * (surfaced once in the UI so they can verify signatures).
+ */
+export const partnerWebhooks = pgTable(
+  "partner_webhooks",
+  {
+    id: serial("id").primaryKey(),
+    orgId: integer("org_id")
+      .notNull()
+      .references(() => partnerOrgs.id, { onDelete: "cascade" }),
+    url: varchar("url", { length: 500 }).notNull(),
+    secret: varchar("secret", { length: 80 }).notNull(),
+    events: jsonb("events").$type<string[]>().default([]).notNull(),
+    active: boolean("active").default(true).notNull(),
+    lastDeliveryAt: timestamp("last_delivery_at"),
+    lastStatus: integer("last_status"),
+    createdBy: varchar("created_by", { length: 64 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [index("partner_webhooks_org_idx").on(t.orgId)],
+);
+
 /** Where a partner transaction row originated. */
 export const transactionSourceEnum = pgEnum("transaction_source", [
   "manual",
@@ -439,6 +486,60 @@ export const clinicPricing = pgTable(
       t.productId,
     ),
   ],
+);
+
+/**
+ * The product catalog: every SKU plus its three-tier pricing. Originally a
+ * static array (`catalogProducts`) in `src/data/catalog.ts`; moved to the DB so
+ * a super admin can edit prices and the SKU roster live via `/admin/catalog`
+ * with no redeploy. The taxonomy const arrays, `CATALOG_CONFIG`, the
+ * `CatalogProduct` type, and all pure helpers still live in `src/data/catalog.ts`
+ * (that file's array is the one-time seed).
+ *
+ *   - `id` is the SKU slug (lowercase kebab-case) and is IMMUTABLE after
+ *     creation: `clinic_pricing.productId` and `featured_products.productId`
+ *     reference it by value, so renaming would orphan those rows. Renaming edits
+ *     the display `name` only.
+ *   - `pricing` is jsonb mirroring `CatalogPricing` in dollars. A tier may be a
+ *     number, `null` ("Not Available"), or absent (`undefined`, hidden "—").
+ *     jsonb preserves that present/null/absent distinction exactly.
+ *   - `productFamily` / `therapeuticAreas` are jsonb string arrays.
+ *   - Deletion defaults to soft-delete (`active=false`); a hard delete is only
+ *     allowed when no `clinic_pricing` / `featured_products` rows reference it.
+ */
+export const catalogProducts = pgTable(
+  "catalog_products",
+  {
+    id: varchar("id", { length: 120 }).primaryKey(),
+    name: varchar("name", { length: 200 }).notNull(),
+    strength: varchar("strength", { length: 120 }),
+    form: varchar("form", { length: 60 }).notNull(),
+    unit: varchar("unit", { length: 60 }),
+    pricing: jsonb("pricing")
+      .$type<{
+        retail?: number | null;
+        provider?: number | null;
+        volume?: number | null;
+      }>()
+      .notNull()
+      .default({}),
+    productFamily: jsonb("product_family")
+      .$type<string[]>()
+      .notNull()
+      .default([]),
+    brand: varchar("brand", { length: 60 }),
+    therapeuticAreas: jsonb("therapeutic_areas")
+      .$type<string[]>()
+      .notNull()
+      .default([]),
+    details: text("details"),
+    badge: varchar("badge", { length: 60 }),
+    sortOrder: integer("sort_order").default(0).notNull(),
+    active: boolean("active").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [index("catalog_products_active_sort_idx").on(t.active, t.sortOrder)],
 );
 
 /** Distinguishes a merchandising entry: a promotion vs. a news/announcement. */
@@ -1118,5 +1219,9 @@ export type PartnerGoal = typeof partnerGoals.$inferSelect;
 export type NewPartnerGoal = typeof partnerGoals.$inferInsert;
 export type PartnerOrgMember = typeof partnerOrgMembers.$inferSelect;
 export type NewPartnerOrgMember = typeof partnerOrgMembers.$inferInsert;
+export type PartnerApiKey = typeof partnerApiKeys.$inferSelect;
+export type NewPartnerApiKey = typeof partnerApiKeys.$inferInsert;
+export type PartnerWebhook = typeof partnerWebhooks.$inferSelect;
+export type NewPartnerWebhook = typeof partnerWebhooks.$inferInsert;
 export type PartnerAgreement = typeof partnerAgreements.$inferSelect;
 export type NewPartnerAgreement = typeof partnerAgreements.$inferInsert;

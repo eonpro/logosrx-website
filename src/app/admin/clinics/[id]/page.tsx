@@ -23,7 +23,8 @@ import {
   SPECIALTY_OPTIONS,
   type Option,
 } from "@/lib/onboarding/steps";
-import { catalogProducts, standardCatalogPrice } from "@/data/catalog";
+import { standardCatalogPrice } from "@/data/catalog";
+import { getCatalogProducts } from "@/lib/catalog/store";
 import ClinicManager from "./ClinicManager";
 
 const statusStyles: Record<string, string> = {
@@ -129,6 +130,7 @@ export default async function ClinicDetailPage({
   }
 
   // Full catalog with standard price + this clinic's override (if any).
+  const catalogProducts = await getCatalogProducts();
   const catalog = catalogProducts.map((p) => {
     const std = standardCatalogPrice(p);
     return {

@@ -30,6 +30,7 @@ import {
   TransactionError,
 } from "@/lib/partners/transactions";
 import { refundTransaction, RefundError } from "@/lib/partners/refunds";
+import { dispatchPartnerEvent } from "@/lib/partners/webhooks";
 import {
   sendPartnerApprovedEmail,
   sendPayoutRecordedEmail,
@@ -586,6 +587,15 @@ export async function recordPartnerPayout(input: {
       type: "partner_org",
       id: input.orgId,
     }, { repId: input.repId, payee, amountCents: result });
+
+    // Notify partner webhooks (best-effort, non-blocking).
+    runAfterResponse(
+      dispatchPartnerEvent(input.orgId, "payout.recorded", {
+        payee,
+        repId: input.repId,
+        amountCents: result,
+      }),
+    );
 
     // Confirmation email (best-effort).
     runAfterResponse(

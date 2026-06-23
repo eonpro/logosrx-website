@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { promotions, featuredProducts } from "@/lib/db/schema";
 import { ADMIN_ROLE, requireAdmin } from "@/lib/auth/admin";
 import { MERCHANDISING_TAG } from "@/lib/portal/merchandising";
-import { catalogProducts } from "@/data/catalog";
+import { getActiveCatalogIds } from "@/lib/catalog/store";
 
 /**
  * Invalidate every storefront surface that renders merchandising. Clears the
@@ -50,7 +50,6 @@ const VALID_KIND = new Set<PromotionKind>(["promo", "news"]);
 const VALID_LAYOUT = new Set<PromotionLayout>(["card", "hero", "tile"]);
 const VALID_TIER = new Set<AudienceTier>(["", "standard", "preferred", "vip"]);
 const HEX_COLOR = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
-const CATALOG_IDS = new Set(catalogProducts.map((p) => p.id));
 
 function assertId(id: number, label = "id") {
   if (!Number.isFinite(id) || id <= 0) throw new Error(`invalid ${label}`);
@@ -63,7 +62,7 @@ function parseDate(value: string): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-function sanitize(input: PromotionInput) {
+function sanitize(input: PromotionInput, catalogIds: Set<string>) {
   const kind: PromotionKind = VALID_KIND.has(input.kind) ? input.kind : "promo";
   const layout: PromotionLayout = VALID_LAYOUT.has(input.layout)
     ? input.layout
@@ -75,7 +74,7 @@ function sanitize(input: PromotionInput) {
   const tier = VALID_TIER.has(input.audienceTier) ? input.audienceTier : "";
   const productId = input.productId.trim();
   // Only persist a product link when it maps to a real catalog SKU.
-  const linkedProduct = productId && CATALOG_IDS.has(productId) ? productId : null;
+  const linkedProduct = productId && catalogIds.has(productId) ? productId : null;
   const bg = input.bgColor.trim();
   const bgColor = HEX_COLOR.test(bg) ? bg : null;
 
@@ -103,7 +102,8 @@ function sanitize(input: PromotionInput) {
 
 export async function createPromotion(input: PromotionInput) {
   await requireAdmin({ minRole: ADMIN_ROLE });
-  const values = sanitize(input);
+  const catalogIds = await getActiveCatalogIds();
+  const values = sanitize(input, catalogIds);
   await db.insert(promotions).values(values);
   revalidateMerchandising();
 }
@@ -111,7 +111,8 @@ export async function createPromotion(input: PromotionInput) {
 export async function updatePromotion(id: number, input: PromotionInput) {
   await requireAdmin({ minRole: ADMIN_ROLE });
   assertId(id);
-  const values = sanitize(input);
+  const catalogIds = await getActiveCatalogIds();
+  const values = sanitize(input, catalogIds);
   await db
     .update(promotions)
     .set({ ...values, updatedAt: new Date() })
@@ -146,7 +147,8 @@ export async function addFeatured(
 ) {
   await requireAdmin({ minRole: ADMIN_ROLE });
   const pid = productId.trim();
-  if (!pid || !CATALOG_IDS.has(pid)) throw new Error("unknown product");
+  const catalogIds = await getActiveCatalogIds();
+  if (!pid || !catalogIds.has(pid)) throw new Error("unknown product");
   const cleanLabel = label.trim().slice(0, 40) || null;
   const order = Number.isFinite(sortOrder) ? Math.trunc(sortOrder) : 0;
 

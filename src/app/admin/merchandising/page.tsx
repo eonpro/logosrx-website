@@ -2,10 +2,11 @@ export const dynamic = "force-dynamic";
 
 import { requireAdmin } from "@/lib/auth/admin";
 import { listAllPromotions, listAllFeatured } from "@/lib/portal/merchandising";
-import { catalogProducts } from "@/data/catalog";
+import { getCatalogProducts } from "@/lib/catalog/store";
+import type { CatalogProduct } from "@/data/catalog";
 
 /** Therapeutic areas across the catalog — the storefront's filter categories. */
-function catalogCategories(): string[] {
+function catalogCategories(catalogProducts: CatalogProduct[]): string[] {
   const set = new Set<string>();
   for (const p of catalogProducts) {
     for (const a of p.therapeuticAreas ?? []) set.add(a);
@@ -24,9 +25,10 @@ function toDateInput(d: Date | null): string {
 export default async function MerchandisingPage() {
   await requireAdmin();
 
-  const [promos, featured] = await Promise.all([
+  const [promos, featured, catalogProducts] = await Promise.all([
     listAllPromotions(),
     listAllFeatured(),
+    getCatalogProducts(),
   ]);
 
   const promotions: PromotionVM[] = promos.map((p) => ({
@@ -67,7 +69,7 @@ export default async function MerchandisingPage() {
       promotions={promotions}
       featured={featuredVM}
       productOptions={productOptions}
-      categoryOptions={catalogCategories()}
+      categoryOptions={catalogCategories(catalogProducts)}
     />
   );
 }

@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { getPartnerContext } from "@/lib/auth/partner";
 import { getOrgFloorMap } from "@/lib/partners/pricing";
-import { catalogProducts } from "@/data/catalog";
+import { getCatalogProducts } from "@/lib/catalog/store";
 import PartnerNoAccess from "../../PartnerNoAccess";
 import PartnerQuoteBuilder, { type FloorOption } from "../PartnerQuoteBuilder";
 
@@ -25,6 +25,7 @@ export default async function NewPartnerQuotePage() {
   }
 
   const floorMap = await getOrgFloorMap(ctx.org.id);
+  const catalogProducts = await getCatalogProducts();
   const strengthById = new Map(
     catalogProducts.map((p) => [p.id, p.strength ?? null]),
   );
