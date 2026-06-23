@@ -7,6 +7,7 @@ import { getQuoteWithItemsById, isQuoteExpired } from "@/lib/quotes/data";
 import { SITE_URL } from "@/lib/constants";
 import { formatCents } from "@/lib/portal/pricing";
 import QuoteDetailActions from "./QuoteDetailActions";
+import RecipientEditor from "./RecipientEditor";
 
 function fmtDateTime(d: Date | null): string {
   return d
@@ -64,6 +65,36 @@ export default async function QuoteDetailPage({ params }: PageProps) {
         </div>
         <p className="mt-1 text-sm text-navy/60">{quote.email}</p>
       </div>
+
+      <section className="mb-5 rounded-2xl border border-beige-dark bg-white p-6">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-navy/55">
+          Recipient
+        </h2>
+        <dl className="mb-4 space-y-1.5 text-sm">
+          <div className="flex justify-between gap-3">
+            <dt className="text-navy/55">Clinic</dt>
+            <dd className="text-right font-medium text-navy">
+              {quote.clinicName?.trim() || "—"}
+            </dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt className="text-navy/55">Contact</dt>
+            <dd className="text-right font-medium text-navy">
+              {quote.contactName?.trim() || "—"}
+            </dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt className="text-navy/55">Email</dt>
+            <dd className="text-right font-medium text-navy">{quote.email}</dd>
+          </div>
+        </dl>
+        <RecipientEditor
+          id={quote.id}
+          clinicName={quote.clinicName}
+          contactName={quote.contactName}
+          email={quote.email}
+        />
+      </section>
 
       <section className="rounded-2xl border border-beige-dark bg-white p-6">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-navy/55">
