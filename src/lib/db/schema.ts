@@ -488,6 +488,60 @@ export const clinicPricing = pgTable(
   ],
 );
 
+/**
+ * The product catalog: every SKU plus its three-tier pricing. Originally a
+ * static array (`catalogProducts`) in `src/data/catalog.ts`; moved to the DB so
+ * a super admin can edit prices and the SKU roster live via `/admin/catalog`
+ * with no redeploy. The taxonomy const arrays, `CATALOG_CONFIG`, the
+ * `CatalogProduct` type, and all pure helpers still live in `src/data/catalog.ts`
+ * (that file's array is the one-time seed).
+ *
+ *   - `id` is the SKU slug (lowercase kebab-case) and is IMMUTABLE after
+ *     creation: `clinic_pricing.productId` and `featured_products.productId`
+ *     reference it by value, so renaming would orphan those rows. Renaming edits
+ *     the display `name` only.
+ *   - `pricing` is jsonb mirroring `CatalogPricing` in dollars. A tier may be a
+ *     number, `null` ("Not Available"), or absent (`undefined`, hidden "—").
+ *     jsonb preserves that present/null/absent distinction exactly.
+ *   - `productFamily` / `therapeuticAreas` are jsonb string arrays.
+ *   - Deletion defaults to soft-delete (`active=false`); a hard delete is only
+ *     allowed when no `clinic_pricing` / `featured_products` rows reference it.
+ */
+export const catalogProducts = pgTable(
+  "catalog_products",
+  {
+    id: varchar("id", { length: 120 }).primaryKey(),
+    name: varchar("name", { length: 200 }).notNull(),
+    strength: varchar("strength", { length: 120 }),
+    form: varchar("form", { length: 60 }).notNull(),
+    unit: varchar("unit", { length: 60 }),
+    pricing: jsonb("pricing")
+      .$type<{
+        retail?: number | null;
+        provider?: number | null;
+        volume?: number | null;
+      }>()
+      .notNull()
+      .default({}),
+    productFamily: jsonb("product_family")
+      .$type<string[]>()
+      .notNull()
+      .default([]),
+    brand: varchar("brand", { length: 60 }),
+    therapeuticAreas: jsonb("therapeutic_areas")
+      .$type<string[]>()
+      .notNull()
+      .default([]),
+    details: text("details"),
+    badge: varchar("badge", { length: 60 }),
+    sortOrder: integer("sort_order").default(0).notNull(),
+    active: boolean("active").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [index("catalog_products_active_sort_idx").on(t.active, t.sortOrder)],
+);
+
 /** Distinguishes a merchandising entry: a promotion vs. a news/announcement. */
 export const promotionKindEnum = pgEnum("promotion_kind", ["promo", "news"]);
 

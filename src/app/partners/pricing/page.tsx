@@ -7,7 +7,7 @@ import { clinicPricing } from "@/lib/db/schema";
 import { getPartnerContext } from "@/lib/auth/partner";
 import { getOrgFloorMap } from "@/lib/partners/pricing";
 import { listNetworkClinics } from "@/lib/partners/queries";
-import { catalogProducts } from "@/data/catalog";
+import { getCatalogProducts } from "@/lib/catalog/store";
 import PartnerNoAccess from "../PartnerNoAccess";
 import ClinicPricingManager from "./ClinicPricingManager";
 
@@ -49,6 +49,7 @@ export default async function PartnerPricingPage({
       : null;
 
   // Catalog strength lookup for display.
+  const catalogProducts = await getCatalogProducts();
   const strengthById = new Map(
     catalogProducts.map((p) => [p.id, p.strength ?? null]),
   );
