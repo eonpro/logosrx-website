@@ -206,6 +206,40 @@ export async function sendRepInviteEmail(args: {
   });
 }
 
+/** Invitation email sent when an org owner/admin adds a teammate. */
+export async function sendOrgMemberInviteEmail(args: {
+  to: string;
+  name: string;
+  orgName: string;
+  role: string;
+  activateUrl?: string;
+}): Promise<boolean> {
+  const base = SITE_URL;
+  const greetingName = args.name?.trim() || "there";
+  const org = args.orgName?.trim() || "your organization";
+  const ctaUrl = args.activateUrl ?? `${base}/partners/sign-in`;
+  const roleLabel = args.role === "admin" ? "an admin" : "a viewer";
+
+  const html = `
+  <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:560px;margin:0 auto;color:#262262">
+    <h1 style="font-size:20px;color:#262262">You've been added to the Logos RX partner portal</h1>
+    <p>Hi ${escapeHtml(greetingName)},</p>
+    <p><strong>${escapeHtml(org)}</strong> has added you as ${roleLabel} on their Logos RX partner account. Activate your account to access the partner portal.</p>
+    <p><a href="${ctaUrl}" style="display:inline-block;background:#E6007E;color:#fff;text-decoration:none;padding:12px 20px;border-radius:9999px;font-weight:600">Activate your account</a></p>
+    <p style="color:#262262;opacity:.7;font-size:13px">This activation link is valid for 7 days. If it expires, ask ${escapeHtml(org)} to re-send your invite, or use “Forgot password” on the <a href="${base}/partners/sign-in" style="color:#E6007E">sign-in page</a>.</p>
+    <p style="color:#262262;opacity:.7;font-size:13px">— The Logos RX Team</p>
+  </div>`;
+
+  const text = `You've been added to the Logos RX partner portal\n\nHi ${greetingName},\n\n${org} has added you as ${roleLabel} on their Logos RX partner account.\n\nActivate your account: ${ctaUrl}\n\n— The Logos RX Team`;
+
+  return sendEmail({
+    to: args.to,
+    subject: `${org} added you to their Logos RX partner account`,
+    html,
+    text,
+  });
+}
+
 /** Confirmation email sent when an admin records a commission payout. */
 export async function sendPayoutRecordedEmail(args: {
   to: string;

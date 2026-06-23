@@ -4,6 +4,7 @@ import {
   buildActivateUrl,
   clerkErrorMessage,
   deriveUsername,
+  markPrimaryEmailVerified,
   toE164,
 } from "@/lib/auth/clerk-users";
 
@@ -119,27 +120,59 @@ export async function createPartnerClerkUser(args: {
   email: string;
   name: string;
   phone?: string | null;
+  /**
+   * Optional admin/owner-chosen initial password. When provided, the account is
+   * created with it (and its email marked verified) so the partner can sign in
+   * immediately with handed-over credentials instead of an activation link.
+   * Omit to keep the throwaway-password + activation-link flow.
+   */
+  password?: string | null;
 }): Promise<string> {
   const client = await clerkClient();
   const email = args.email.trim().toLowerCase();
   const [firstName, ...rest] = args.name.trim().split(/\s+/);
   const lastName = rest.join(" ");
   const phoneNumber = toE164(args.phone);
+  const initialPassword = args.password?.trim() || null;
 
-  // Reuse an existing account if one already has this email.
+  // Reuse an existing account if one already has this email. When an initial
+  // password was supplied, apply it to that account too so the caller's intent
+  // (sign in with these credentials) holds regardless of who created it first.
   const existingId = await findClerkUserIdByEmail(client, email);
-  if (existingId) return existingId;
+  if (existingId) {
+    if (initialPassword) {
+      try {
+        await client.users.updateUser(existingId, { password: initialPassword });
+        await markPrimaryEmailVerified(client, existingId);
+      } catch (err) {
+        const info = clerkErrorInfo(err);
+        throw new PartnerProvisionError(
+          info.message
+            ? `Could not set the password: ${info.message}`
+            : clerkErrorMessage(err, "Could not set the password."),
+        );
+      }
+    }
+    return existingId;
+  }
 
   try {
     const user = await client.users.createUser({
       emailAddress: [email],
       username: deriveUsername(email, "partner"),
       phoneNumber: phoneNumber ? [phoneNumber] : undefined,
-      password: randomPassword(),
+      password: initialPassword || randomPassword(),
       firstName: firstName || undefined,
       lastName: lastName || undefined,
       skipLegalChecks: true,
     });
+    if (initialPassword) {
+      try {
+        await markPrimaryEmailVerified(client, user.id);
+      } catch {
+        console.error("[partners] verify-email after create failed (non-critical)");
+      }
+    }
     return user.id;
   } catch (err) {
     // The email now exists (a race with another approval) — link to it.

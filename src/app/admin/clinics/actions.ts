@@ -12,7 +12,12 @@ import {
 } from "@/lib/db/schema";
 import { ADMIN_ROLE, requireAdmin } from "@/lib/auth/admin";
 import { recordAdminAudit } from "@/lib/audit/log";
-import { buildActivateUrl } from "@/lib/auth/clerk-users";
+import {
+  buildActivateUrl,
+  clerkErrorMessage,
+  setClerkUserPassword,
+  validatePasswordInput,
+} from "@/lib/auth/clerk-users";
 import { decrypt } from "@/lib/onboarding/encryption";
 import { sendClinicApprovedEmail } from "@/lib/notifications/email";
 import { notifyClinicApproved } from "@/lib/notifications/slack";
@@ -177,6 +182,41 @@ export async function resendClinicActivation(
     };
   }
 
+  return { ok: true };
+}
+
+/**
+ * Directly sets a clinic's sign-in password (no email round-trip) so an admin can
+ * hand the clinic working credentials — handy when the clinic was rep-onboarded
+ * and never set one, or forgot it. Full admins only; audited.
+ */
+export async function setClinicPassword(
+  id: number,
+  password: string,
+): Promise<ResendActivationResult> {
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(id);
+
+  const pwErr = validatePasswordInput(password ?? "");
+  if (pwErr) return { ok: false, error: pwErr };
+
+  const [clinic] = await db
+    .select({ id: clinics.id, clerkUserId: clinics.clerkUserId })
+    .from(clinics)
+    .where(eq(clinics.id, id))
+    .limit(1);
+  if (!clinic) return { ok: false, error: "Clinic not found." };
+  if (!clinic.clerkUserId) {
+    return { ok: false, error: "This clinic has no account yet." };
+  }
+
+  try {
+    await setClerkUserPassword(clinic.clerkUserId, password);
+  } catch (err) {
+    return { ok: false, error: clerkErrorMessage(err, "Could not set the password.") };
+  }
+
+  await recordAdminAudit(ctx, "clinic.set_password", { type: "clinic", id });
   return { ok: true };
 }
 

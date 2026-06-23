@@ -39,6 +39,16 @@ const navItems: SidebarNavItem[] = [
     ),
   },
   {
+    label: "Catalog",
+    href: "/admin/catalog",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <rect x="3" y="3" width="14" height="14" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M3 8h14M8 8v9" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
     label: "Quotes",
     href: "/admin/quotes",
     icon: (

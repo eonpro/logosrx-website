@@ -2,6 +2,7 @@
 
 import { Fragment, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import SetPasswordControl from "@/components/auth/SetPasswordControl";
 import {
   addClinicNote,
   addPriceItem,
@@ -9,6 +10,7 @@ import {
   resendClinicActivation,
   resetProductPrice,
   revealCard,
+  setClinicPassword,
   setClinicPricing,
   setClinicVerification,
   setProductPrice,
@@ -238,6 +240,17 @@ function ResendActivation({
           ? "Emails the clinic a fresh one-time link to set their password and sign in. Doesn't change verification status."
           : "Needs a contact email and an account on file to send an activation link."}
       </p>
+      {canActivate && (
+        <div className="mt-4 border-t border-beige pt-4">
+          <SetPasswordControl
+            action={(password) => setClinicPassword(clinicId, password)}
+          />
+          <p className="mt-2 text-xs text-navy/50">
+            Sets the clinic&rsquo;s sign-in password immediately (no email needed)
+            — useful if they were rep-onboarded and never set one.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

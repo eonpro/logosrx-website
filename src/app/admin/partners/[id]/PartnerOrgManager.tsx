@@ -2,12 +2,14 @@
 
 import { useState, useTransition } from "react";
 import { formatCents } from "@/lib/partners/commission";
+import SetPasswordControl from "@/components/auth/SetPasswordControl";
 import {
   approvePartnerCommission,
   approvePartnerOrg,
   recordPartnerPayout,
   resendPartnerActivation,
   setPartnerOrgCompensationModel,
+  setPartnerOrgPassword,
   setPartnerOrgRate,
   setPartnerOrgStatus,
 } from "../actions";
@@ -47,6 +49,7 @@ export default function PartnerOrgManager({
   const [method, setMethod] = useState("ach");
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
+  const [approvePw, setApprovePw] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [pending, startTransition] = useTransition();
@@ -73,19 +76,36 @@ export default function PartnerOrgManager({
     <div className="rounded-2xl border border-beige bg-white p-6">
       <div className="flex flex-wrap items-center gap-3">
         {org.status === "pending" && (
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() =>
-              run(
-                () => approvePartnerOrg(org.id),
-                "Org approved — activation email sent.",
-              )
-            }
-            className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-          >
-            Approve application
-          </button>
+          <div className="flex flex-wrap items-end gap-2">
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-medium text-navy/60">
+                Initial password (optional)
+              </span>
+              <input
+                type="text"
+                value={approvePw}
+                onChange={(e) => setApprovePw(e.target.value)}
+                autoComplete="off"
+                placeholder="Leave blank to email a link"
+                className={`${inputClass} w-60`}
+              />
+            </label>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() =>
+                run(
+                  () => approvePartnerOrg(org.id, approvePw || undefined),
+                  approvePw
+                    ? "Org approved — sign-in password set."
+                    : "Org approved — activation email sent.",
+                )
+              }
+              className="h-10 rounded-full bg-emerald-600 px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+            >
+              Approve application
+            </button>
+          </div>
         )}
         {org.status === "active" && (
           <button
@@ -163,6 +183,18 @@ export default function PartnerOrgManager({
           </button>
         </div>
       </div>
+
+      {org.hasAccount && (
+        <div className="mt-4 border-t border-beige pt-4">
+          <SetPasswordControl
+            action={(password) => setPartnerOrgPassword(org.id, password)}
+          />
+          <p className="mt-2 text-xs text-navy/55">
+            Sets the owner&rsquo;s sign-in password immediately (no email needed).
+            Use it to hand a partner working credentials or reset a forgotten one.
+          </p>
+        </div>
+      )}
 
       <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-beige pt-4">
         <span className="text-xs font-medium text-navy/60">

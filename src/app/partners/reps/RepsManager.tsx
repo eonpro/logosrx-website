@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { Fragment, useState, useTransition } from "react";
+import SetPasswordControl from "@/components/auth/SetPasswordControl";
 import {
   inviteRep,
   resendRepInvite,
+  setRepPassword,
   setRepRate,
   setRepStatus,
 } from "./actions";
@@ -32,6 +34,8 @@ export default function RepsManager({
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [rate, setRate] = useState("");
+  const [invitePw, setInvitePw] = useState("");
+  const [pwForId, setPwForId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [pending, startTransition] = useTransition();
@@ -49,7 +53,13 @@ export default function RepsManager({
       return;
     }
     startTransition(async () => {
-      const res = await inviteRep({ name, email, phone, ratePercent });
+      const res = await inviteRep({
+        name,
+        email,
+        phone,
+        ratePercent,
+        password: invitePw || undefined,
+      });
       if (!res.ok) {
         setError(res.error ?? "Could not invite the rep.");
         return;
@@ -58,7 +68,12 @@ export default function RepsManager({
       setEmail("");
       setPhone("");
       setRate("");
-      setNotice("Invite sent — the rep will receive an activation email.");
+      setInvitePw("");
+      setNotice(
+        invitePw
+          ? "Rep added — they can sign in with the password you set."
+          : "Invite sent — the rep will receive an activation email.",
+      );
     });
   }
 
@@ -156,6 +171,20 @@ export default function RepsManager({
               required
             />
           </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-navy/60">
+              Password (optional)
+            </span>
+            <input
+              className={`${inputClass} w-48`}
+              type="text"
+              value={invitePw}
+              onChange={(e) => setInvitePw(e.target.value)}
+              placeholder="Leave blank to email a link"
+              autoComplete="off"
+              maxLength={100}
+            />
+          </label>
           <button
             type="submit"
             disabled={pending}
@@ -199,8 +228,8 @@ export default function RepsManager({
             </thead>
             <tbody className="divide-y divide-beige text-navy">
               {reps.map((rep) => (
+                <Fragment key={rep.id}>
                 <tr
-                  key={rep.id}
                   className={rep.status === "suspended" ? "opacity-50" : ""}
                 >
                   <td className="px-5 py-3">
@@ -259,6 +288,16 @@ export default function RepsManager({
                     <button
                       type="button"
                       disabled={pending}
+                      onClick={() =>
+                        setPwForId((cur) => (cur === rep.id ? null : rep.id))
+                      }
+                      className="mr-3 text-navy/60 hover:text-magenta disabled:opacity-50"
+                    >
+                      {pwForId === rep.id ? "Cancel" : "Set password"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={pending}
                       onClick={() => toggleStatus(rep)}
                       className="text-navy/60 hover:text-magenta disabled:opacity-50"
                     >
@@ -266,6 +305,16 @@ export default function RepsManager({
                     </button>
                   </td>
                 </tr>
+                {pwForId === rep.id && (
+                  <tr>
+                    <td colSpan={5} className="bg-cream/40 px-5 py-4">
+                      <SetPasswordControl
+                        action={(password) => setRepPassword(rep.id, password)}
+                      />
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               ))}
             </tbody>
           </table>

@@ -4,7 +4,7 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { and, eq, isNull } from "drizzle-orm";
 import { clerkErrorMessage } from "@/lib/auth/clerk-users";
 import { db } from "@/lib/db";
-import { partnerReps } from "@/lib/db/schema";
+import { partnerOrgMembers, partnerReps } from "@/lib/db/schema";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -78,6 +78,21 @@ export async function activateSetPassword(
       );
   } catch {
     console.error("[activate] rep activation stamp failed (non-critical)");
+  }
+
+  // Likewise stamp an invited org member's first activation.
+  try {
+    await db
+      .update(partnerOrgMembers)
+      .set({ activatedAt: new Date(), updatedAt: new Date() })
+      .where(
+        and(
+          eq(partnerOrgMembers.clerkUserId, userId),
+          isNull(partnerOrgMembers.activatedAt),
+        ),
+      );
+  } catch {
+    console.error("[activate] member activation stamp failed (non-critical)");
   }
 
   return { ok: true };

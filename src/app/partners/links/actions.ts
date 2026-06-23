@@ -21,7 +21,7 @@ export async function createReferralLink(input: {
   label: string;
   repId: number | null;
 }): Promise<LinkActionResult> {
-  const ctx = await requirePartner();
+  const ctx = await requirePartner({ minRole: "admin" });
 
   const label = input.label.trim().slice(0, 120);
 
@@ -73,7 +73,7 @@ export async function setReferralLinkActive(
   linkId: number,
   active: boolean,
 ): Promise<LinkActionResult> {
-  const ctx = await requirePartner();
+  const ctx = await requirePartner({ minRole: "admin" });
 
   const scope =
     ctx.kind === "rep"

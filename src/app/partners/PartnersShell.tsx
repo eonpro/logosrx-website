@@ -2,7 +2,8 @@
 
 import { usePathname } from "next/navigation";
 import { UserButton, Show } from "@clerk/nextjs";
-import type { PartnerKind } from "@/lib/auth/partner";
+import type { PartnerKind, PartnerRole } from "@/lib/auth/partner";
+import { roleAtLeast } from "@/lib/auth/partner-roles";
 import SidebarShell, { type SidebarNavItem } from "@/components/portal/SidebarShell";
 
 interface PartnerNavItem extends SidebarNavItem {
@@ -10,6 +11,8 @@ interface PartnerNavItem extends SidebarNavItem {
   only?: PartnerKind;
   /** Only show when the org is on the margin model. */
   marginOnly?: boolean;
+  /** Hide from org viewers (management-only nav). */
+  adminOnly?: boolean;
 }
 
 const navItems: PartnerNavItem[] = [
@@ -61,6 +64,7 @@ const navItems: PartnerNavItem[] = [
     label: "Reps",
     href: "/partners/reps",
     only: "org",
+    adminOnly: true,
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
         <circle cx="7" cy="7" r="3" />
@@ -72,11 +76,36 @@ const navItems: PartnerNavItem[] = [
     label: "Goals",
     href: "/partners/goals",
     only: "org",
+    adminOnly: true,
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
         <circle cx="10" cy="10" r="7" />
         <circle cx="10" cy="10" r="3" />
         <circle cx="10" cy="10" r="0.5" fill="currentColor" />
+      </svg>
+    ),
+  },
+  {
+    label: "Team",
+    href: "/partners/team",
+    only: "org",
+    adminOnly: true,
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <circle cx="6.5" cy="7" r="2.5" />
+        <circle cx="13.5" cy="7" r="2.5" />
+        <path d="M2 16c0-2.5 2-4.5 4.5-4.5S11 13.5 11 16M11 16c0-2.5 2-4.5 4.5-4.5S20 13.5 20 16" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    label: "API & Webhooks",
+    href: "/partners/api",
+    only: "org",
+    adminOnly: true,
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M7 5l-4 5 4 5M13 5l4 5-4 5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
   },
@@ -136,12 +165,14 @@ const navItems: PartnerNavItem[] = [
 export default function PartnersShell({
   children,
   kind,
+  role,
   orgName,
   repName,
   marginEnabled = false,
 }: {
   children: React.ReactNode;
   kind: PartnerKind | null;
+  role?: PartnerRole | null;
   orgName: string | null;
   repName: string | null;
   marginEnabled?: boolean;
@@ -159,7 +190,10 @@ export default function PartnersShell({
 
   const items = navItems.filter(
     (i) =>
-      (!i.only || i.only === kind) && (!i.marginOnly || marginEnabled),
+      (!i.only || i.only === kind) &&
+      (!i.marginOnly || marginEnabled) &&
+      // Management nav is hidden from org viewers (read-only members).
+      (!i.adminOnly || kind !== "org" || roleAtLeast(role, "admin")),
   );
 
   return (

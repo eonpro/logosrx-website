@@ -49,7 +49,7 @@ export async function setClinicProductPrice(input: {
   priceDollars: number;
   unit: string;
 }): Promise<PricingActionResult> {
-  const ctx = await requirePartner();
+  const ctx = await requirePartner({ minRole: "admin" });
   if (ctx.org.compensationModel !== "margin") {
     return {
       ok: false,
@@ -110,7 +110,7 @@ export async function resetClinicProductPrice(
   clinicId: number,
   productId: string,
 ): Promise<PricingActionResult> {
-  const ctx = await requirePartner();
+  const ctx = await requirePartner({ minRole: "admin" });
   if (!(await assertClinicInScope(clinicId, ctx))) {
     return { ok: false, error: "Clinic not found in your network." };
   }

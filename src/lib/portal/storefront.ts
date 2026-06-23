@@ -4,11 +4,11 @@ import { db } from "@/lib/db";
 import { clinics, clinicPricing } from "@/lib/db/schema";
 import { timed } from "@/lib/observability/timing";
 import {
-  catalogProducts,
   standardCatalogPrice,
   resolveDetailSlug,
   type CatalogProduct,
 } from "@/data/catalog";
+import { getCatalogProducts } from "@/lib/catalog/store";
 import { products } from "@/data/products";
 import { computeEffectivePriceCents } from "@/lib/portal/pricing";
 
@@ -82,6 +82,7 @@ export async function getClinicStorefrontFor(args: {
 }): Promise<ClinicStorefront> {
   const { clinicId, pricingTier, discountPct } = args;
   const detailSlugs = products.map((p) => p.slug);
+  const catalog = await getCatalogProducts();
 
   // Sparse per-SKU overrides keyed by catalog product id.
   const overrides = new Map<string, number>();
@@ -105,7 +106,7 @@ export async function getClinicStorefrontFor(args: {
     }
   }
 
-  const storefrontProducts: StorefrontProduct[] = catalogProducts.map((p) => {
+  const storefrontProducts: StorefrontProduct[] = catalog.map((p) => {
     const std = standardCents(p);
     const overrideCents = overrides.has(p.id)
       ? (overrides.get(p.id) as number)

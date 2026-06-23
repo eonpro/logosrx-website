@@ -109,20 +109,20 @@ export default function QuoteView({
                     className="border-b border-white/8 last:border-0"
                   >
                     <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/10 bg-white/5">
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/5">
                           {it.imageUrl ? (
                             <Image
                               src={it.imageUrl}
                               alt={it.imageAlt ?? it.name}
-                              width={48}
-                              height={48}
-                              className="h-full w-full object-contain p-1"
+                              width={64}
+                              height={64}
+                              className="h-full w-full object-contain p-1.5"
                             />
                           ) : (
                             <svg
-                              width="20"
-                              height="20"
+                              width="28"
+                              height="28"
                               viewBox="0 0 24 24"
                               fill="none"
                               stroke="currentColor"
