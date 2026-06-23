@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { Fragment, useState, useTransition } from "react";
+import SetPasswordControl from "@/components/auth/SetPasswordControl";
 import {
   inviteMember,
   removeMember,
   resendMemberInvite,
+  setMemberPassword,
   setMemberRole,
 } from "./actions";
 
@@ -30,6 +32,8 @@ export default function TeamManager({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("viewer");
+  const [invitePw, setInvitePw] = useState("");
+  const [pwForId, setPwForId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [pending, startTransition] = useTransition();
@@ -60,12 +64,21 @@ export default function TeamManager({
           onSubmit={(e) => {
             e.preventDefault();
             run(
-              () => inviteMember({ name, email, role }),
-              "Invite sent.",
+              () =>
+                inviteMember({
+                  name,
+                  email,
+                  role,
+                  password: invitePw || undefined,
+                }),
+              invitePw
+                ? "Teammate added — they can sign in with the password you set."
+                : "Invite sent.",
               () => {
                 setName("");
                 setEmail("");
                 setRole("viewer");
+                setInvitePw("");
               },
             );
           }}
@@ -101,6 +114,20 @@ export default function TeamManager({
               <option value="viewer">Viewer (read-only)</option>
               <option value="admin">Admin (manage)</option>
             </select>
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-navy/60">
+              Password (optional)
+            </span>
+            <input
+              className={`${inputClass} w-48`}
+              type="text"
+              value={invitePw}
+              onChange={(e) => setInvitePw(e.target.value)}
+              placeholder="Leave blank to email a link"
+              autoComplete="off"
+              maxLength={100}
+            />
           </label>
           <button
             type="submit"
@@ -149,7 +176,8 @@ export default function TeamManager({
               <td className="px-5 py-3 text-right text-xs text-navy/40">—</td>
             </tr>
             {members.map((m) => (
-              <tr key={m.id} className={m.status === "suspended" ? "opacity-50" : ""}>
+              <Fragment key={m.id}>
+              <tr className={m.status === "suspended" ? "opacity-50" : ""}>
                 <td className="px-5 py-3">
                   <span className="font-medium">{m.name}</span>
                   <span className="block text-xs text-navy/55">{m.email}</span>
@@ -194,6 +222,16 @@ export default function TeamManager({
                   <button
                     type="button"
                     disabled={pending}
+                    onClick={() =>
+                      setPwForId((cur) => (cur === m.id ? null : m.id))
+                    }
+                    className="mr-3 text-navy/60 hover:text-magenta disabled:opacity-50"
+                  >
+                    {pwForId === m.id ? "Cancel" : "Set password"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pending}
                     onClick={() => run(() => removeMember(m.id))}
                     className="text-navy/60 hover:text-red-600 disabled:opacity-50"
                   >
@@ -201,6 +239,16 @@ export default function TeamManager({
                   </button>
                 </td>
               </tr>
+              {pwForId === m.id && (
+                <tr>
+                  <td colSpan={4} className="bg-cream/40 px-5 py-4">
+                    <SetPasswordControl
+                      action={(password) => setMemberPassword(m.id, password)}
+                    />
+                  </td>
+                </tr>
+              )}
+              </Fragment>
             ))}
           </tbody>
         </table>

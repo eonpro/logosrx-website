@@ -8,6 +8,65 @@ import { SITE_URL } from "@/lib/constants";
  * Single source of truth — these were previously copy-pasted per flow.
  */
 
+/** Minimum password length enforced anywhere we set/accept a password. */
+export const MIN_PASSWORD_LENGTH = 8;
+const MAX_PASSWORD_LENGTH = 100;
+
+/**
+ * Validates an admin- or user-supplied password. Returns an error message, or
+ * `null` when acceptable. Length only — Clerk enforces breach/strength checks
+ * server-side and surfaces them via `clerkErrorMessage`.
+ */
+export function validatePasswordInput(password: string): string | null {
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
+  }
+  if (password.length > MAX_PASSWORD_LENGTH) {
+    return "Password is too long.";
+  }
+  return null;
+}
+
+/**
+ * Marks a user's primary email as verified so they aren't prompted to verify on
+ * first sign-in. Best-effort by convention at the call sites; throws here so the
+ * caller decides whether a failure is critical.
+ */
+export async function markPrimaryEmailVerified(
+  client: Awaited<ReturnType<typeof clerkClient>>,
+  userId: string,
+): Promise<void> {
+  const user = await client.users.getUser(userId);
+  if (user.primaryEmailAddressId) {
+    await client.emailAddresses.updateEmailAddress(user.primaryEmailAddressId, {
+      verified: true,
+    });
+  }
+}
+
+/**
+ * Sets a Clerk user's password directly (admin/owner-initiated). Used both when
+ * first creating an account and to reset it later, so a user can sign in with
+ * credentials handed to them — no activation link required. By default also
+ * marks their primary email verified (non-critical). Throws on failure so the
+ * caller can surface `clerkErrorMessage(err)`.
+ */
+export async function setClerkUserPassword(
+  clerkUserId: string,
+  password: string,
+  options: { verifyEmail?: boolean } = {},
+): Promise<void> {
+  const client = await clerkClient();
+  await client.users.updateUser(clerkUserId, { password });
+  if (options.verifyEmail !== false) {
+    try {
+      await markPrimaryEmailVerified(client, clerkUserId);
+    } catch {
+      console.error("[auth] verify-email after password set failed (non-critical)");
+    }
+  }
+}
+
 /**
  * Best-effort E.164 normalization for US-style phone numbers. Clerk requires
  * phone numbers in E.164 when the instance treats phone as a required field.

@@ -25,6 +25,11 @@ import {
   PartnerProvisionError,
 } from "@/lib/partners/provision";
 import {
+  clerkErrorMessage,
+  setClerkUserPassword,
+  validatePasswordInput,
+} from "@/lib/auth/clerk-users";
+import {
   createTransactionWithCommission,
   DuplicateReferenceError,
   TransactionError,
@@ -168,9 +173,21 @@ export async function resetOrgFloorPrice(
  */
 export async function approvePartnerOrg(
   orgId: number,
+  /**
+   * Optional initial password. When set, the owner's account is created with it
+   * (email marked verified) so they can sign in immediately with credentials you
+   * hand them. Omit to keep the activation-link flow.
+   */
+  password?: string,
 ): Promise<AdminPartnerResult> {
   const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
   assertId(orgId, "orgId");
+
+  const initialPassword = password?.trim() || undefined;
+  if (initialPassword) {
+    const pwErr = validatePasswordInput(initialPassword);
+    if (pwErr) return { ok: false, error: pwErr };
+  }
 
   const [org] = await db
     .select()
@@ -186,6 +203,7 @@ export async function approvePartnerOrg(
         email: org.contactEmail,
         name: org.contactName || org.name,
         phone: org.contactPhone,
+        password: initialPassword,
       });
     } catch (err) {
       return {
@@ -195,6 +213,13 @@ export async function approvePartnerOrg(
             ? err.message
             : "Could not create the partner's account.",
       };
+    }
+  } else if (initialPassword) {
+    // Account already existed (re-approval) — still honor the chosen password.
+    try {
+      await setClerkUserPassword(clerkUserId, initialPassword);
+    } catch (err) {
+      return { ok: false, error: clerkErrorMessage(err, "Could not set the password.") };
     }
   }
 
@@ -293,6 +318,45 @@ export async function resendPartnerActivation(
   if (!sent) {
     return { ok: false, error: "The activation email could not be sent. Check email configuration." };
   }
+  return { ok: true };
+}
+
+/**
+ * Directly sets the partner org owner's sign-in password (no email round-trip).
+ * Use it to hand a partner working credentials at creation time or to reset a
+ * forgotten one. Requires the org to have a provisioned account (approve first).
+ */
+export async function setPartnerOrgPassword(
+  orgId: number,
+  password: string,
+): Promise<AdminPartnerResult> {
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(orgId, "orgId");
+
+  const pwErr = validatePasswordInput(password ?? "");
+  if (pwErr) return { ok: false, error: pwErr };
+
+  const [org] = await db
+    .select()
+    .from(partnerOrgs)
+    .where(eq(partnerOrgs.id, orgId))
+    .limit(1);
+  if (!org) return { ok: false, error: "Org not found." };
+  if (!org.clerkUserId) {
+    return { ok: false, error: "This org has no account yet — approve it first." };
+  }
+
+  try {
+    await setClerkUserPassword(org.clerkUserId, password);
+  } catch (err) {
+    return { ok: false, error: clerkErrorMessage(err, "Could not set the password.") };
+  }
+
+  await recordAdminAudit(ctx, "partner_org.set_password", {
+    type: "partner_org",
+    id: orgId,
+  });
+
   return { ok: true };
 }
 

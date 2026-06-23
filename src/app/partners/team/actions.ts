@@ -12,6 +12,11 @@ import {
   createPartnerClerkUser,
   PartnerProvisionError,
 } from "@/lib/partners/provision";
+import {
+  clerkErrorMessage,
+  setClerkUserPassword,
+  validatePasswordInput,
+} from "@/lib/auth/clerk-users";
 import { sendOrgMemberInviteEmail } from "@/lib/notifications/email";
 import { recordPartnerAudit } from "@/lib/audit/log";
 import { runAfterResponse } from "@/lib/runtime/after";
@@ -32,6 +37,8 @@ export async function inviteMember(input: {
   name: string;
   email: string;
   role: string;
+  /** Optional initial password; lets the teammate sign in without an activation link. */
+  password?: string;
 }): Promise<TeamActionResult> {
   const ctx = await requirePartner({ orgOnly: true, minRole: "admin" });
 
@@ -45,6 +52,12 @@ export async function inviteMember(input: {
     return { ok: false, error: "Invalid role." };
   }
   const role = input.role as AssignableRole;
+
+  const initialPassword = input.password?.trim() || undefined;
+  if (initialPassword) {
+    const pwErr = validatePasswordInput(initialPassword);
+    if (pwErr) return { ok: false, error: pwErr };
+  }
 
   // Block collisions with the owner's own email or an existing member.
   if (ctx.org.contactEmail?.toLowerCase() === email) {
@@ -61,7 +74,7 @@ export async function inviteMember(input: {
 
   let clerkUserId: string;
   try {
-    clerkUserId = await createPartnerClerkUser({ email, name });
+    clerkUserId = await createPartnerClerkUser({ email, name, password: initialPassword });
   } catch (err) {
     return {
       ok: false,
@@ -211,5 +224,46 @@ export async function resendMemberInvite(
   if (!sent) {
     return { ok: false, error: "The invitation email could not be sent." };
   }
+  return { ok: true };
+}
+
+/**
+ * Directly sets a teammate's sign-in password (no email round-trip) so they can
+ * sign in with credentials handed to them. Scoped to the caller's org.
+ */
+export async function setMemberPassword(
+  memberId: number,
+  password: string,
+): Promise<TeamActionResult> {
+  const ctx = await requirePartner({ orgOnly: true, minRole: "admin" });
+
+  const pwErr = validatePasswordInput(password ?? "");
+  if (pwErr) return { ok: false, error: pwErr };
+
+  const [m] = await db
+    .select()
+    .from(partnerOrgMembers)
+    .where(
+      and(eq(partnerOrgMembers.id, memberId), eq(partnerOrgMembers.orgId, ctx.org.id)),
+    )
+    .limit(1);
+  if (!m) return { ok: false, error: "Teammate not found." };
+  if (!m.clerkUserId) {
+    return { ok: false, error: "This teammate has no account yet." };
+  }
+
+  try {
+    await setClerkUserPassword(m.clerkUserId, password);
+  } catch (err) {
+    return { ok: false, error: clerkErrorMessage(err, "Could not set the password.") };
+  }
+
+  await recordPartnerAudit(
+    ctx,
+    "partner.member_set_password",
+    { type: "partner_org", id: ctx.org.id },
+    { memberId },
+  );
+  revalidatePath("/partners/team");
   return { ok: true };
 }

@@ -15,6 +15,11 @@ import {
   createPartnerClerkUser,
   PartnerProvisionError,
 } from "@/lib/partners/provision";
+import {
+  clerkErrorMessage,
+  setClerkUserPassword,
+  validatePasswordInput,
+} from "@/lib/auth/clerk-users";
 import { sendRepInviteEmail } from "@/lib/notifications/email";
 import { runAfterResponse } from "@/lib/runtime/after";
 
@@ -35,6 +40,8 @@ export async function inviteRep(input: {
   email: string;
   phone: string;
   ratePercent: number;
+  /** Optional initial password; lets the rep sign in without an activation link. */
+  password?: string;
 }): Promise<RepActionResult> {
   const ctx = await requirePartner({ orgOnly: true, minRole: "admin" });
 
@@ -46,6 +53,12 @@ export async function inviteRep(input: {
   }
   if (!EMAIL_RE.test(email)) {
     return { ok: false, error: "Please enter a valid email address." };
+  }
+
+  const initialPassword = input.password?.trim() || undefined;
+  if (initialPassword) {
+    const pwErr = validatePasswordInput(initialPassword);
+    if (pwErr) return { ok: false, error: pwErr };
   }
 
   const rateBps = percentToBps(input.ratePercent);
@@ -67,7 +80,12 @@ export async function inviteRep(input: {
   //    one). Done first so a Clerk failure surfaces before any DB write.
   let clerkUserId: string;
   try {
-    clerkUserId = await createPartnerClerkUser({ email, name, phone });
+    clerkUserId = await createPartnerClerkUser({
+      email,
+      name,
+      phone,
+      password: initialPassword,
+    });
   } catch (err) {
     return {
       ok: false,
@@ -205,5 +223,38 @@ export async function resendRepInvite(
     };
   }
 
+  return { ok: true };
+}
+
+/**
+ * Org-owner action: directly sets a rep's sign-in password (no email round-trip)
+ * so they can sign in with credentials handed to them. Scoped to the caller's org.
+ */
+export async function setRepPassword(
+  repId: number,
+  password: string,
+): Promise<RepActionResult> {
+  const ctx = await requirePartner({ orgOnly: true, minRole: "admin" });
+
+  const pwErr = validatePasswordInput(password ?? "");
+  if (pwErr) return { ok: false, error: pwErr };
+
+  const [rep] = await db
+    .select()
+    .from(partnerReps)
+    .where(and(eq(partnerReps.id, repId), eq(partnerReps.orgId, ctx.org.id)))
+    .limit(1);
+  if (!rep) return { ok: false, error: "Rep not found." };
+  if (!rep.clerkUserId) {
+    return { ok: false, error: "This rep has no account yet." };
+  }
+
+  try {
+    await setClerkUserPassword(rep.clerkUserId, password);
+  } catch (err) {
+    return { ok: false, error: clerkErrorMessage(err, "Could not set the password.") };
+  }
+
+  revalidatePath("/partners/reps");
   return { ok: true };
 }

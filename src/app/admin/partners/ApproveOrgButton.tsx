@@ -12,11 +12,12 @@ export default function ApproveOrgButton({ orgId }: { orgId: number }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState("");
+  const [password, setPassword] = useState("");
 
   function approve() {
     setError("");
     startTransition(async () => {
-      const res = await approvePartnerOrg(orgId);
+      const res = await approvePartnerOrg(orgId, password || undefined);
       if (!res.ok) setError(res.error ?? "Could not approve.");
       else router.refresh();
     });
@@ -24,14 +25,24 @@ export default function ApproveOrgButton({ orgId }: { orgId: number }) {
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <button
-        type="button"
-        onClick={approve}
-        disabled={pending}
-        className="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-      >
-        {pending ? "Approving…" : "Approve"}
-      </button>
+      <div className="flex items-center gap-1.5">
+        <input
+          type="text"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          autoComplete="off"
+          placeholder="Optional password"
+          className="h-7 w-36 rounded-md border border-beige bg-cream/50 px-2 text-[11px] text-navy outline-none focus:border-magenta"
+        />
+        <button
+          type="button"
+          onClick={approve}
+          disabled={pending}
+          className="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+        >
+          {pending ? "Approving…" : "Approve"}
+        </button>
+      </div>
       {error && <span className="text-[11px] text-red-600">{error}</span>}
     </div>
   );
