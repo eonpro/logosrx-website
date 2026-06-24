@@ -80,12 +80,14 @@ const limiters = {
   form: makeLimiter("form", 5, 60), // 5 form submits / minute / key
   email: makeLimiter("email", 3, 60), // 3 newsletter signups / minute / key
   resume: makeLimiter("resume", 2, 60 * 5), // 2 resume uploads / 5 minutes / key
+  download: makeLimiter("download", 10, 60), // 10 token attempts / minute / key
 } as const;
 
 const memoryConfig = {
   form: { limit: 5, windowMs: 60_000 },
   email: { limit: 3, windowMs: 60_000 },
   resume: { limit: 2, windowMs: 5 * 60_000 },
+  download: { limit: 10, windowMs: 60_000 },
 } as const;
 
 export type LimiterKey = keyof typeof limiters;

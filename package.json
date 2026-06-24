@@ -23,6 +23,7 @@
     "db:setup": "tsx src/lib/db/setup.ts",
     "db:seed-partners": "tsx scripts/seed-partners.ts",
     "db:seed-catalog": "tsx scripts/seed-catalog.ts",
+    "catalog:upload": "tsx scripts/upload-catalog.ts",
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
     "e2e:install": "playwright install chromium"

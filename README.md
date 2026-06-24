@@ -91,3 +91,39 @@ Edit `src/data/products.ts` to add new compounds. Each product needs:
 - `activeIngredient` with name and description
 - `details` array (How to Use, Size, Concentration, Schedule, BUD)
 - Product image in `public/images/products/`
+
+## Private Catalog Download Link
+
+The 2026 catalog PDF (~34 MB) is **not** committed to the repo or linked from
+any public page. It lives in Vercel Blob and is downloadable only through an
+unlisted, token-gated route you share by hand:
+
+```
+https://www.logosrx.com/download/catalog?key=<CATALOG_DOWNLOAD_TOKEN>
+```
+
+The route streams the file through itself, so the underlying blob URL is never
+exposed, the browser gets a clean `Logos-RX-Catalog-2026.pdf` filename, and a
+wrong/absent key returns a generic 404. Rotating `CATALOG_DOWNLOAD_TOKEN`
+instantly revokes every link you've handed out.
+
+### One-time setup
+
+1. Ensure `BLOB_READ_WRITE_TOKEN` is in `.env.local` (Vercel → Storage → Blob,
+   or `vercel env pull .env.local`).
+2. Upload the PDF and print the env values:
+
+   ```bash
+   npm run catalog:upload -- "/path/to/Logos RX Catalog 2026.pdf"
+   ```
+
+3. Add the two printed values to your hosting env (and `.env.local` for local
+   testing):
+
+   | Var | Purpose |
+   |-----|---------|
+   | `CATALOG_PDF_URL` | Vercel Blob URL of the uploaded PDF (server-only). |
+   | `CATALOG_DOWNLOAD_TOKEN` | High-entropy secret required as `?key=`. Rotate to revoke. |
+
+To publish an updated catalog, re-run `npm run catalog:upload` and update
+`CATALOG_PDF_URL` (the existing token is reused).

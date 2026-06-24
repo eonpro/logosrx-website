@@ -92,6 +92,13 @@ const WARNINGS: EnvWarning[] = [
       "No Upstash/Vercel KV credentials set — rate limiting will use the " +
       "in-memory fallback (not shared across serverless instances).",
   },
+  {
+    anyOf: ["CATALOG_PDF_URL"],
+    message:
+      "CATALOG_PDF_URL / CATALOG_DOWNLOAD_TOKEN not set — the private " +
+      "/download/catalog link will 404. Run `npm run catalog:upload` to " +
+      "publish the PDF and print both values.",
+  },
 ];
 
 export interface EnvValidationResult {
