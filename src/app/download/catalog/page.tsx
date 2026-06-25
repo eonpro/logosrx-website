@@ -9,12 +9,27 @@ import {
 
 export const dynamic = "force-dynamic";
 
+const SHARE_TITLE = "Logos RX — 2026 Catalog";
+const SHARE_DESCRIPTION =
+  "The complete catalog of Logos RX compounded medications with provider pricing — GLP-1, hormone therapy, peptides, longevity & more.";
+
 export const metadata: Metadata = {
   title: "2026 Catalog",
-  description:
-    "Download the Logos RX 2026 catalog of compounded medications with provider pricing.",
-  // Private share link — never index or follow.
+  description: SHARE_DESCRIPTION,
+  // Private share link — never index or follow (link unfurling still works).
   robots: { index: false, follow: false },
+  // og:image / twitter:image are auto-wired from the segment's
+  // opengraph-image.tsx / twitter-image.tsx files.
+  openGraph: {
+    type: "website",
+    title: SHARE_TITLE,
+    description: SHARE_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SHARE_TITLE,
+    description: SHARE_DESCRIPTION,
+  },
 };
 
 /** High-level sections of the catalog, shown so recipients know what's inside. */
