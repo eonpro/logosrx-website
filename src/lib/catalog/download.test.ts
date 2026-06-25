@@ -1,5 +1,9 @@
-import { describe, expect, it } from "vitest";
-import { getCatalogDownloadConfig, verifyCatalogToken } from "./download";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  getCatalogDownloadConfig,
+  getFlipbookPages,
+  verifyCatalogToken,
+} from "./download";
 
 describe("verifyCatalogToken", () => {
   it("accepts the exact configured token", () => {
@@ -34,11 +38,13 @@ describe("getCatalogDownloadConfig", () => {
       CATALOG_DOWNLOAD_TOKEN: "  tok  ",
       CATALOG_PDF_URL: "  https://blob.example/x.pdf  ",
       CATALOG_COVER_URL: "  https://blob.example/cover.jpg  ",
+      CATALOG_FLIPBOOK_URL: "  https://blob.example/manifest.json  ",
     } as unknown as NodeJS.ProcessEnv);
     expect(cfg).toEqual({
       token: "tok",
       pdfUrl: "https://blob.example/x.pdf",
       coverUrl: "https://blob.example/cover.jpg",
+      flipbookUrl: "https://blob.example/manifest.json",
     });
   });
 
@@ -55,13 +61,67 @@ describe("getCatalogDownloadConfig", () => {
       token: null,
       pdfUrl: null,
       coverUrl: null,
+      flipbookUrl: null,
     });
     expect(
       getCatalogDownloadConfig({
         CATALOG_DOWNLOAD_TOKEN: "   ",
         CATALOG_PDF_URL: "",
         CATALOG_COVER_URL: "  ",
+        CATALOG_FLIPBOOK_URL: "   ",
       } as unknown as NodeJS.ProcessEnv),
-    ).toEqual({ token: null, pdfUrl: null, coverUrl: null });
+    ).toEqual({ token: null, pdfUrl: null, coverUrl: null, flipbookUrl: null });
+  });
+});
+
+describe("getFlipbookPages", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("returns null when no manifest URL is configured (without fetching)", async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+    expect(await getFlipbookPages(null)).toBeNull();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("returns the ordered page URLs from a valid manifest", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          version: 1,
+          pageCount: 2,
+          pages: ["https://b/p1.webp", "https://b/p2.webp"],
+        }),
+      })),
+    );
+    expect(await getFlipbookPages("https://b/manifest.json")).toEqual([
+      "https://b/p1.webp",
+      "https://b/p2.webp",
+    ]);
+  });
+
+  it("returns null on a non-ok response or malformed body", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false })));
+    expect(await getFlipbookPages("https://b/manifest.json")).toBeNull();
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: true, json: async () => ({ pages: [] }) })),
+    );
+    expect(await getFlipbookPages("https://b/manifest.json")).toBeNull();
+  });
+
+  it("returns null when fetch throws", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new Error("network");
+      }),
+    );
+    expect(await getFlipbookPages("https://b/manifest.json")).toBeNull();
   });
 });

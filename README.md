@@ -103,13 +103,20 @@ https://www.logosrx.com/download/catalog?key=<CATALOG_DOWNLOAD_TOKEN>
 ```
 
 Opening that link shows a branded **landing page** (`page.tsx`) with the catalog
-cover, a summary of what's inside, and a **Download PDF** button — it does not
-force the 34 MB download on arrival. The button points at the token-gated
-streaming route (`/download/catalog/file`), which streams the file through
-itself, so the underlying blob URL is never exposed, the browser gets a clean
-`Logos-RX-Catalog-2026.pdf` filename, and a wrong/absent key returns a generic
-404. Rotating `CATALOG_DOWNLOAD_TOKEN` instantly revokes every link you've
-handed out.
+cover, a summary of what's inside, and two buttons — **View online** and
+**Download PDF** — rather than force-downloading the 34 MB file on arrival.
+
+- **View online** opens a page-flip **flipbook** at `/download/catalog/view`
+  (`Flipbook.tsx`, built on the MIT `page-flip` library) — one full landscape
+  page at a time with a realistic page-curl. It reads the optimized WebP page
+  images from a `manifest.json` in Blob (`CATALOG_FLIPBOOK_URL`).
+- **Download PDF** points at the token-gated streaming route
+  (`/download/catalog/file`), which streams the file through itself, so the
+  underlying blob URL is never exposed and the browser gets a clean
+  `Logos-RX-Catalog-2026.pdf` filename.
+
+A wrong/absent key returns a generic 404 on every route. Rotating
+`CATALOG_DOWNLOAD_TOKEN` instantly revokes every link you've handed out.
 
 ### One-time setup
 
@@ -129,6 +136,19 @@ handed out.
    | `CATALOG_PDF_URL` | Vercel Blob URL of the uploaded PDF (server-only). |
    | `CATALOG_DOWNLOAD_TOKEN` | High-entropy secret required as `?key=`. Rotate to revoke. |
    | `CATALOG_COVER_URL` | _(optional)_ Cover image shown on the landing page. Falls back to a styled placeholder when unset. |
+   | `CATALOG_FLIPBOOK_URL` | _(optional)_ URL of the flipbook `manifest.json`. When set, a "View online" button appears. |
 
 To publish an updated catalog, re-run `npm run catalog:upload` and update
 `CATALOG_PDF_URL` (the existing token is reused).
+
+### Online flipbook
+
+Build the flipbook page images (optimizes the numbered catalog page JPGs to
+WebP, uploads them, and prints `CATALOG_FLIPBOOK_URL`):
+
+```bash
+npm run catalog:flipbook -- "/path/to/LOGOS RX CATALOG 2026"
+```
+
+Then set the printed `CATALOG_FLIPBOOK_URL` in your hosting env. Re-run and
+update the var whenever the catalog pages change.

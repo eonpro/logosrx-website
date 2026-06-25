@@ -24,6 +24,7 @@
     "db:seed-partners": "tsx scripts/seed-partners.ts",
     "db:seed-catalog": "tsx scripts/seed-catalog.ts",
     "catalog:upload": "tsx scripts/upload-catalog.ts",
+    "catalog:flipbook": "tsx scripts/build-flipbook.ts",
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
     "e2e:install": "playwright install chromium"
@@ -43,6 +44,7 @@
     "framer-motion": "^12.38.0",
     "lenis": "^1.3.21",
     "next": "16.2.9",
+    "page-flip": "^2.0.7",
     "pg": "^8.20.0",
     "react": "19.2.4",
     "react-dom": "19.2.4"
@@ -63,6 +65,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "happy-dom": "^20.9.0",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5",

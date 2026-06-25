@@ -56,7 +56,7 @@ interface PageProps {
  * the link's validity isn't distinguishable from a non-existent page.
  */
 export default async function CatalogDownloadPage({ searchParams }: PageProps) {
-  const { token, pdfUrl, coverUrl } = getCatalogDownloadConfig();
+  const { token, pdfUrl, coverUrl, flipbookUrl } = getCatalogDownloadConfig();
   const params = await searchParams;
   const key =
     typeof params.key === "string"
@@ -69,7 +69,10 @@ export default async function CatalogDownloadPage({ searchParams }: PageProps) {
     notFound();
   }
 
-  const fileHref = `/download/catalog/file?key=${encodeURIComponent(key as string)}`;
+  const safeKey = encodeURIComponent(key as string);
+  const fileHref = `/download/catalog/file?key=${safeKey}`;
+  const viewHref = `/download/catalog/view?key=${safeKey}`;
+  const hasFlipbook = Boolean(flipbookUrl);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-white via-white to-[#262262]/5 px-6 py-16">
@@ -136,22 +139,45 @@ export default async function CatalogDownloadPage({ searchParams }: PageProps) {
             </ul>
 
             <div className="mt-8">
-              <Link
-                href={fileHref}
-                prefetch={false}
-                className="inline-flex w-full items-center justify-center gap-3 rounded-full bg-magenta px-8 py-4 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-magenta-dark sm:w-auto"
-              >
-                <svg
-                  className="h-4 w-4"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  aria-hidden="true"
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                {hasFlipbook && (
+                  <Link
+                    href={viewHref}
+                    prefetch={false}
+                    className="inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-magenta px-7 py-4 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-magenta-dark sm:w-auto"
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path d="M10 4C5.5 4 2.2 7 1 10c1.2 3 4.5 6 9 6s7.8-3 9-6c-1.2-3-4.5-6-9-6Zm0 9.5A3.5 3.5 0 1 1 10 6.5a3.5 3.5 0 0 1 0 7Zm0-1.8a1.7 1.7 0 1 0 0-3.4 1.7 1.7 0 0 0 0 3.4Z" />
+                    </svg>
+                    View online
+                  </Link>
+                )}
+                <Link
+                  href={fileHref}
+                  prefetch={false}
+                  className={
+                    hasFlipbook
+                      ? "inline-flex w-full items-center justify-center gap-2.5 rounded-full border border-navy/20 px-7 py-4 text-sm font-semibold uppercase tracking-wide text-navy transition-colors hover:bg-navy/5 sm:w-auto"
+                      : "inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-magenta px-7 py-4 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-magenta-dark sm:w-auto"
+                  }
                 >
-                  <path d="M10 2a1 1 0 0 1 1 1v8.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.42l2.3 2.3V3a1 1 0 0 1 1-1Z" />
-                  <path d="M4 15a1 1 0 0 1 1 1v1h10v-1a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Z" />
-                </svg>
-                Download PDF
-              </Link>
+                  <svg
+                    className="h-4 w-4"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path d="M10 2a1 1 0 0 1 1 1v8.59l2.3-2.3a1 1 0 1 1 1.4 1.42l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.42l2.3 2.3V3a1 1 0 0 1 1-1Z" />
+                    <path d="M4 15a1 1 0 0 1 1 1v1h10v-1a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Z" />
+                  </svg>
+                  Download PDF
+                </Link>
+              </div>
               <p className="mt-3 text-xs text-navy/50">
                 PDF · approx. 33 MB · valid through December 31, 2026
               </p>
