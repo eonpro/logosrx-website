@@ -34,9 +34,9 @@ export const metadata: Metadata = {
 
 /** High-level sections of the catalog, shown so recipients know what's inside. */
 const HIGHLIGHTS = [
-  "GLP-1 weight management — Semaglutide & Tirzepatide",
+  "Weight management & GLP-1 therapy",
   "Hormone replacement therapy",
-  "Peptide therapy — Sermorelin, BPC-157, NAD+",
+  "Peptide therapy",
   "Longevity & wellness",
   "Men's & women's health",
   "Dermatology & hair restoration",
@@ -159,7 +159,7 @@ export default async function CatalogDownloadPage({ searchParams }: PageProps) {
 
             <p className="mt-6 border-t border-navy/10 pt-4 text-xs leading-relaxed text-navy/45">
               This is a private link intended for licensed healthcare providers.
-              Pricing is for providers only — please don&rsquo;t share publicly.
+              Pricing is for providers only.
             </p>
           </div>
         </div>
