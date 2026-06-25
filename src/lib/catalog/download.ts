@@ -23,6 +23,11 @@ export interface CatalogDownloadConfig {
   token: string | null;
   /** Vercel Blob (or any HTTP) URL of the catalog PDF, or `null` when unset. */
   pdfUrl: string | null;
+  /**
+   * Optional cover-image URL shown on the download landing page. Falls back to
+   * a styled placeholder when unset.
+   */
+  coverUrl: string | null;
 }
 
 /** Filename presented to the browser on download. */
@@ -34,9 +39,11 @@ export function getCatalogDownloadConfig(
 ): CatalogDownloadConfig {
   const token = env.CATALOG_DOWNLOAD_TOKEN?.trim();
   const pdfUrl = env.CATALOG_PDF_URL?.trim();
+  const coverUrl = env.CATALOG_COVER_URL?.trim();
   return {
     token: token && token.length > 0 ? token : null,
     pdfUrl: pdfUrl && pdfUrl.length > 0 ? pdfUrl : null,
+    coverUrl: coverUrl && coverUrl.length > 0 ? coverUrl : null,
   };
 }
 

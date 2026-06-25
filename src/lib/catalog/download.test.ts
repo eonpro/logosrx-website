@@ -29,24 +29,39 @@ describe("verifyCatalogToken", () => {
 });
 
 describe("getCatalogDownloadConfig", () => {
-  it("reads and trims both env vars", () => {
+  it("reads and trims the env vars", () => {
     const cfg = getCatalogDownloadConfig({
       CATALOG_DOWNLOAD_TOKEN: "  tok  ",
       CATALOG_PDF_URL: "  https://blob.example/x.pdf  ",
+      CATALOG_COVER_URL: "  https://blob.example/cover.jpg  ",
     } as unknown as NodeJS.ProcessEnv);
-    expect(cfg).toEqual({ token: "tok", pdfUrl: "https://blob.example/x.pdf" });
+    expect(cfg).toEqual({
+      token: "tok",
+      pdfUrl: "https://blob.example/x.pdf",
+      coverUrl: "https://blob.example/cover.jpg",
+    });
+  });
+
+  it("leaves the cover URL null when unset (page uses a placeholder)", () => {
+    const cfg = getCatalogDownloadConfig({
+      CATALOG_DOWNLOAD_TOKEN: "tok",
+      CATALOG_PDF_URL: "https://blob.example/x.pdf",
+    } as unknown as NodeJS.ProcessEnv);
+    expect(cfg.coverUrl).toBeNull();
   });
 
   it("returns null for unset or whitespace-only values", () => {
     expect(getCatalogDownloadConfig({} as NodeJS.ProcessEnv)).toEqual({
       token: null,
       pdfUrl: null,
+      coverUrl: null,
     });
     expect(
       getCatalogDownloadConfig({
         CATALOG_DOWNLOAD_TOKEN: "   ",
         CATALOG_PDF_URL: "",
+        CATALOG_COVER_URL: "  ",
       } as unknown as NodeJS.ProcessEnv),
-    ).toEqual({ token: null, pdfUrl: null });
+    ).toEqual({ token: null, pdfUrl: null, coverUrl: null });
   });
 });

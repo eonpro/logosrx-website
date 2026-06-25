@@ -10,13 +10,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Private catalog download.
+ * Private catalog file stream.
  *
- *   GET /download/catalog?key=<CATALOG_DOWNLOAD_TOKEN>
+ *   GET /download/catalog/file?key=<CATALOG_DOWNLOAD_TOKEN>
  *
- * An unlisted share link — not referenced anywhere on the public site. Anyone
- * with the secret `key` may download the 2026 catalog PDF; rotating
- * `CATALOG_DOWNLOAD_TOKEN` revokes every outstanding link.
+ * The actual PDF bytes behind the `/download/catalog` info page's "Download"
+ * button. Same token gate as the page; rotating `CATALOG_DOWNLOAD_TOKEN`
+ * revokes every outstanding link.
  *
  * The PDF lives in Vercel Blob (see `scripts/upload-catalog.ts`). We stream the
  * upstream body straight through so (a) the ~34 MB never buffers in function
@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
   try {
     upstream = await fetch(pdfUrl, { cache: "no-store" });
   } catch {
-    console.error("[download/catalog] failed to reach blob storage");
+    console.error("[download/catalog/file] failed to reach blob storage");
     return new NextResponse("Catalog is temporarily unavailable.", {
       status: 502,
     });
@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
 
   if (!upstream.ok || !upstream.body) {
     console.error(
-      `[download/catalog] upstream returned ${upstream.status} (no body)`,
+      `[download/catalog/file] upstream returned ${upstream.status} (no body)`,
     );
     return new NextResponse("Catalog is temporarily unavailable.", {
       status: 502,

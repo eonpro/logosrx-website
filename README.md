@@ -95,17 +95,21 @@ Edit `src/data/products.ts` to add new compounds. Each product needs:
 ## Private Catalog Download Link
 
 The 2026 catalog PDF (~34 MB) is **not** committed to the repo or linked from
-any public page. It lives in Vercel Blob and is downloadable only through an
-unlisted, token-gated route you share by hand:
+any public page. It lives in Vercel Blob and is reachable only through an
+unlisted, token-gated link you share by hand:
 
 ```
 https://www.logosrx.com/download/catalog?key=<CATALOG_DOWNLOAD_TOKEN>
 ```
 
-The route streams the file through itself, so the underlying blob URL is never
-exposed, the browser gets a clean `Logos-RX-Catalog-2026.pdf` filename, and a
-wrong/absent key returns a generic 404. Rotating `CATALOG_DOWNLOAD_TOKEN`
-instantly revokes every link you've handed out.
+Opening that link shows a branded **landing page** (`page.tsx`) with the catalog
+cover, a summary of what's inside, and a **Download PDF** button — it does not
+force the 34 MB download on arrival. The button points at the token-gated
+streaming route (`/download/catalog/file`), which streams the file through
+itself, so the underlying blob URL is never exposed, the browser gets a clean
+`Logos-RX-Catalog-2026.pdf` filename, and a wrong/absent key returns a generic
+404. Rotating `CATALOG_DOWNLOAD_TOKEN` instantly revokes every link you've
+handed out.
 
 ### One-time setup
 
@@ -124,6 +128,7 @@ instantly revokes every link you've handed out.
    |-----|---------|
    | `CATALOG_PDF_URL` | Vercel Blob URL of the uploaded PDF (server-only). |
    | `CATALOG_DOWNLOAD_TOKEN` | High-entropy secret required as `?key=`. Rotate to revoke. |
+   | `CATALOG_COVER_URL` | _(optional)_ Cover image shown on the landing page. Falls back to a styled placeholder when unset. |
 
 To publish an updated catalog, re-run `npm run catalog:upload` and update
 `CATALOG_PDF_URL` (the existing token is reused).
