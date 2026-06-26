@@ -17,12 +17,12 @@ import {
   emptyProvider,
   type OnboardingFormState,
 } from "@/lib/onboarding/steps";
-import { STATES_SERVED } from "@/lib/constants";
+import { US_STATE_CODES } from "@/lib/constants";
 import type { ClinicProvider } from "@/lib/db/schema";
 import type { VerificationStatus } from "@/lib/onboarding/data";
 import { updateClinicProfile } from "@/app/onboarding/actions";
 
-const STATE_OPTIONS = STATES_SERVED.map((s) => ({ value: s, label: s }));
+const STATE_OPTIONS = US_STATE_CODES.map((s) => ({ value: s, label: s }));
 
 function Section({
   title,

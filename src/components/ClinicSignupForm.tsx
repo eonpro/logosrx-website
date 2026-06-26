@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { STATES_SERVED } from "@/lib/constants";
+import { US_STATE_CODES } from "@/lib/constants";
 
 const inputClass =
   "w-full rounded-full border border-beige-dark bg-white px-5 py-3 text-sm text-navy placeholder:text-navy/65 focus:border-magenta focus:ring-1 focus:ring-magenta outline-none transition-colors";
@@ -205,7 +205,7 @@ export default function ClinicSignupForm() {
               className={selectClass}
             >
               <option value="" disabled>Select state</option>
-              {STATES_SERVED.map((st) => (
+              {US_STATE_CODES.map((st) => (
                 <option key={st} value={st}>
                   {st}
                 </option>

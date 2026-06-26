@@ -322,3 +322,19 @@ export const STATES_SERVED = [
   "NJ", "NM", "NV", "NY", "OH", "PA", "RI", "SD",
   "UT", "VT", "WA", "WI", "WY", "DC",
 ] as const;
+
+/**
+ * Every U.S. state (all 50) plus D.C., USPS codes, sorted alphabetically.
+ *
+ * Distinct from `STATES_SERVED` (the jurisdictions the pharmacy ships to): a
+ * provider or practice may be licensed/located in any state, so intake forms
+ * (provider license state, practice location) must offer the full list, not
+ * just the served subset.
+ */
+export const US_STATE_CODES = [
+  "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL",
+  "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME",
+  "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH",
+  "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI",
+  "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
+] as const;

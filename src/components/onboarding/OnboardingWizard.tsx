@@ -30,7 +30,7 @@ import {
   type OnboardingFormState,
   type StepId,
 } from "@/lib/onboarding/steps";
-import { STATES_SERVED } from "@/lib/constants";
+import { US_STATE_CODES } from "@/lib/constants";
 import type { ClinicProvider } from "@/lib/db/schema";
 import {
   completeOnboarding,
@@ -38,7 +38,7 @@ import {
   saveProgress,
 } from "@/app/onboarding/actions";
 
-const STATE_OPTIONS = STATES_SERVED.map((s) => ({ value: s, label: s }));
+const STATE_OPTIONS = US_STATE_CODES.map((s) => ({ value: s, label: s }));
 
 const MIN_PASSWORD_LENGTH = 8;
 
