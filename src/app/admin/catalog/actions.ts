@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
@@ -70,8 +70,13 @@ const BRAND_SET = new Set<string>(BRANDS);
 
 /** Invalidate every surface that renders catalog data. */
 function revalidateCatalog() {
-  // Next 16 requires the second arg; "max" = serve stale-while-revalidate.
-  revalidateTag(CATALOG_PRODUCTS_TAG, "max");
+  // `updateTag` (not `revalidateTag(tag, "max")`) gives read-your-own-writes:
+  // it expires the tag immediately so the next read of getCatalogProducts()
+  // — the public /catalog, clinic storefront, and the quote builder — fetches
+  // fresh prices. `revalidateTag(tag, "max")` is stale-while-revalidate, which
+  // served the OLD price after a save. Valid here because every caller is a
+  // Server Action.
+  updateTag(CATALOG_PRODUCTS_TAG);
   revalidatePath("/admin/catalog");
   revalidatePath("/catalog");
   revalidatePath("/dashboard");

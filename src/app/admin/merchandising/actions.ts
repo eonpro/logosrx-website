@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { promotions, featuredProducts } from "@/lib/db/schema";
@@ -14,10 +14,10 @@ import { getActiveCatalogIds } from "@/lib/catalog/store";
  * pages that embed them.
  */
 function revalidateMerchandising() {
-  // Next 16: the second arg is required. "max" marks the tag stale and serves
-  // stale-while-revalidate on the next visit. The path revalidations below keep
-  // the admin + dashboard surfaces consistent.
-  revalidateTag(MERCHANDISING_TAG, "max");
+  // `updateTag` expires the tag immediately (read-your-own-writes) so edits show
+  // up on the next visit, instead of `revalidateTag(tag, "max")` which serves
+  // stale-while-revalidate. Valid here because every caller is a Server Action.
+  updateTag(MERCHANDISING_TAG);
   revalidatePath("/admin/merchandising");
   revalidatePath("/dashboard");
 }

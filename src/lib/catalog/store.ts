@@ -10,7 +10,8 @@ import { rowToCatalogProduct, type CatalogProductRow } from "./mapping";
  * Server-only catalog reads. The product roster + three-tier pricing live in
  * the `catalog_products` table (seeded from the former static array). Reads are
  * tag-cached so the public `/catalog` page and clinic storefront stay fast;
- * admin mutations call `revalidateTag(CATALOG_PRODUCTS_TAG)` for freshness.
+ * admin mutations call `updateTag(CATALOG_PRODUCTS_TAG)` for immediate freshness
+ * (read-your-own-writes), so saved prices show up on the next read everywhere.
  */
 
 /** Cache tag for all catalog product reads. */

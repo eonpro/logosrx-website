@@ -9,7 +9,7 @@ export type PricingTier = "standard" | "preferred" | "vip";
 
 /**
  * Cache tag for storefront merchandising reads. Admin mutations call
- * `revalidateTag(MERCHANDISING_TAG)` so edits show up immediately; the short
+ * `updateTag(MERCHANDISING_TAG)` so edits show up immediately; the short
  * `revalidate` window below also lets time-boxed promotions (startsAt/endsAt)
  * roll over without an explicit invalidation.
  */
