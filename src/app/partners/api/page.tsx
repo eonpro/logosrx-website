@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { partnerApiKeys, partnerWebhooks } from "@/lib/db/schema";
 import { getPartnerContext } from "@/lib/auth/partner";
 import { roleAtLeast } from "@/lib/auth/partner-roles";
+import { listWebhookDeliveries } from "@/lib/partners/webhooks";
 import { SITE_URL } from "@/lib/constants";
 import PartnerNoAccess from "../PartnerNoAccess";
 import ApiKeysManager from "./ApiKeysManager";
@@ -16,7 +17,7 @@ export default async function PartnerApiPage() {
     return <PartnerNoAccess />;
   }
 
-  const [keys, webhooks] = await Promise.all([
+  const [keys, webhooks, deliveries] = await Promise.all([
     db
       .select({
         id: partnerApiKeys.id,
@@ -42,7 +43,49 @@ export default async function PartnerApiPage() {
       .from(partnerWebhooks)
       .where(eq(partnerWebhooks.orgId, ctx.org.id))
       .orderBy(desc(partnerWebhooks.createdAt)),
+    listWebhookDeliveries(ctx.org.id, { limit: 200 }),
   ]);
+
+  // Group the last few deliveries under each webhook for the history view.
+  const PER_HOOK = 8;
+  const deliveriesByWebhook = new Map<
+    number,
+    {
+      id: number;
+      event: string;
+      delivered: boolean;
+      attempts: number;
+      lastStatus: number | null;
+      lastError: string | null;
+      at: string;
+    }[]
+  >();
+  for (const d of deliveries) {
+    const list = deliveriesByWebhook.get(d.webhookId) ?? [];
+    if (list.length < PER_HOOK) {
+      list.push({
+        id: d.id,
+        event: d.event,
+        delivered: d.delivered,
+        attempts: d.attempts,
+        lastStatus: d.lastStatus,
+        lastError: d.lastError,
+        at: d.updatedAt.toLocaleString("en-US", {
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        }),
+      });
+      deliveriesByWebhook.set(d.webhookId, list);
+    }
+  }
+  const failedByWebhook = new Map<number, number>();
+  for (const d of deliveries) {
+    if (!d.delivered) {
+      failedByWebhook.set(d.webhookId, (failedByWebhook.get(d.webhookId) ?? 0) + 1);
+    }
+  }
 
   const apiBase = `${SITE_URL}/api/partner/v1`;
 
@@ -106,6 +149,8 @@ ${apiBase}/reps`}
                   minute: "2-digit",
                 })
               : null,
+            failedCount: failedByWebhook.get(w.id) ?? 0,
+            deliveries: deliveriesByWebhook.get(w.id) ?? [],
           }))}
         />
       </div>

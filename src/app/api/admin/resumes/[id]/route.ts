@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { employmentApplications } from "@/lib/db/schema";
 import { ForbiddenError, requireAdmin } from "@/lib/auth/admin";
 import { encodeContentDispositionFilename } from "@/lib/security/filename";
+import { log } from "@/lib/observability/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -67,7 +68,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
     if (err instanceof ForbiddenError) {
       return NextResponse.json({ error: "forbidden" }, { status: 403 });
     }
-    console.error("[api/admin/resumes/:id] download failed");
+    log.error("admin resume download failed", { error: err });
     return NextResponse.json({ error: "server error" }, { status: 500 });
   }
 }

@@ -187,6 +187,45 @@ export const partnerWebhooks = pgTable(
   (t) => [index("partner_webhooks_org_idx").on(t.orgId)],
 );
 
+/**
+ * Per-delivery log for outbound partner webhooks — also the dead-letter store.
+ *
+ * One row per (subscription, event) dispatch. `deliveryId` is the idempotency
+ * key sent to the receiver as `X-Logos-Delivery-Id`; it is stable across
+ * retries AND replays so consumers can dedupe. `payload` is stored so a failed
+ * delivery can be replayed without recomputing it. Undelivered rows
+ * (`delivered = false`, attempts exhausted) are the dead-letter queue an admin
+ * can inspect and replay.
+ */
+export const partnerWebhookDeliveries = pgTable(
+  "partner_webhook_deliveries",
+  {
+    id: serial("id").primaryKey(),
+    webhookId: integer("webhook_id")
+      .notNull()
+      .references(() => partnerWebhooks.id, { onDelete: "cascade" }),
+    orgId: integer("org_id")
+      .notNull()
+      .references(() => partnerOrgs.id, { onDelete: "cascade" }),
+    event: varchar("event", { length: 64 }).notNull(),
+    deliveryId: varchar("delivery_id", { length: 64 }).notNull(),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+    attempts: integer("attempts").default(0).notNull(),
+    delivered: boolean("delivered").default(false).notNull(),
+    lastStatus: integer("last_status"),
+    lastError: text("last_error"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("partner_webhook_deliveries_delivery_id_uniq").on(t.deliveryId),
+    index("partner_webhook_deliveries_webhook_idx").on(t.webhookId),
+    index("partner_webhook_deliveries_org_idx").on(t.orgId),
+    // Fast dead-letter scan: pull the undelivered rows for an org.
+    index("partner_webhook_deliveries_undelivered_idx").on(t.delivered, t.orgId),
+  ],
+);
+
 /** Where a partner transaction row originated. */
 export const transactionSourceEnum = pgEnum("transaction_source", [
   "manual",
@@ -1223,5 +1262,9 @@ export type PartnerApiKey = typeof partnerApiKeys.$inferSelect;
 export type NewPartnerApiKey = typeof partnerApiKeys.$inferInsert;
 export type PartnerWebhook = typeof partnerWebhooks.$inferSelect;
 export type NewPartnerWebhook = typeof partnerWebhooks.$inferInsert;
+export type PartnerWebhookDelivery =
+  typeof partnerWebhookDeliveries.$inferSelect;
+export type NewPartnerWebhookDelivery =
+  typeof partnerWebhookDeliveries.$inferInsert;
 export type PartnerAgreement = typeof partnerAgreements.$inferSelect;
 export type NewPartnerAgreement = typeof partnerAgreements.$inferInsert;

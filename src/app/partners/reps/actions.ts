@@ -5,6 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { clerkClient } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { partnerReps } from "@/lib/db/schema";
+import { log } from "@/lib/observability/logger";
 import { requirePartner } from "@/lib/auth/partner";
 import {
   percentToBps,
@@ -109,13 +110,17 @@ export async function inviteRep(input: {
       status: "active",
       commissionRateBps: rateBps,
     });
-  } catch {
-    console.error("[partners] rep insert failed; rolling back Clerk user");
+  } catch (err) {
+    log.error("partner rep insert failed; rolling back Clerk user", {
+      error: err,
+    });
     try {
       const client = await clerkClient();
       await client.users.deleteUser(clerkUserId);
-    } catch {
-      console.error("[partners] rollback deleteUser failed");
+    } catch (rollbackErr) {
+      log.error("partner rep rollback deleteUser failed", {
+        error: rollbackErr,
+      });
     }
     return { ok: false, error: "Could not save the rep. Please try again." };
   }

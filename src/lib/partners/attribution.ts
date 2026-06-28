@@ -10,6 +10,7 @@ import {
   type ReferralAttribution,
 } from "@/lib/partners/referral";
 import { dispatchPartnerEvent } from "@/lib/partners/webhooks";
+import { log } from "@/lib/observability/logger";
 import { runAfterResponse } from "@/lib/runtime/after";
 
 /**
@@ -36,8 +37,8 @@ export async function resolveReferralCode(
       .where(eq(referralLinks.code, code.toLowerCase()))
       .limit(1);
     return attributionFromLink(link);
-  } catch {
-    console.error("[partners] referral code lookup failed");
+  } catch (err) {
+    log.error("referral code lookup failed", { error: err });
     return null;
   }
 }
@@ -59,38 +60,50 @@ export async function stampClinicAttribution(
     const attribution = await resolveReferralCode(code);
     if (!attribution) return;
 
-    const stamped = await db
-      .update(clinics)
-      .set({
-        referralLinkId: attribution.referralLinkId,
-        partnerOrgId: attribution.partnerOrgId,
-        partnerRepId: attribution.partnerRepId,
-      })
-      .where(
-        and(
-          eq(clinics.clerkUserId, clerkUserId),
-          isNull(clinics.partnerOrgId),
-        ),
-      )
-      .returning({ id: clinics.id });
+    // Stamp the clinic and bump the link's signup counter in one transaction:
+    // the conditional update is the source of truth for "did we attribute?", so
+    // the counter must increment iff the stamp landed. Splitting them risks a
+    // stamped clinic with an un-incremented counter (or vice versa) if the
+    // second write fails.
+    const stamped = await db.transaction(async (tx) => {
+      const rows = await tx
+        .update(clinics)
+        .set({
+          referralLinkId: attribution.referralLinkId,
+          partnerOrgId: attribution.partnerOrgId,
+          partnerRepId: attribution.partnerRepId,
+        })
+        .where(
+          and(
+            eq(clinics.clerkUserId, clerkUserId),
+            isNull(clinics.partnerOrgId),
+          ),
+        )
+        .returning({ id: clinics.id });
 
-    if (stamped.length > 0) {
-      await db
+      if (rows.length === 0) return null;
+
+      await tx
         .update(referralLinks)
         .set({ signupCount: sql`${referralLinks.signupCount} + 1` })
         .where(eq(referralLinks.id, attribution.referralLinkId));
 
-      // Notify partner webhooks (best-effort, non-blocking).
+      return rows[0];
+    });
+
+    if (stamped) {
+      // Notify partner webhooks (best-effort, non-blocking). Fired only after
+      // the attribution transaction commits.
       runAfterResponse(
         dispatchPartnerEvent(attribution.partnerOrgId, "clinic.attributed", {
-          clinicId: stamped[0].id,
+          clinicId: stamped.id,
           referralLinkId: attribution.referralLinkId,
           repId: attribution.partnerRepId,
         }),
       );
     }
-  } catch {
+  } catch (err) {
     // Attribution is bonus data — never let it break account creation.
-    console.error("[partners] clinic attribution stamp failed");
+    log.error("clinic attribution stamp failed", { error: err });
   }
 }

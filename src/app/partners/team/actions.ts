@@ -5,6 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { clerkClient } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { partnerOrgMembers } from "@/lib/db/schema";
+import { log } from "@/lib/observability/logger";
 import { requirePartner } from "@/lib/auth/partner";
 import type { AssignableRole } from "@/lib/auth/partner-roles";
 import {
@@ -95,13 +96,17 @@ export async function inviteMember(input: {
       status: "active",
       invitedBy: ctx.userId,
     });
-  } catch {
-    console.error("[partners] member insert failed; rolling back Clerk user");
+  } catch (err) {
+    log.error("partner member insert failed; rolling back Clerk user", {
+      error: err,
+    });
     try {
       const client = await clerkClient();
       await client.users.deleteUser(clerkUserId);
-    } catch {
-      console.error("[partners] member rollback deleteUser failed");
+    } catch (rollbackErr) {
+      log.error("partner member rollback deleteUser failed", {
+        error: rollbackErr,
+      });
     }
     return { ok: false, error: "Could not add the teammate. Please try again." };
   }
@@ -177,8 +182,10 @@ export async function removeMember(
         try {
           const client = await clerkClient();
           await client.users.deleteUser(deleted.clerkUserId!);
-        } catch {
-          console.error("[partners] member Clerk delete failed (non-critical)");
+        } catch (err) {
+          log.warn("partner member Clerk delete failed (non-critical)", {
+            error: err instanceof Error ? err.message : "unknown",
+          });
         }
       })(),
     );

@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { partnerReps, referralLinks } from "@/lib/db/schema";
 import { requirePartner } from "@/lib/auth/partner";
 import { generateReferralCode } from "@/lib/partners/referral";
+import { log } from "@/lib/observability/logger";
 
 export interface LinkActionResult {
   ok: boolean;
@@ -60,7 +61,7 @@ export async function createReferralLink(input: {
       if (attempt === 2) break;
     }
   }
-  console.error("[partners] referral link insert failed");
+  log.error("referral link insert failed after retries");
   return { ok: false, error: "Could not create the link. Please try again." };
 }
 

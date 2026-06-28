@@ -26,11 +26,79 @@ interface EnvRule {
   validate?: (value: string) => string | null;
 }
 
+/**
+ * Never-required vars: only format-checked when present, so a typo'd URL or
+ * non-numeric tuning knob is caught at boot instead of failing mid-request.
+ */
+interface OptionalRule {
+  name: string;
+  validate: (value: string) => string | null;
+}
+
+/**
+ * Companion requirement: integrations configured by more than one var. When
+ * `trigger` is set, `requires` must be too — a half-configured integration (a
+ * URL with no token, a published catalog PDF with no gate token) is a bug in
+ * every environment, so this is always enforced.
+ */
+interface EnvCompanion {
+  trigger: string;
+  requires: string;
+  hint: string;
+}
+
 /** Variables that are only advisory — missing them degrades gracefully. */
 interface EnvWarning {
   /** At least one of these must be set, or we warn. */
   anyOf: string[];
   message: string;
+  /** Only warn in production (avoids dev/test noise for prod-only concerns). */
+  prodOnly?: boolean;
+}
+
+// --- Shared format validators ---
+
+function httpUrl(value: string): string | null {
+  try {
+    return /^https?:$/.test(new URL(value).protocol)
+      ? null
+      : "must be an http(s) URL";
+  } catch {
+    return "must be a valid URL";
+  }
+}
+
+function httpsUrl(value: string): string | null {
+  try {
+    return new URL(value).protocol === "https:" ? null : "must be an https URL";
+  } catch {
+    return "must be a valid URL";
+  }
+}
+
+function numeric(value: string): string | null {
+  return /^\d+$/.test(value) ? null : "must be a number";
+}
+
+function logLevel(value: string): string | null {
+  return ["debug", "info", "warn", "error"].includes(value.toLowerCase())
+    ? null
+    : "must be one of debug, info, warn, error";
+}
+
+function emailFrom(value: string): string | null {
+  // Accept a bare address or RFC-5322 "Display Name <addr@host>".
+  const match = value.match(/<([^>]+)>\s*$/);
+  const addr = (match ? match[1] : value).trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(addr)
+    ? null
+    : 'must be an email address or "Name <email>"';
+}
+
+function postgresUrl(value: string): string | null {
+  return /^postgres(?:ql)?:\/\//.test(value)
+    ? null
+    : "must be a postgres:// connection string";
 }
 
 function isProduction(): boolean {
@@ -82,6 +150,53 @@ const RULES: EnvRule[] = [
   },
 ];
 
+/** Format-only checks for optional configuration (validated iff present). */
+const OPTIONAL_RULES: OptionalRule[] = [
+  { name: "DATABASE_URL", validate: postgresUrl },
+  { name: "NEXT_PUBLIC_SITE_URL", validate: httpUrl },
+  { name: "KV_REST_API_URL", validate: httpsUrl },
+  { name: "UPSTASH_REDIS_REST_URL", validate: httpsUrl },
+  { name: "CATALOG_PDF_URL", validate: httpsUrl },
+  { name: "SENTRY_DSN", validate: httpsUrl },
+  { name: "NEXT_PUBLIC_SENTRY_DSN", validate: httpsUrl },
+  { name: "EMAIL_FROM", validate: emailFrom },
+  { name: "LOG_LEVEL", validate: logLevel },
+  { name: "SLOW_OP_MS", validate: numeric },
+];
+
+const COMPANIONS: EnvCompanion[] = [
+  {
+    trigger: "KV_REST_API_URL",
+    requires: "KV_REST_API_TOKEN",
+    hint: "Vercel KV needs both the URL and token.",
+  },
+  {
+    trigger: "UPSTASH_REDIS_REST_URL",
+    requires: "UPSTASH_REDIS_REST_TOKEN",
+    hint: "Upstash Redis needs both the URL and token.",
+  },
+  {
+    trigger: "CATALOG_PDF_URL",
+    requires: "CATALOG_DOWNLOAD_TOKEN",
+    hint: "A published catalog PDF must be gated by a download token.",
+  },
+  {
+    trigger: "CATALOG_DOWNLOAD_TOKEN",
+    requires: "CATALOG_PDF_URL",
+    hint: "A catalog download token is useless without the PDF URL.",
+  },
+  {
+    trigger: "SES_ACCESS_KEY_ID",
+    requires: "SES_SECRET_ACCESS_KEY",
+    hint: "SES needs both the access key id and secret.",
+  },
+  {
+    trigger: "SES_SECRET_ACCESS_KEY",
+    requires: "SES_ACCESS_KEY_ID",
+    hint: "SES needs both the access key id and secret.",
+  },
+];
+
 const WARNINGS: EnvWarning[] = [
   {
     anyOf: [
@@ -98,6 +213,27 @@ const WARNINGS: EnvWarning[] = [
       "CATALOG_PDF_URL / CATALOG_DOWNLOAD_TOKEN not set — the private " +
       "/download/catalog link will 404. Run `npm run catalog:upload` to " +
       "publish the PDF and print both values.",
+  },
+  {
+    anyOf: ["SENTRY_DSN", "NEXT_PUBLIC_SENTRY_DSN"],
+    prodOnly: true,
+    message:
+      "No Sentry DSN set in production — server and client errors won't be " +
+      "reported.",
+  },
+  {
+    anyOf: ["ADMIN_EMAILS", "ADMIN_VIEWER_EMAILS"],
+    prodOnly: true,
+    message:
+      "No ADMIN_EMAILS / ADMIN_VIEWER_EMAILS set — no one can access the " +
+      "/admin portal in production.",
+  },
+  {
+    anyOf: ["SES_ACCESS_KEY_ID"],
+    prodOnly: true,
+    message:
+      "SES credentials not set — transactional email (clinic approvals, " +
+      "partner invites) is disabled in production.",
   },
 ];
 
@@ -134,7 +270,26 @@ export function checkEnv(
     }
   }
 
+  for (const rule of OPTIONAL_RULES) {
+    const value = env[rule.name];
+    if (!value) continue;
+    const formatError = rule.validate(value);
+    if (formatError) {
+      errors.push(`Invalid ${rule.name}: ${formatError}.`);
+    }
+  }
+
+  for (const companion of COMPANIONS) {
+    if (env[companion.trigger] && !env[companion.requires]) {
+      errors.push(
+        `Missing ${companion.requires} — required when ${companion.trigger} ` +
+          `is set. ${companion.hint}`,
+      );
+    }
+  }
+
   for (const warn of WARNINGS) {
+    if (warn.prodOnly && !prod) continue;
     if (!warn.anyOf.some((name) => env[name])) {
       warnings.push(warn.message);
     }

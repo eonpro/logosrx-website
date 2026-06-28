@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
-import { put } from "@vercel/blob";
+import { put, del } from "@vercel/blob";
 import { db } from "@/lib/db";
 import { employmentApplications } from "@/lib/db/schema";
 import { sanitizeFilename } from "@/lib/security/filename";
@@ -12,12 +12,16 @@ import {
   rateLimit,
   rateLimitHeaders,
 } from "@/lib/security/rate-limit";
+import { log } from "@/lib/observability/logger";
+import {
+  employmentApplicationSchema,
+  parseForm,
+} from "@/lib/validation/forms";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
-const MAX_FIELD_LENGTH = 1024;
 const ALLOWED_TYPES = [
   "application/pdf",
   "application/msword",
@@ -26,15 +30,6 @@ const ALLOWED_TYPES = [
 
 function bad(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
-}
-
-function getField(formData: FormData, name: string): string | null {
-  const value = formData.get(name);
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  if (trimmed.length > MAX_FIELD_LENGTH) return null;
-  return trimmed;
 }
 
 export async function POST(req: NextRequest) {
@@ -59,28 +54,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true }, { status: 201 });
     }
 
-    const firstName = getField(formData, "firstName");
-    const lastName = getField(formData, "lastName");
-    const email = getField(formData, "email");
-    const phone = getField(formData, "phone");
-    const position = getField(formData, "position");
-    const referralSource = getField(formData, "referralSource");
-    const willingToRelocate = getField(formData, "willingToRelocate");
+    const parsed = parseForm(employmentApplicationSchema, {
+      firstName: formData.get("firstName"),
+      lastName: formData.get("lastName"),
+      email: formData.get("email"),
+      phone: formData.get("phone"),
+      position: formData.get("position"),
+      referralSource: formData.get("referralSource"),
+      willingToRelocate: formData.get("willingToRelocate"),
+    });
+    if (!parsed.ok) return bad(parsed.error);
+    const {
+      firstName,
+      lastName,
+      email,
+      phone,
+      position,
+      referralSource,
+      willingToRelocate,
+    } = parsed.data;
     const resume = formData.get("resume");
-
-    if (!firstName || !lastName || !email || !phone || !position) {
-      return bad(
-        "First name, last name, email, phone, and position are required.",
-      );
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return bad("Invalid email address.");
-    }
 
     let resumePathname: string | null = null;
     let resumeFilename: string | null = null;
     let resumeContentType: string | null = null;
+    // Tracked separately so we can delete the uploaded blob if the row insert
+    // below fails — otherwise a failed insert leaks an orphaned private blob.
+    let resumeBlobUrl: string | null = null;
 
     if (resume instanceof File && resume.size > 0) {
       if (!ALLOWED_TYPES.includes(resume.type)) {
@@ -119,28 +119,39 @@ export async function POST(req: NextRequest) {
       resumePathname = blob.pathname;
       resumeFilename = safeName;
       resumeContentType = verifiedType;
+      resumeBlobUrl = blob.url;
     }
 
-    const [inserted] = await db
-      .insert(employmentApplications)
-      .values({
+    let inserted: { id: number };
+    try {
+      [inserted] = await db
+        .insert(employmentApplications)
+        .values({
         firstName,
         lastName,
-        email: email.toLowerCase(),
+        email,
         phone,
-        position,
-        referralSource,
-        willingToRelocate,
-        resumePathname,
-        resumeFilename,
-        resumeContentType,
-      })
-      .returning({ id: employmentApplications.id });
+          position,
+          referralSource,
+          willingToRelocate,
+          resumePathname,
+          resumeFilename,
+          resumeContentType,
+        })
+        .returning({ id: employmentApplications.id });
+    } catch (err) {
+      // The blob upload already succeeded; without this compensating delete a
+      // failed insert would leave an unreferenced private blob behind forever.
+      if (resumeBlobUrl) {
+        await del(resumeBlobUrl).catch(() => {});
+      }
+      throw err;
+    }
 
     return NextResponse.json({ success: true, id: inserted.id }, { status: 201 });
-  } catch {
-    // PII-safe: never echo the user-submitted payload back into logs.
-    console.error("[api/applications] submit failed");
+  } catch (err) {
+    // PII-safe: log the error (not the user-submitted payload) and report it.
+    log.error("applications submit failed", { error: err });
     return bad("Something went wrong. Please try again.", 500);
   }
 }

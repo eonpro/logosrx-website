@@ -15,6 +15,16 @@ import {
 import { dispatchPartnerEvent } from "@/lib/partners/webhooks";
 import { runAfterResponse } from "@/lib/runtime/after";
 
+/** Postgres `unique_violation` SQLSTATE — a row hit a UNIQUE constraint/index. */
+function isUniqueViolation(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code?: unknown }).code === "23505"
+  );
+}
+
 export class TransactionError extends Error {
   constructor(message: string) {
     super(message);
@@ -59,7 +69,11 @@ export async function createTransactionWithCommission(
   }
 
   // Idempotency: a non-null external reference (e.g. a LifeFile order id) is
-  // unique, so re-importing the same file can't double-record a sale.
+  // unique, so re-importing the same file can't double-record a sale. This
+  // pre-check is only a fast path for the common case — the authoritative guard
+  // is the `partner_transactions_reference_uniq` index, enforced on insert
+  // below. (A bare pre-check is racy: two concurrent imports of the same file
+  // both pass it, so we must also handle the unique violation.)
   const reference = input.reference?.trim() || null;
   if (reference) {
     const [dup] = await db
@@ -136,36 +150,47 @@ export async function createTransactionWithCommission(
     });
   }
 
-  const transactionId = await db.transaction(async (tx) => {
-    const [created] = await tx
-      .insert(partnerTransactions)
-      .values({
-        clinicId: clinic.id,
-        transactionDate: input.date,
-        description: input.description,
-        reference,
-        revenueCents: input.revenueCents,
-        costCents,
-        source: input.source,
-        createdBy: input.createdBy,
-      })
-      .returning({ id: partnerTransactions.id });
+  let transactionId: number;
+  try {
+    transactionId = await db.transaction(async (tx) => {
+      const [created] = await tx
+        .insert(partnerTransactions)
+        .values({
+          clinicId: clinic.id,
+          transactionDate: input.date,
+          description: input.description,
+          reference,
+          revenueCents: input.revenueCents,
+          costCents,
+          source: input.source,
+          createdBy: input.createdBy,
+        })
+        .returning({ id: partnerTransactions.id });
 
-    if (split.length > 0) {
-      await tx.insert(commissionEntries).values(
-        split.map((entry) => ({
-          transactionId: created.id,
-          orgId: org.id,
-          repId: entry.payee === "rep" ? clinic.partnerRepId : null,
-          payee: entry.payee,
-          rateBps: entry.rateBps,
-          amountCents: entry.amountCents,
-        })),
-      );
+      if (split.length > 0) {
+        await tx.insert(commissionEntries).values(
+          split.map((entry) => ({
+            transactionId: created.id,
+            orgId: org.id,
+            repId: entry.payee === "rep" ? clinic.partnerRepId : null,
+            payee: entry.payee,
+            rateBps: entry.rateBps,
+            amountCents: entry.amountCents,
+          })),
+        );
+      }
+
+      return created.id;
+    });
+  } catch (err) {
+    // Lost the race with a concurrent import of the same reference: the unique
+    // index rejected the insert. Convert to the typed error so callers surface
+    // the friendly "already exists" message instead of a generic failure.
+    if (reference && isUniqueViolation(err)) {
+      throw new DuplicateReferenceError(reference);
     }
-
-    return created.id;
-  });
+    throw err;
+  }
 
   // Notify partner webhooks (best-effort, non-blocking).
   runAfterResponse(

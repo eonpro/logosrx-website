@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
+import { checkRateLimitStore } from "@/lib/security/rate-limit";
+import { checkBlobStore } from "@/lib/storage/blob-health";
 import { log } from "@/lib/observability/logger";
 import { ServerTiming } from "@/lib/observability/timing";
 
@@ -10,25 +12,27 @@ export const dynamic = "force-dynamic";
 /**
  * Readiness probe.
  *
- * Returns 200 only when every critical downstream the request path needs
- * is reachable:
+ * Reports the health of the downstreams the request path depends on. Checks are
+ * split by severity:
  *
- *   - Postgres: a 1 ms `SELECT 1` round-trip. Uses the existing pooled
- *     `db` client so we exercise the same IAM auth + SSL path the rest of
- *     the app uses.
+ *   - CRITICAL — needed by (nearly) every request. A failure flips the probe to
+ *     503 so the platform pulls the instance.
+ *       • Postgres: a `SELECT 1` round-trip via the shared IAM-auth pool.
  *
- * Future additions when introduced:
- *   - Upstash Redis  → `redis.ping()` against the rate-limit bucket.
- *   - Vercel Blob    → `head()` on a known small object.
- *   - Clerk          → `await clerkClient.organizations.getOrganizationList({ limit: 1 })`.
+ *   - NON-CRITICAL — used by specific routes and/or designed to fail open. A
+ *     failure is surfaced as `degraded` but keeps the probe at 200, so a Redis
+ *     or Blob blip doesn't take the whole site out of rotation.
+ *       • Upstash Redis (rate limiting; falls back to in-memory).
+ *       • Vercel Blob (uploads/downloads).
  *
- * Returns a structured payload so an alerting agent (or a human running
- * `curl`) can immediately see which dependency is sad. Always 503 on
- * partial failure — fail loud, fail fast.
+ * Returns a structured payload so an alerting agent (or a human running `curl`)
+ * can immediately see which dependency is sad.
  */
 interface CheckResult {
   ok: boolean;
   latencyMs: number;
+  critical: boolean;
+  configured?: boolean;
   error?: string;
 }
 
@@ -36,35 +40,76 @@ async function checkDb(): Promise<CheckResult> {
   const start = performance.now();
   try {
     await db.execute(sql`select 1 as up`);
-    return { ok: true, latencyMs: Math.round(performance.now() - start) };
+    return { ok: true, latencyMs: Math.round(performance.now() - start), critical: true };
   } catch (err) {
     return {
       ok: false,
       latencyMs: Math.round(performance.now() - start),
+      critical: true,
       error: err instanceof Error ? err.message : "unknown",
     };
   }
 }
 
+async function checkRedis(): Promise<CheckResult> {
+  const start = performance.now();
+  const res = await checkRateLimitStore();
+  return {
+    ok: res.ok,
+    latencyMs: Math.round(performance.now() - start),
+    critical: false,
+    configured: res.configured,
+    error: res.error,
+  };
+}
+
+async function checkBlob(): Promise<CheckResult> {
+  const start = performance.now();
+  const res = await checkBlobStore();
+  return {
+    ok: res.ok,
+    latencyMs: Math.round(performance.now() - start),
+    critical: false,
+    configured: res.configured,
+    error: res.error,
+  };
+}
+
 export async function GET() {
   const timing = new ServerTiming();
-  const dbCheck = await timing.measure("db", checkDb, "select 1");
 
-  const overall = dbCheck.ok;
+  // Run the probes concurrently — they hit independent backends.
+  const [dbCheck, redisCheck, blobCheck] = await Promise.all([
+    timing.measure("db", checkDb, "select 1"),
+    timing.measure("redis", checkRedis, "ping"),
+    timing.measure("blob", checkBlob, "list 1"),
+  ]);
+
+  const checks = { db: dbCheck, redis: redisCheck, blob: blobCheck };
+  const checkList = Object.values(checks);
+
+  // Readiness is governed by CRITICAL checks only; a non-critical failure is
+  // reported as degraded but never pulls the instance from rotation.
+  const ready = checkList.filter((c) => c.critical).every((c) => c.ok);
+  const degraded = checkList.some((c) => !c.ok);
+
   const body = {
-    status: overall ? "ready" : "not_ready",
+    status: ready ? (degraded ? "degraded" : "ready") : "not_ready",
+    degraded,
     ts: new Date().toISOString(),
-    checks: { db: dbCheck },
+    checks,
     release: process.env.VERCEL_GIT_COMMIT_SHA ?? "dev",
     region: process.env.VERCEL_REGION ?? "local",
   };
 
-  if (!overall) {
-    log.warn("readyz failed", { checks: body.checks });
+  if (!ready) {
+    log.error("readyz not ready", { checks });
+  } else if (degraded) {
+    log.warn("readyz degraded", { checks });
   }
 
   return NextResponse.json(body, {
-    status: overall ? 200 : 503,
+    status: ready ? 200 : 503,
     headers: {
       "Cache-Control": "no-store, max-age=0",
       "X-Robots-Tag": "noindex, nofollow",

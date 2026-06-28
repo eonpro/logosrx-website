@@ -7,6 +7,7 @@ import {
   markPrimaryEmailVerified,
   toE164,
 } from "@/lib/auth/clerk-users";
+import { log } from "@/lib/observability/logger";
 
 /**
  * Clerk account provisioning for partner orgs and reps.
@@ -169,8 +170,10 @@ export async function createPartnerClerkUser(args: {
     if (initialPassword) {
       try {
         await markPrimaryEmailVerified(client, user.id);
-      } catch {
-        console.error("[partners] verify-email after create failed (non-critical)");
+      } catch (err) {
+        log.warn("partner verify-email after create failed (non-critical)", {
+          error: err instanceof Error ? err.message : "unknown",
+        });
       }
     }
     return user.id;
@@ -180,7 +183,7 @@ export async function createPartnerClerkUser(args: {
     if (linked) return linked;
 
     const info = clerkErrorInfo(err);
-    console.error("[partners] createUser failed:", err);
+    log.error("partner createUser failed", { error: err });
     if (info.code === "form_identifier_exists" && info.param === "phone_number") {
       throw new PartnerProvisionError(
         "Another account is already using this phone number. Update the partner's phone number to a unique one and try again.",

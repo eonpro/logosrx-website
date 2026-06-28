@@ -9,6 +9,7 @@ import { partnerAgreements, partnerOrgs, partnerReps } from "@/lib/db/schema";
 import { getPartnerContext } from "@/lib/auth/partner";
 import { recordPartnerAudit } from "@/lib/audit/log";
 import { clientKeyFromHeaders } from "@/lib/security/rate-limit";
+import { log } from "@/lib/observability/logger";
 import { runAfterResponse } from "@/lib/runtime/after";
 import {
   MSA_TITLE,
@@ -179,12 +180,13 @@ export async function signPartnerMsa(
       }
     });
   } catch (err) {
-    console.error("[partners] signPartnerMsa failed");
     // Unique-constraint violation means a concurrent submit already recorded
-    // it — treat as success rather than surfacing a scary error.
+    // it — treat as success rather than surfacing a scary error (and don't
+    // report a benign race to Sentry).
     if (err instanceof Error && /unique|duplicate/i.test(err.message)) {
       return { ok: true };
     }
+    log.error("signPartnerMsa failed", { error: err });
     return { ok: false, error: "Could not record your signature. Please try again." };
   }
 

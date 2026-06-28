@@ -1,6 +1,7 @@
 import "server-only";
 import { SITE_URL } from "@/lib/constants";
 import { log } from "@/lib/observability/logger";
+import { fetchWithTimeout } from "@/lib/http/fetch";
 
 /**
  * Minimal Slack notifier built on an Incoming Webhook.
@@ -61,7 +62,7 @@ async function postToSlack(args: {
   }
 
   try {
-    const res = await fetch(WEBHOOK_URL, {
+    const res = await fetchWithTimeout(WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: args.header, blocks }),

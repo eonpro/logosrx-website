@@ -12,6 +12,7 @@ import {
 } from "@/lib/db/schema";
 import { ADMIN_ROLE, requireAdmin } from "@/lib/auth/admin";
 import { recordAdminAudit } from "@/lib/audit/log";
+import { fetchWithTimeout } from "@/lib/http/fetch";
 import {
   buildActivateUrl,
   clerkErrorMessage,
@@ -306,7 +307,7 @@ async function verifyAdminPassword(
   const key = process.env.CLERK_SECRET_KEY;
   if (!key) return false;
   try {
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `https://api.clerk.com/v1/users/${userId}/verify_password`,
       {
         method: "POST",

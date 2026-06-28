@@ -8,6 +8,7 @@ import {
   generateQuoteToken,
   hashQuotePassword,
 } from "@/lib/quotes/crypto";
+import { log } from "@/lib/observability/logger";
 
 export type PricingTier = "standard" | "preferred" | "vip";
 const VALID_TIER = new Set<PricingTier>(["standard", "preferred", "vip"]);
@@ -104,7 +105,7 @@ export async function createQuoteRecord(
   try {
     token = await uniqueToken();
   } catch (err) {
-    console.error("[quotes] token allocation failed:", err);
+    log.error("quote token allocation failed", { error: err });
     return { ok: false, error: "Could not create the quote. Please try again." };
   }
 
@@ -135,7 +136,7 @@ export async function createQuoteRecord(
       .returning({ id: pricingQuotes.id });
     quoteId = row.id;
   } catch (err) {
-    console.error("[quotes] quote insert failed:", err);
+    log.error("quote insert failed", { error: err });
     return { ok: false, error: "Could not create the quote. Please try again." };
   }
 
@@ -152,13 +153,13 @@ export async function createQuoteRecord(
         })),
       );
     } catch (err) {
-      console.error("[quotes] items insert failed; rolling back quote:", err);
+      log.error("quote items insert failed; rolling back quote", { error: err });
       // Compensate: a quote with no line items is invalid, so remove the orphan.
       await db
         .delete(pricingQuotes)
         .where(eq(pricingQuotes.id, quoteId))
         .catch((delErr) =>
-          console.error("[quotes] orphan cleanup failed:", delErr),
+          log.error("quote orphan cleanup failed", { error: delErr }),
         );
       return { ok: false, error: "Could not create the quote. Please try again." };
     }

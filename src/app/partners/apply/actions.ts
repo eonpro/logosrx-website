@@ -11,6 +11,8 @@ import {
   clientKeyFromHeaders,
   rateLimitKey,
 } from "@/lib/security/rate-limit";
+import { log } from "@/lib/observability/logger";
+import { parseForm, partnerApplicationSchema } from "@/lib/validation/forms";
 
 const PHONE_IN_USE =
   "Another account is already using this phone number. Please enter a different one.";
@@ -28,8 +30,6 @@ export interface PartnerApplicationResult {
   ok: boolean;
   error?: string;
 }
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * Public submission for the affiliate program. Creates a `pending` partner
@@ -51,30 +51,20 @@ export async function submitPartnerApplication(
         error: "Too many attempts. Please wait a minute and try again.",
       };
     }
-  } catch {
+  } catch (err) {
     // Fail open: a rate-limiter backend issue must never block applications.
-    console.error("[partners] rate-limit check failed; allowing request");
+    log.warn("partner apply rate-limit check failed; allowing request", {
+      error: err instanceof Error ? err.message : "unknown",
+    });
   }
 
-  const orgName = input.orgName.trim().slice(0, 200);
-  const contactName = input.contactName.trim().slice(0, 200);
-  const email = input.email.trim().toLowerCase().slice(0, 255);
-  const phone = input.phone.trim().slice(0, 30);
-  const website = input.website.trim().slice(0, 255);
-  const notes = input.notes.trim().slice(0, 4000);
-
-  if (!orgName || !contactName || !email || !phone) {
-    return {
-      ok: false,
-      error: "Organization name, contact name, email, and phone are required.",
-    };
-  }
-  if (!EMAIL_RE.test(email)) {
-    return { ok: false, error: "Please enter a valid email address." };
-  }
-  if (phone.replace(/\D/g, "").length < 7) {
-    return { ok: false, error: "Please enter a valid phone number." };
-  }
+  const parsed = parseForm(partnerApplicationSchema, input);
+  if (!parsed.ok) return { ok: false, error: parsed.error };
+  const { orgName, contactName, email, phone } = parsed.data;
+  // Optional fields normalize to null in the schema; keep local empty-string
+  // forms for the notify payload (which expects strings).
+  const website = parsed.data.website ?? "";
+  const notes = parsed.data.notes ?? "";
 
   // Phone numbers are unique account identifiers (enforced by the auth
   // provider). Reject a duplicate at submission so the applicant can fix it
@@ -119,7 +109,7 @@ export async function submitPartnerApplication(
       status: "pending",
     });
   } catch (err) {
-    console.error("[partners] application insert failed:", err);
+    log.error("partner application insert failed", { error: err });
     return {
       ok: false,
       error: "Could not submit your application. Please try again.",

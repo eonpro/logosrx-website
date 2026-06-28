@@ -4,6 +4,7 @@ import { put } from "@vercel/blob";
 import { ADMIN_ROLE, ForbiddenError, requireAdmin } from "@/lib/auth/admin";
 import { checkSameOrigin } from "@/lib/security/origin";
 import { detectImageMime, imageExtension } from "@/lib/security/image-type";
+import { log } from "@/lib/observability/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
     if (err instanceof ForbiddenError) {
       return NextResponse.json({ error: "forbidden" }, { status: 403 });
     }
-    console.error("[api/admin/merchandising/upload] failed");
+    log.error("admin merchandising upload failed", { error: err });
     return NextResponse.json({ error: "Upload failed." }, { status: 500 });
   }
 }

@@ -3,7 +3,7 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
-import { db } from "@/lib/db";
+import { db, type DbTransaction } from "@/lib/db";
 import { clinics, clinicPayments, clinicSignatures } from "@/lib/db/schema";
 import {
   clerkErrorMessage,
@@ -14,6 +14,7 @@ import { encrypt } from "@/lib/onboarding/encryption";
 import { stampClinicAttribution } from "@/lib/partners/attribution";
 import { applyClaimedQuote } from "@/lib/quotes/apply";
 import { notifyNewClinic } from "@/lib/notifications/slack";
+import { log } from "@/lib/observability/logger";
 import { runAfterResponse } from "@/lib/runtime/after";
 import {
   clientKeyFromHeaders,
@@ -103,13 +104,14 @@ function toClinicColumns(s: OnboardingFormState) {
 }
 
 async function upsertClinic(
+  tx: DbTransaction,
   clerkUserId: string,
   s: OnboardingFormState,
   extra: { onboardingStep?: number; onboardingCompleted?: boolean },
 ) {
   const columns = toClinicColumns(s);
   const now = new Date();
-  await db
+  await tx
     .insert(clinics)
     .values({
       clerkUserId,
@@ -128,14 +130,18 @@ async function upsertClinic(
  * the isolated `clinic_signatures` table. Kept out of `clinics` so the common
  * clinic read paths never pull these large values incidentally.
  */
-async function upsertSignatures(clerkUserId: string, s: OnboardingFormState) {
+async function upsertSignatures(
+  tx: DbTransaction,
+  clerkUserId: string,
+  s: OnboardingFormState,
+) {
   const cols = {
     shippingSignature: s.shippingSignature || null,
     providerAgreementSignature: s.providerAgreementSignature || null,
     paymentSignature: s.paymentSignature || null,
   };
   const now = new Date();
-  await db
+  await tx
     .insert(clinicSignatures)
     .values({ clerkUserId, ...cols, updatedAt: now })
     .onConflictDoUpdate({
@@ -149,7 +155,11 @@ async function upsertSignatures(clerkUserId: string, s: OnboardingFormState) {
  * values are AES-256-GCM encrypted. Skips writing when no card number was
  * entered (e.g. editing other fields later without re-entering the card).
  */
-async function upsertPayment(clerkUserId: string, s: OnboardingFormState) {
+async function upsertPayment(
+  tx: DbTransaction,
+  clerkUserId: string,
+  s: OnboardingFormState,
+) {
   const number = s.payment.cardNumber.replace(/\s/g, "");
   if (!number) return;
   const now = new Date();
@@ -165,7 +175,7 @@ async function upsertPayment(clerkUserId: string, s: OnboardingFormState) {
     billingZip: s.payment.billingZip.trim() || null,
     updatedAt: now,
   };
-  await db
+  await tx
     .insert(clinicPayments)
     .values(values)
     .onConflictDoUpdate({ target: clinicPayments.clerkUserId, set: values });
@@ -184,14 +194,16 @@ export async function saveProgress(
 
   try {
     const step = Math.max(0, Math.min(stepIndex, STEP_IDS.length - 1));
-    await upsertClinic(userId, state, { onboardingStep: step });
-    await Promise.all([
-      upsertPayment(userId, state),
-      upsertSignatures(userId, state),
-    ]);
+    // One transaction so the profile + payment + signatures commit together;
+    // a partial write would leave an inconsistent intake.
+    await db.transaction(async (tx) => {
+      await upsertClinic(tx, userId, state, { onboardingStep: step });
+      await upsertPayment(tx, userId, state);
+      await upsertSignatures(tx, userId, state);
+    });
     return { ok: true };
-  } catch {
-    console.error("[onboarding] saveProgress failed");
+  } catch (err) {
+    log.error("onboarding saveProgress failed", { error: err });
     return { ok: false, error: "Could not save your progress." };
   }
 }
@@ -212,14 +224,14 @@ export async function completeOnboarding(
   }
 
   try {
-    await upsertClinic(userId, state, {
-      onboardingStep: STEP_IDS.length - 1,
-      onboardingCompleted: true,
+    await db.transaction(async (tx) => {
+      await upsertClinic(tx, userId, state, {
+        onboardingStep: STEP_IDS.length - 1,
+        onboardingCompleted: true,
+      });
+      await upsertPayment(tx, userId, state);
+      await upsertSignatures(tx, userId, state);
     });
-    await Promise.all([
-      upsertPayment(userId, state),
-      upsertSignatures(userId, state),
-    ]);
     // Partner referral attribution (from the /join/<code> cookie, if any).
     // Best-effort by design; runs after the profile write so the row exists.
     await stampClinicAttribution(userId);
@@ -229,8 +241,8 @@ export async function completeOnboarding(
     // Admin Slack ping is non-critical: don't make the clinic wait on it.
     runAfterResponse(notifyNewClinic(toClinicNotification(state)));
     return { ok: true };
-  } catch {
-    console.error("[onboarding] completeOnboarding failed");
+  } catch (err) {
+    log.error("onboarding completeOnboarding failed", { error: err });
     return { ok: false, error: "Could not submit your application." };
   }
 }
@@ -270,9 +282,11 @@ export async function createAccountAndComplete(
         error: "Too many attempts. Please wait a minute and try again.",
       };
     }
-  } catch {
+  } catch (err) {
     // Fail open: never let a rate-limiter backend issue block account creation.
-    console.error("[onboarding] rate-limit check failed; allowing request");
+    log.warn("onboarding rate-limit check failed; allowing request", {
+      error: err instanceof Error ? err.message : "unknown",
+    });
   }
 
   for (const id of STEP_IDS) {
@@ -318,7 +332,7 @@ export async function createAccountAndComplete(
             (err as { errors?: unknown }).errors ?? err,
           )
         : String(err);
-    console.error("[onboarding] createUser failed:", detail);
+    log.error("onboarding createUser failed", { error: err, detail });
     return {
       ok: false,
       error: clerkErrorMessage(err, "Could not create your account."),
@@ -328,20 +342,24 @@ export async function createAccountAndComplete(
   // 2. Persist the profile. If this fails, roll back the orphaned Clerk user so
   //    the visitor can retry cleanly.
   try {
-    await upsertClinic(newUserId, state, {
-      onboardingStep: STEP_IDS.length - 1,
-      onboardingCompleted: true,
+    await db.transaction(async (tx) => {
+      await upsertClinic(tx, newUserId, state, {
+        onboardingStep: STEP_IDS.length - 1,
+        onboardingCompleted: true,
+      });
+      await upsertPayment(tx, newUserId, state);
+      await upsertSignatures(tx, newUserId, state);
     });
-    await Promise.all([
-      upsertPayment(newUserId, state),
-      upsertSignatures(newUserId, state),
-    ]);
-  } catch {
-    console.error("[onboarding] profile persist failed; rolling back user");
+  } catch (err) {
+    log.error("onboarding profile persist failed; rolling back user", {
+      error: err,
+    });
     try {
       await client.users.deleteUser(newUserId);
-    } catch {
-      console.error("[onboarding] rollback deleteUser failed");
+    } catch (rollbackErr) {
+      log.error("onboarding rollback deleteUser failed", {
+        error: rollbackErr,
+      });
     }
     return {
       ok: false,
@@ -365,9 +383,11 @@ export async function createAccountAndComplete(
       expiresInSeconds: 600,
     });
     return { ok: true, ticket: token.token };
-  } catch {
+  } catch (err) {
     // Account + profile exist; the client can fall back to /sign-in.
-    console.error("[onboarding] createSignInToken failed");
+    log.warn("onboarding createSignInToken failed", {
+      error: err instanceof Error ? err.message : "unknown",
+    });
     return { ok: true };
   }
 }
@@ -380,17 +400,17 @@ export async function updateClinicProfile(
   if (!userId) return { ok: false, error: "Not authenticated." };
 
   try {
-    await db
-      .update(clinics)
-      .set({ ...toClinicColumns(state), updatedAt: new Date() })
-      .where(eq(clinics.clerkUserId, userId));
-    await Promise.all([
-      upsertPayment(userId, state),
-      upsertSignatures(userId, state),
-    ]);
+    await db.transaction(async (tx) => {
+      await tx
+        .update(clinics)
+        .set({ ...toClinicColumns(state), updatedAt: new Date() })
+        .where(eq(clinics.clerkUserId, userId));
+      await upsertPayment(tx, userId, state);
+      await upsertSignatures(tx, userId, state);
+    });
     return { ok: true };
-  } catch {
-    console.error("[onboarding] updateClinicProfile failed");
+  } catch (err) {
+    log.error("onboarding updateClinicProfile failed", { error: err });
     return { ok: false, error: "Could not save your changes." };
   }
 }

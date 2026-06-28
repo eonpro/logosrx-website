@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { auditEvents } from "@/lib/db/schema";
 import { clientKeyFromHeaders } from "@/lib/security/rate-limit";
+import { log } from "@/lib/observability/logger";
 import type { AdminContext } from "@/lib/auth/admin";
 import type { PartnerContext } from "@/lib/auth/partner";
 
@@ -57,7 +58,7 @@ export async function recordAudit(input: AuditInput): Promise<void> {
       ip,
     });
   } catch (err) {
-    console.error(`[audit] failed to record "${input.action}":`, err);
+    log.error("audit record failed", { action: input.action, error: err });
   }
 }
 

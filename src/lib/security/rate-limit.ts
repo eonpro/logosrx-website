@@ -1,6 +1,8 @@
 import type { NextRequest } from "next/server";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
+import * as Sentry from "@sentry/nextjs";
+import { log } from "@/lib/observability/logger";
 
 /**
  * Rate limiting for public POST endpoints.
@@ -132,16 +134,60 @@ export async function rateLimitKey(
   const limiter = limiters[bucket];
 
   if (limiter) {
-    const result = await limiter.limit(key);
-    return {
-      success: result.success,
-      reset: result.reset,
-      remaining: result.remaining,
-    };
+    try {
+      const result = await limiter.limit(key);
+      return {
+        success: result.success,
+        reset: result.reset,
+        remaining: result.remaining,
+      };
+    } catch (err) {
+      // Fail OPEN: rate limiting is a guardrail, not a gate. An Upstash/Redis
+      // outage must never turn legitimate requests into 500s (previously the
+      // error propagated to API-route callers, which is exactly how a
+      // dependency blip cascaded into user-facing errors). Allow the request,
+      // but log + report so the degraded state is visible to ops.
+      log.warn("rate-limit limiter error; failing open", {
+        bucket,
+        error: err instanceof Error ? err.message : "unknown",
+      });
+      Sentry.captureException(err, {
+        tags: { surface: "rate-limit", bucket },
+        level: "warning",
+      });
+      return { success: true, reset: Date.now(), remaining: 1 };
+    }
   }
 
   const cfg = memoryConfig[bucket];
   return memoryLimit(`${bucket}:${key}`, cfg.limit, cfg.windowMs);
+}
+
+export interface DependencyCheck {
+  /** Whether the dependency is wired up in this environment. */
+  configured: boolean;
+  /** True when reachable (or not configured — nothing to be unhealthy about). */
+  ok: boolean;
+  error?: string;
+}
+
+/**
+ * Readiness probe for the rate-limit backing store. Returns `configured:false`
+ * (and `ok:true`) when Upstash isn't wired up — the app intentionally falls
+ * back to an in-memory limiter, so an unconfigured store is not a failure.
+ */
+export async function checkRateLimitStore(): Promise<DependencyCheck> {
+  if (!redis) return { configured: false, ok: true };
+  try {
+    await redis.ping();
+    return { configured: true, ok: true };
+  } catch (err) {
+    return {
+      configured: true,
+      ok: false,
+      error: err instanceof Error ? err.message : "unknown",
+    };
+  }
 }
 
 /** Derives a best-effort client identity from a `Headers`-like object. */

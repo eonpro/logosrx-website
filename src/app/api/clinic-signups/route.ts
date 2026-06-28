@@ -10,6 +10,8 @@ import {
   rateLimit,
   rateLimitHeaders,
 } from "@/lib/security/rate-limit";
+import { log } from "@/lib/observability/logger";
+import { clinicSignupSchema, parseForm } from "@/lib/validation/forms";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,14 +20,6 @@ const MAX_BODY_BYTES = 16 * 1024; // 16 KB — plenty for this form, blocks abus
 
 function bad(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
-}
-
-function clean(value: unknown, maxLength = 1024): string | null {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  if (trimmed.length > maxLength) return null;
-  return trimmed;
 }
 
 export async function POST(req: NextRequest) {
@@ -50,24 +44,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true }, { status: 201 });
     }
 
-    const clinicName = clean(body.clinicName, 200);
-    const contactName = clean(body.contactName, 200);
-    const email = clean(body.email, 255);
-    const phone = clean(body.phone, 30);
-    const npiNumber = clean(body.npiNumber, 20);
-    const state = clean(body.state, 50);
-    const specialty = clean(body.specialty, 100);
-    const message = clean(body.message, 4000);
-
-    if (!clinicName || !contactName || !email || !phone) {
-      return bad(
-        "Clinic name, contact name, email, and phone are required.",
-      );
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return bad("Invalid email address.");
-    }
+    const parsed = parseForm(clinicSignupSchema, body);
+    if (!parsed.ok) return bad(parsed.error);
+    const { clinicName, contactName, email, phone, npiNumber, state, specialty, message } =
+      parsed.data;
 
     // Partner referral attribution from the /join/<code> cookie, if present.
     const attribution = await resolveReferralCode(
@@ -79,7 +59,7 @@ export async function POST(req: NextRequest) {
       .values({
         clinicName,
         contactName,
-        email: email.toLowerCase(),
+        email,
         phone,
         npiNumber,
         state,
@@ -92,8 +72,9 @@ export async function POST(req: NextRequest) {
       .returning({ id: clinicSignups.id });
 
     return NextResponse.json({ success: true, id: inserted.id }, { status: 201 });
-  } catch {
-    console.error("[api/clinic-signups] submit failed");
+  } catch (err) {
+    // PII-safe: log the error (not the submitted payload) and surface to Sentry.
+    log.error("clinic-signups submit failed", { error: err });
     return bad("Something went wrong. Please try again.", 500);
   }
 }

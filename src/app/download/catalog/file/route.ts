@@ -5,6 +5,7 @@ import {
   verifyCatalogToken,
 } from "@/lib/catalog/download";
 import { rateLimit, rateLimitHeaders } from "@/lib/security/rate-limit";
+import { log } from "@/lib/observability/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,17 +53,17 @@ export async function GET(req: NextRequest) {
   let upstream: Response;
   try {
     upstream = await fetch(pdfUrl, { cache: "no-store" });
-  } catch {
-    console.error("[download/catalog/file] failed to reach blob storage");
+  } catch (err) {
+    log.error("catalog file: failed to reach blob storage", { error: err });
     return new NextResponse("Catalog is temporarily unavailable.", {
       status: 502,
     });
   }
 
   if (!upstream.ok || !upstream.body) {
-    console.error(
-      `[download/catalog/file] upstream returned ${upstream.status} (no body)`,
-    );
+    log.error("catalog file: upstream returned no body", {
+      status: upstream.status,
+    });
     return new NextResponse("Catalog is temporarily unavailable.", {
       status: 502,
     });

@@ -100,6 +100,22 @@ export async function acceptQuote(token: string): Promise<AcceptResult> {
   const clean = (token ?? "").trim().toLowerCase();
   if (!clean) return { ok: false, error: "Invalid link." };
 
+  try {
+    const h = await headers();
+    const limit = await rateLimitKey(
+      "form",
+      `quote-accept:${clean}:${clientKeyFromHeaders(h)}`,
+    );
+    if (!limit.success) {
+      return {
+        ok: false,
+        error: "Too many attempts. Please wait a minute and try again.",
+      };
+    }
+  } catch {
+    // Fail open: a limiter hiccup must not block a legitimate acceptance.
+  }
+
   const store = await cookies();
   if (!verifyQuoteAccess(store.get(QUOTE_ACCESS_COOKIE)?.value, clean)) {
     return { ok: false, error: "Please re-enter the password to continue." };

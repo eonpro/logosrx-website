@@ -16,6 +16,8 @@
  *   - PII never goes through the logger — pass IDs, not bodies.
  */
 
+import * as Sentry from "@sentry/nextjs";
+
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
 const LEVELS: Record<LogLevel, number> = {
@@ -57,6 +59,30 @@ function serializeError(err: unknown) {
   return err;
 }
 
+/**
+ * Forwards an `error`-level log to Sentry so a `log.error(...)` in a catch
+ * block is never invisible. When the caller passes an `Error` in `fields.error`
+ * we capture the exception (preserving its stack); otherwise we capture a
+ * message. `captureException`/`captureMessage` are no-ops when Sentry isn't
+ * initialized (no DSN), so this is safe in dev/test.
+ *
+ * `warn` is intentionally NOT forwarded — those are frequently expected
+ * (skipped notifications, missing optional config) and would be noise. The few
+ * warn sites that warrant alerting call Sentry explicitly.
+ */
+function forwardErrorToSentry(msg: string, fields?: Fields) {
+  const { error, ...rest } = fields ?? {};
+  const extra = { msg, ...rest } as Record<string, unknown>;
+  if (error instanceof Error) {
+    Sentry.captureException(error, { extra });
+  } else {
+    Sentry.captureMessage(msg, {
+      level: "error",
+      extra: error !== undefined ? { ...extra, error } : extra,
+    });
+  }
+}
+
 function emit(level: LogLevel, msg: string, fields?: Fields) {
   if (LEVELS[level] < minLevel) return;
 
@@ -78,6 +104,7 @@ function emit(level: LogLevel, msg: string, fields?: Fields) {
   const line = JSON.stringify(payload);
   if (level === "error") {
     console.error(line);
+    forwardErrorToSentry(msg, fields);
   } else if (level === "warn") {
     console.warn(line);
   } else {

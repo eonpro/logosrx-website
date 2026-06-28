@@ -34,12 +34,47 @@ function getSigner(): Signer {
   return _signer;
 }
 
+/**
+ * Mints a fresh RDS IAM auth token with a bounded retry. This sits on the
+ * critical path of *every* new pooled connection — both ordinary reads and the
+ * `pool.connect()` that drizzle uses to open a transaction — because `pg`
+ * invokes the `password` callback while establishing the socket. If it throws,
+ * the connection is aborted *before* any statement runs, so `withDbRetry`'s
+ * query-level recovery can't help and the request surfaces as a 500.
+ *
+ * Minting is side-effect-free (assume the Vercel OIDC role via STS, then sign a
+ * SigV4 token locally), so retrying on *any* failure is always safe. A wedged
+ * signer (e.g. cached credentials whose underlying OIDC token expired) is
+ * dropped between attempts so the next try rebuilds with a fresh assume-role.
+ */
+async function mintAuthToken(): Promise<string> {
+  const MAX_ATTEMPTS = 3;
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      return await getSigner().getAuthToken();
+    } catch (err) {
+      lastErr = err;
+      log.warn("db.iam_token.mint_failed", { attempt, error: err });
+      if (attempt < MAX_ATTEMPTS) {
+        // Rebuild the signer (and its OIDC credentials provider) before retry.
+        _signer = null;
+        await new Promise((resolve) => setTimeout(resolve, 100 * attempt));
+      }
+    }
+  }
+  Sentry.captureException(lastErr, {
+    tags: { surface: "db", kind: "iam-token-mint" },
+  });
+  throw lastErr;
+}
+
 async function getCachedAuthToken(): Promise<string> {
   const now = Date.now();
   if (_cachedToken && _cachedToken.expiresAt > now) {
     return _cachedToken.value;
   }
-  const value = await getSigner().getAuthToken();
+  const value = await mintAuthToken();
   _cachedToken = { value, expiresAt: now + TOKEN_TTL_MS };
   return value;
 }
@@ -193,6 +228,11 @@ const TRANSIENT_MESSAGE_FRAGMENTS = [
   "socket hang up",
   "read econnreset",
   "the database system is",
+  // RDS IAM token-mint path: a transient STS/OIDC hiccup surfaces here when the
+  // `password` callback throws during connect. `mintAuthToken` already retries
+  // internally; this is a conservative secondary net for the read path.
+  "could not load credentials",
+  "timeout error from oidc",
 ];
 
 /**
@@ -264,3 +304,15 @@ export const db = new Proxy({} as NodePgDatabase<typeof schema>, {
     return (getDb() as unknown as Record<string | symbol, unknown>)[prop];
   },
 });
+
+/** The top-level database handle type. */
+export type Database = NodePgDatabase<typeof schema>;
+
+/**
+ * The transaction-scoped executor passed to `db.transaction(async (tx) => …)`.
+ * Helpers that must run inside a caller's transaction should accept this so a
+ * multi-table write commits (or rolls back) atomically on one connection.
+ */
+export type DbTransaction = Parameters<
+  Parameters<Database["transaction"]>[0]
+>[0];

@@ -1,4 +1,5 @@
 import { createHash, timingSafeEqual } from "node:crypto";
+import { fetchWithTimeout } from "@/lib/http/fetch";
 
 /**
  * Private catalog PDF download — configuration + access-token verification.
@@ -72,7 +73,9 @@ export async function getFlipbookPages(
 ): Promise<string[] | null> {
   if (!manifestUrl) return null;
   try {
-    const res = await fetch(manifestUrl, { next: { revalidate: 300 } });
+    const res = await fetchWithTimeout(manifestUrl, {
+      next: { revalidate: 300 },
+    } as RequestInit);
     if (!res.ok) return null;
     const data = (await res.json()) as Partial<FlipbookManifest>;
     const pages = data.pages;

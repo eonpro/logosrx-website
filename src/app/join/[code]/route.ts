@@ -7,6 +7,7 @@ import {
   REF_COOKIE_MAX_AGE_SECONDS,
   isValidReferralCode,
 } from "@/lib/partners/referral";
+import { log } from "@/lib/observability/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,8 +56,8 @@ export async function GET(
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
     });
-  } catch {
-    console.error("[join] referral redirect lookup failed");
+  } catch (err) {
+    log.error("join referral redirect lookup failed", { error: err });
   }
 
   return redirect;

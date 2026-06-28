@@ -1,7 +1,22 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createWebhook, deleteWebhook, setWebhookActive } from "./actions";
+import {
+  createWebhook,
+  deleteWebhook,
+  redeliverWebhook,
+  setWebhookActive,
+} from "./actions";
+
+interface DeliveryRow {
+  id: number;
+  event: string;
+  delivered: boolean;
+  attempts: number;
+  lastStatus: number | null;
+  lastError: string | null;
+  at: string;
+}
 
 interface WebhookRow {
   id: number;
@@ -11,6 +26,8 @@ interface WebhookRow {
   secret: string;
   lastStatus: number | null;
   lastDelivery: string | null;
+  failedCount: number;
+  deliveries: DeliveryRow[];
 }
 
 const EVENTS = [
@@ -27,6 +44,7 @@ export default function WebhooksManager({
   const [url, setUrl] = useState("");
   const [events, setEvents] = useState<string[]>([]);
   const [revealed, setRevealed] = useState<number | null>(null);
+  const [expanded, setExpanded] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
 
@@ -119,7 +137,16 @@ export default function WebhooksManager({
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="truncate font-mono text-xs text-navy">{w.url}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="truncate font-mono text-xs text-navy">
+                      {w.url}
+                    </p>
+                    {w.failedCount > 0 && (
+                      <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700">
+                        {w.failedCount} failed
+                      </span>
+                    )}
+                  </div>
                   <p className="mt-1 text-xs text-navy/55">
                     {w.events.join(", ")}
                   </p>
@@ -130,6 +157,17 @@ export default function WebhooksManager({
                   </p>
                 </div>
                 <div className="flex items-center gap-3 text-xs font-medium">
+                  {w.deliveries.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpanded(expanded === w.id ? null : w.id)
+                      }
+                      className="text-navy/60 hover:text-magenta"
+                    >
+                      {expanded === w.id ? "Hide history" : "History"}
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => setRevealed(revealed === w.id ? null : w.id)}
@@ -159,6 +197,46 @@ export default function WebhooksManager({
                 <code className="mt-2 block overflow-x-auto rounded-lg bg-cream px-3 py-2 font-mono text-xs text-navy">
                   {w.secret}
                 </code>
+              )}
+              {expanded === w.id && w.deliveries.length > 0 && (
+                <ul className="mt-3 space-y-1.5 border-t border-beige pt-3">
+                  {w.deliveries.map((d) => (
+                    <li
+                      key={d.id}
+                      className="flex flex-wrap items-center justify-between gap-2 text-xs"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`inline-block h-2 w-2 shrink-0 rounded-full ${
+                            d.delivered ? "bg-green-500" : "bg-red-500"
+                          }`}
+                          aria-hidden
+                        />
+                        <span className="font-mono text-navy/80">{d.event}</span>
+                        <span className="text-navy/45">{d.at}</span>
+                        <span className="text-navy/45">
+                          {d.delivered
+                            ? `HTTP ${d.lastStatus ?? "—"}`
+                            : `failed (${
+                                d.lastStatus
+                                  ? `HTTP ${d.lastStatus}`
+                                  : "network"
+                              }, ${d.attempts}×)`}
+                        </span>
+                      </div>
+                      {!d.delivered && (
+                        <button
+                          type="button"
+                          disabled={pending}
+                          onClick={() => run(() => redeliverWebhook(d.id))}
+                          className="font-medium text-magenta hover:underline disabled:opacity-50"
+                        >
+                          Redeliver
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
           ))}

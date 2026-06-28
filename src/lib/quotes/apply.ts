@@ -4,6 +4,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { clinics, clinicPricing, pricingQuotes, pricingQuoteItems } from "@/lib/db/schema";
 import { QUOTE_CLAIM_COOKIE, verifyQuoteClaim } from "@/lib/quotes/crypto";
+import { log } from "@/lib/observability/logger";
 
 /**
  * Applies an accepted pricing quote to a freshly-created clinic account.
@@ -122,8 +123,8 @@ export async function applyClaimedQuote(clerkUserId: string): Promise<boolean> {
 
     store.delete(QUOTE_CLAIM_COOKIE);
     return true;
-  } catch {
-    console.error("[quotes] applyClaimedQuote failed");
+  } catch (err) {
+    log.error("applyClaimedQuote failed", { error: err });
     return false;
   }
 }

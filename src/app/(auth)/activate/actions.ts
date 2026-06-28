@@ -5,6 +5,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { clerkErrorMessage } from "@/lib/auth/clerk-users";
 import { db } from "@/lib/db";
 import { partnerOrgMembers, partnerReps } from "@/lib/db/schema";
+import { log } from "@/lib/observability/logger";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -43,7 +44,7 @@ export async function activateSetPassword(
   try {
     await client.users.updateUser(userId, { password });
   } catch (err) {
-    console.error("[activate] updateUser failed");
+    log.error("activate updateUser failed", { error: err });
     return {
       ok: false,
       error: clerkErrorMessage(err, "Could not set your password."),
@@ -60,8 +61,10 @@ export async function activateSetPassword(
         { verified: true },
       );
     }
-  } catch {
-    console.error("[activate] email verify failed (non-critical)");
+  } catch (err) {
+    log.warn("activate email verify failed (non-critical)", {
+      error: err instanceof Error ? err.message : "unknown",
+    });
   }
 
   // If this account is an invited partner rep, stamp first activation.
@@ -76,8 +79,10 @@ export async function activateSetPassword(
           isNull(partnerReps.activatedAt),
         ),
       );
-  } catch {
-    console.error("[activate] rep activation stamp failed (non-critical)");
+  } catch (err) {
+    log.warn("activate rep activation stamp failed (non-critical)", {
+      error: err instanceof Error ? err.message : "unknown",
+    });
   }
 
   // Likewise stamp an invited org member's first activation.
@@ -91,8 +96,10 @@ export async function activateSetPassword(
           isNull(partnerOrgMembers.activatedAt),
         ),
       );
-  } catch {
-    console.error("[activate] member activation stamp failed (non-critical)");
+  } catch (err) {
+    log.warn("activate member activation stamp failed (non-critical)", {
+      error: err instanceof Error ? err.message : "unknown",
+    });
   }
 
   return { ok: true };

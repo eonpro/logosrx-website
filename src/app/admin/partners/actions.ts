@@ -12,6 +12,7 @@ import {
 } from "@/lib/db/schema";
 import { ADMIN_ROLE, requireAdmin } from "@/lib/auth/admin";
 import { recordAdminAudit } from "@/lib/audit/log";
+import { log } from "@/lib/observability/logger";
 import {
   formatCents,
   percentToBps,
@@ -409,7 +410,7 @@ export async function addPartnerTransaction(input: {
     if (err instanceof TransactionError) {
       return { ok: false, error: err.message };
     }
-    console.error("[admin/partners] addPartnerTransaction failed");
+    log.error("addPartnerTransaction failed", { error: err });
     return { ok: false, error: "Could not record the transaction." };
   }
 
@@ -489,7 +490,7 @@ export async function refundPartnerTransaction(input: {
     );
   } catch (err) {
     if (err instanceof RefundError) return { ok: false, error: err.message };
-    console.error("[admin/partners] refundPartnerTransaction failed");
+    log.error("refundPartnerTransaction failed", { error: err });
     return { ok: false, error: "Could not record the refund." };
   }
 
@@ -692,8 +693,8 @@ export async function recordPartnerPayout(input: {
         }
       })(),
     );
-  } catch {
-    console.error("[admin/partners] recordPartnerPayout failed");
+  } catch (err) {
+    log.error("recordPartnerPayout failed", { error: err });
     return { ok: false, error: "Could not record the payout." };
   }
 

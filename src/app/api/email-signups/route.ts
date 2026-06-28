@@ -8,6 +8,8 @@ import {
   rateLimit,
   rateLimitHeaders,
 } from "@/lib/security/rate-limit";
+import { log } from "@/lib/observability/logger";
+import { emailSignupSchema, parseForm } from "@/lib/validation/forms";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,22 +42,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true }, { status: 201 });
     }
 
-    const raw = typeof body.email === "string" ? body.email.trim() : "";
-
-    if (!raw) return bad("Email is required.");
-    if (raw.length > 255) return bad("Invalid email address.");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)) {
-      return bad("Invalid email address.");
-    }
+    const parsed = parseForm(emailSignupSchema, body);
+    if (!parsed.ok) return bad(parsed.error);
 
     await db
       .insert(emailSignups)
-      .values({ email: raw.toLowerCase() })
+      .values({ email: parsed.data.email })
       .onConflictDoNothing({ target: emailSignups.email });
 
     return NextResponse.json({ success: true }, { status: 201 });
-  } catch {
-    console.error("[api/email-signups] submit failed");
+  } catch (err) {
+    log.error("email-signups submit failed", { error: err });
     return bad("Something went wrong. Please try again.", 500);
   }
 }

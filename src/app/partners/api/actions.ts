@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { partnerApiKeys, partnerWebhooks } from "@/lib/db/schema";
+import {
+  partnerApiKeys,
+  partnerWebhooks,
+  partnerWebhookDeliveries,
+} from "@/lib/db/schema";
 import { requirePartner } from "@/lib/auth/partner";
 import { mintApiKey } from "@/lib/partners/api-auth";
 import {
@@ -11,6 +15,7 @@ import {
   isWebhookEvent,
   WEBHOOK_EVENTS,
 } from "@/lib/partners/webhook-crypto";
+import { replayWebhookDelivery } from "@/lib/partners/webhooks";
 import { recordPartnerAudit } from "@/lib/audit/log";
 
 export interface ApiActionResult {
@@ -139,6 +144,48 @@ export async function deleteWebhook(webhookId: number): Promise<ApiActionResult>
     id: ctx.org.id,
   });
   revalidatePath("/partners/api");
+  return { ok: true };
+}
+
+/**
+ * Re-attempt a single (typically dead-lettered) delivery. Org owner/admin only.
+ * The delivery row is verified to belong to the caller's org before replay, so
+ * a tampered id can't trigger deliveries for another partner.
+ */
+export async function redeliverWebhook(
+  deliveryRowId: number,
+): Promise<ApiActionResult> {
+  const ctx = await requirePartner({ orgOnly: true, minRole: "admin" });
+
+  const [row] = await db
+    .select({ id: partnerWebhookDeliveries.id })
+    .from(partnerWebhookDeliveries)
+    .where(
+      and(
+        eq(partnerWebhookDeliveries.id, deliveryRowId),
+        eq(partnerWebhookDeliveries.orgId, ctx.org.id),
+      ),
+    )
+    .limit(1);
+  if (!row) return { ok: false, error: "Delivery not found." };
+
+  const result = await replayWebhookDelivery(deliveryRowId);
+  if (!result) return { ok: false, error: "Delivery could not be replayed." };
+
+  await recordPartnerAudit(
+    ctx,
+    "partner.webhook_redeliver",
+    { type: "partner_org", id: ctx.org.id },
+    { deliveryRowId, delivered: result.delivered },
+  );
+  revalidatePath("/partners/api");
+
+  if (!result.delivered) {
+    const detail = result.lastStatus
+      ? `HTTP ${result.lastStatus}`
+      : "network error";
+    return { ok: false, error: `Delivery failed again (${detail}).` };
+  }
   return { ok: true };
 }
 

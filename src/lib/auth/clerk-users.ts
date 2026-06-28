@@ -1,6 +1,7 @@
 import "server-only";
 import { clerkClient } from "@clerk/nextjs/server";
 import { SITE_URL } from "@/lib/constants";
+import { log } from "@/lib/observability/logger";
 
 /**
  * Shared Clerk Backend API helpers used by every account-provisioning flow
@@ -61,8 +62,10 @@ export async function setClerkUserPassword(
   if (options.verifyEmail !== false) {
     try {
       await markPrimaryEmailVerified(client, clerkUserId);
-    } catch {
-      console.error("[auth] verify-email after password set failed (non-critical)");
+    } catch (err) {
+      log.warn("verify-email after password set failed (non-critical)", {
+        error: err instanceof Error ? err.message : "unknown",
+      });
     }
   }
 }
