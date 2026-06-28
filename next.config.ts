@@ -156,7 +156,7 @@ const shouldUploadSourceMaps =
 export default shouldUploadSourceMaps
   ? withSentryConfig(nextConfig, {
       org: process.env.SENTRY_ORG ?? "eonpro",
-      project: process.env.SENTRY_PROJECT ?? "javascript-nextjs",
+      project: process.env.SENTRY_PROJECT ?? "logosrx-website",
       authToken: process.env.SENTRY_AUTH_TOKEN,
       // Upload a wider set of client bundles so prod stack traces don't
       // resolve to "<unknown>" for code-split chunks.
