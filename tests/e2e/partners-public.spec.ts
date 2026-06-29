@@ -10,11 +10,20 @@ import { test, expect } from "@playwright/test";
  */
 
 test.describe("partner portal — public & middleware", () => {
-  test("unauthenticated /partners redirects to the partner sign-in", async ({
+  test("unauthenticated /partners shows the public landing page", async ({
     page,
   }) => {
+    // `/partners` is a public, top-of-funnel marketing landing page until the
+    // visitor signs in — it must NOT redirect. (Protected sub-routes still do;
+    // see the next test.) Anonymous visitors get the landing with both CTAs.
     await page.goto("/partners");
-    await expect(page).toHaveURL(/\/partners\/sign-in/);
+    await expect(page).toHaveURL(/\/partners$/);
+    await expect(
+      page.getByRole("heading", { name: /work with logos rx/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: /apply to become a partner/i }),
+    ).toBeVisible();
   });
 
   test("a protected sub-route preserves the intended destination", async ({
@@ -37,7 +46,7 @@ test.describe("partner portal — public & middleware", () => {
   test("the public application form renders its fields", async ({ page }) => {
     await page.goto("/partners/apply");
     await expect(
-      page.getByRole("heading", { name: /become a logos rx partner/i }),
+      page.getByRole("heading", { name: /become a logos rx.*partner/i }),
     ).toBeVisible();
     await expect(page.getByPlaceholder("Acme Sales Group")).toBeVisible();
     await expect(
