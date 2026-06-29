@@ -4,21 +4,23 @@ import { CONTACT, SITE_URL } from "@/lib/constants";
 import { log } from "@/lib/observability/logger";
 
 /**
- * Transactional email sender built on AWS SES (v2).
+ * Transactional email sender.
  *
- * SES lives in a different AWS account than the app's Vercel OIDC role (which is
- * scoped to RDS), so we authenticate with a dedicated, send-only IAM access key
- * rather than the OIDC role.
+ * Two transports are supported; the active one is chosen at send time:
+ *   - RESEND (preferred) — set `RESEND_API_KEY`. Production-ready after you
+ *     verify the `EMAIL_FROM` domain in Resend; no AWS SES sandbox to escape.
+ *   - AWS SES (fallback) — set `SES_ACCESS_KEY_ID` / `SES_SECRET_ACCESS_KEY`
+ *     (+ optional `SES_REGION`, default us-east-1). Used when Resend isn't
+ *     configured, or when `EMAIL_PROVIDER=ses` forces it.
  *
- * Configure:
- *   - `SES_ACCESS_KEY_ID`, `SES_SECRET_ACCESS_KEY`  (IAM user with ses:SendEmail)
- *   - `SES_REGION`  (defaults to us-east-1)
- *   - `EMAIL_FROM`  (e.g. "Logos RX <noreply@logosrx.com>"; the address/domain
- *                    must be a verified SES identity)
+ * Selection: Resend if `RESEND_API_KEY` is set, unless `EMAIL_PROVIDER` pins a
+ * specific transport (`resend` | `ses`). `EMAIL_FROM` (e.g. "Logos RX
+ * <noreply@logosrx.com>") must be a verified sender on whichever transport is
+ * active.
  *
- * When the SES credentials aren't configured the helper no-ops with a single
- * warning so the surrounding flow (e.g. clinic approval) never fails because
- * email isn't wired up yet.
+ * When no transport is configured the helper no-ops with a single warning so
+ * the surrounding flow (e.g. clinic approval) never fails because email isn't
+ * wired up yet.
  */
 
 const EMAIL_FROM = process.env.EMAIL_FROM ?? "Logos RX <noreply@logosrx.com>";
@@ -46,8 +48,65 @@ interface SendEmailArgs {
   text?: string;
 }
 
-export async function sendEmail(args: SendEmailArgs): Promise<boolean> {
-  if (!args.to) return false;
+/**
+ * Picks the transport: an explicit `EMAIL_PROVIDER` wins; otherwise Resend when
+ * its key is present, else SES.
+ */
+function activeProvider(): "resend" | "ses" | "none" {
+  const override = process.env.EMAIL_PROVIDER?.toLowerCase();
+  if (override === "resend") return "resend";
+  if (override === "ses") return "ses";
+  if (process.env.RESEND_API_KEY) return "resend";
+  if (process.env.SES_ACCESS_KEY_ID && process.env.SES_SECRET_ACCESS_KEY) {
+    return "ses";
+  }
+  return "none";
+}
+
+/** Sends via the Resend HTTP API (no SDK dependency). */
+async function sendViaResend(args: SendEmailArgs): Promise<boolean> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    log.warn("email send skipped: RESEND_API_KEY not set", {
+      subject: args.subject,
+    });
+    return false;
+  }
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: EMAIL_FROM,
+        to: [args.to],
+        subject: args.subject,
+        html: args.html,
+        ...(args.text ? { text: args.text } : {}),
+      }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      log.warn("resend send failed", {
+        status: res.status,
+        detail: detail.slice(0, 300),
+      });
+      return false;
+    }
+    return true;
+  } catch (err) {
+    log.warn("resend send threw", {
+      error: err instanceof Error ? err.message : "unknown",
+    });
+    return false;
+  }
+}
+
+/** Sends via AWS SES (v2). */
+async function sendViaSes(args: SendEmailArgs): Promise<boolean> {
   const client = getClient();
   if (!client) {
     log.warn("email send skipped: SES credentials not set", {
@@ -55,7 +114,6 @@ export async function sendEmail(args: SendEmailArgs): Promise<boolean> {
     });
     return false;
   }
-
   try {
     await client.send(
       new SendEmailCommand({
@@ -81,6 +139,17 @@ export async function sendEmail(args: SendEmailArgs): Promise<boolean> {
     });
     return false;
   }
+}
+
+export async function sendEmail(args: SendEmailArgs): Promise<boolean> {
+  if (!args.to) return false;
+  const provider = activeProvider();
+  if (provider === "resend") return sendViaResend(args);
+  if (provider === "ses") return sendViaSes(args);
+  log.warn("email send skipped: no email provider configured", {
+    subject: args.subject,
+  });
+  return false;
 }
 
 /**
