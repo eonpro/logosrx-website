@@ -11,6 +11,12 @@ export interface ProductOption {
   standardDollars: number | null;
 }
 
+export interface ReferrerOrg {
+  id: number;
+  name: string;
+  reps: { id: number; name: string }[];
+}
+
 interface LineItem {
   key: string;
   productId: string | null;
@@ -31,8 +37,10 @@ function nextKey() {
 
 export default function QuoteBuilder({
   productOptions,
+  referrerOrgs = [],
 }: {
   productOptions: ProductOption[];
+  referrerOrgs?: ReferrerOrg[];
 }) {
   const [clinicName, setClinicName] = useState("");
   const [contactName, setContactName] = useState("");
@@ -43,6 +51,8 @@ export default function QuoteBuilder({
   const [expiresInDays, setExpiresInDays] = useState("14");
   const [items, setItems] = useState<LineItem[]>([]);
   const [picker, setPicker] = useState("");
+  const [partnerOrgId, setPartnerOrgId] = useState("");
+  const [partnerRepId, setPartnerRepId] = useState("");
   const [error, setError] = useState("");
   const [created, setCreated] = useState<CreateQuoteResult["quote"] | null>(null);
   const [pending, startTransition] = useTransition();
@@ -53,6 +63,17 @@ export default function QuoteBuilder({
     for (const o of productOptions) m.set(o.id, o);
     return m;
   }, [productOptions]);
+
+  const selectedOrg = useMemo(
+    () => referrerOrgs.find((o) => String(o.id) === partnerOrgId) ?? null,
+    [referrerOrgs, partnerOrgId],
+  );
+
+  function changeReferrerOrg(value: string) {
+    setPartnerOrgId(value);
+    // Reset rep when the org changes — a rep only belongs to one org.
+    setPartnerRepId("");
+  }
 
   function addCatalogItem(id: string) {
     const opt = optionsById.get(id);
@@ -118,6 +139,8 @@ export default function QuoteBuilder({
           priceDollars: Number(it.priceDollars) || 0,
           unit: it.unit || null,
         })),
+        partnerOrgId: partnerOrgId ? Number(partnerOrgId) : null,
+        partnerRepId: partnerRepId ? Number(partnerRepId) : null,
       });
       if (res.ok && res.quote) {
         setCreated(res.quote);
@@ -302,6 +325,56 @@ export default function QuoteBuilder({
           0 for no expiry.
         </p>
       </section>
+
+      {referrerOrgs.length > 0 && (
+        <section className="mt-5 rounded-2xl border border-beige-dark bg-white p-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-navy/55">
+            Referrer (optional)
+          </h2>
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs text-navy/60">Partner org</label>
+              <select
+                value={partnerOrgId}
+                onChange={(e) => changeReferrerOrg(e.target.value)}
+                className={inputClass}
+              >
+                <option value="">No referrer</option>
+                {referrerOrgs.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-navy/60">Sales rep</label>
+              <select
+                value={partnerRepId}
+                onChange={(e) => setPartnerRepId(e.target.value)}
+                className={inputClass}
+                disabled={!selectedOrg || selectedOrg.reps.length === 0}
+              >
+                <option value="">
+                  {selectedOrg && selectedOrg.reps.length > 0
+                    ? "Org only (no rep)"
+                    : "—"}
+                </option>
+                {selectedOrg?.reps.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <p className="mt-3 text-xs text-navy/50">
+            Credits the partner (and rep, if chosen) for this relationship. When
+            the clinic claims the quote, it&apos;s added to their network and
+            earns them commission. The quote also appears on their partner portal.
+          </p>
+        </section>
+      )}
 
       <section className="mt-5 rounded-2xl border border-beige-dark bg-white p-6">
         <div className="flex items-center justify-between">

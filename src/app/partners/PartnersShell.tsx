@@ -11,6 +11,8 @@ interface PartnerNavItem extends SidebarNavItem {
   only?: PartnerKind;
   /** Only show when the org is on the margin model. */
   marginOnly?: boolean;
+  /** The Pricing Quotes item — shown when quotes are enabled (margin or has quotes). */
+  quotesItem?: boolean;
   /** Hide from org viewers (management-only nav). */
   adminOnly?: boolean;
 }
@@ -131,7 +133,7 @@ const navItems: PartnerNavItem[] = [
   {
     label: "Pricing Quotes",
     href: "/partners/quotes",
-    marginOnly: true,
+    quotesItem: true,
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M5 2h7l3 3v13a1 1 0 01-1 1H5a1 1 0 01-1-1V3a1 1 0 011-1z" strokeLinecap="round" strokeLinejoin="round" />
@@ -169,6 +171,7 @@ export default function PartnersShell({
   orgName,
   repName,
   marginEnabled = false,
+  quotesEnabled = false,
 }: {
   children: React.ReactNode;
   kind: PartnerKind | null;
@@ -176,6 +179,7 @@ export default function PartnersShell({
   orgName: string | null;
   repName: string | null;
   marginEnabled?: boolean;
+  quotesEnabled?: boolean;
 }) {
   const pathname = usePathname();
   const isBareLayout =
@@ -192,6 +196,7 @@ export default function PartnersShell({
     (i) =>
       (!i.only || i.only === kind) &&
       (!i.marginOnly || marginEnabled) &&
+      (!i.quotesItem || quotesEnabled) &&
       // Management nav is hidden from org viewers (read-only members).
       (!i.adminOnly || kind !== "org" || roleAtLeast(role, "admin")),
   );

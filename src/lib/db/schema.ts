@@ -689,15 +689,20 @@ export const pricingQuotes = pgTable("pricing_quotes", {
     onDelete: "set null",
   }),
   claimedAt: timestamp("claimed_at"),
-  // When a quote is created by a partner (sales org), these attribute the
+  // When a quote is attributed to a partner (sales org), these credit the
   // resulting clinic to that org/rep on claim (so they earn on its sales).
-  // NULL for admin-created quotes.
+  // Set either by a partner creating their own quote, or by an admin who picks
+  // a referrer on an admin-created quote. NULL for unattributed admin quotes.
   partnerOrgId: integer("partner_org_id").references(() => partnerOrgs.id, {
     onDelete: "set null",
   }),
   partnerRepId: integer("partner_rep_id").references(() => partnerReps.id, {
     onDelete: "set null",
   }),
+  // True when an admin created this quote and attributed it to a partner as a
+  // referral. The partner sees it read-only (Logos RX owns it); partner-created
+  // quotes stay false so they remain fully manageable by the partner.
+  adminReferral: boolean("admin_referral").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (t) => [

@@ -2,6 +2,9 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { partnerOrgs, partnerReps } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/auth/admin";
 import { getQuoteWithItemsById, isQuoteExpired } from "@/lib/quotes/data";
 import { SITE_URL } from "@/lib/constants";
@@ -37,6 +40,25 @@ export default async function QuoteDetailPage({ params }: PageProps) {
   const { quote, items } = data;
   const url = `${SITE_URL}/quote/${quote.token}`;
   const expired = isQuoteExpired(quote);
+
+  let referrerOrgName: string | null = null;
+  let referrerRepName: string | null = null;
+  if (quote.partnerOrgId) {
+    const [org] = await db
+      .select({ name: partnerOrgs.name })
+      .from(partnerOrgs)
+      .where(eq(partnerOrgs.id, quote.partnerOrgId))
+      .limit(1);
+    referrerOrgName = org?.name ?? `Org #${quote.partnerOrgId}`;
+    if (quote.partnerRepId) {
+      const [rep] = await db
+        .select({ name: partnerReps.name })
+        .from(partnerReps)
+        .where(eq(partnerReps.id, quote.partnerRepId))
+        .limit(1);
+      referrerRepName = rep?.name ?? `Rep #${quote.partnerRepId}`;
+    }
+  }
 
   const timeline: { label: string; value: string }[] = [
     { label: "Created", value: fmtDateTime(quote.createdAt) },
@@ -95,6 +117,32 @@ export default async function QuoteDetailPage({ params }: PageProps) {
           email={quote.email}
         />
       </section>
+
+      {referrerOrgName && (
+        <section className="mb-5 rounded-2xl border border-beige-dark bg-white p-6">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-navy/55">
+            Referrer
+          </h2>
+          <dl className="space-y-1.5 text-sm">
+            <div className="flex justify-between gap-3">
+              <dt className="text-navy/55">Partner</dt>
+              <dd className="text-right font-medium text-navy">
+                {referrerOrgName}
+              </dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-navy/55">Sales rep</dt>
+              <dd className="text-right font-medium text-navy">
+                {referrerRepName ?? "Org only"}
+              </dd>
+            </div>
+          </dl>
+          <p className="mt-3 text-xs text-navy/50">
+            The clinic that claims this quote is credited to this partner — it
+            joins their network and earns them commission.
+          </p>
+        </section>
+      )}
 
       <section className="rounded-2xl border border-beige-dark bg-white p-6">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-navy/55">

@@ -36,6 +36,8 @@ export interface CreateQuoteRecordInput {
   createdByEmail: string | null;
   partnerOrgId?: number | null;
   partnerRepId?: number | null;
+  /** True when an admin attributes their quote to a partner as a referral. */
+  adminReferral?: boolean;
 }
 
 export interface CreateQuoteRecordResult {
@@ -132,6 +134,7 @@ export async function createQuoteRecord(
         createdByEmail: input.createdByEmail,
         partnerOrgId: input.partnerOrgId ?? null,
         partnerRepId: input.partnerRepId ?? null,
+        adminReferral: input.adminReferral ?? false,
       })
       .returning({ id: pricingQuotes.id });
     quoteId = row.id;

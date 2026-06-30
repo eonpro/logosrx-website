@@ -28,7 +28,17 @@ export default async function PartnerQuotesPage() {
   const ctx = await getPartnerContext();
   if (!ctx) return <PartnerNoAccess />;
 
-  if (ctx.org.compensationModel !== "margin") {
+  const canCreate = ctx.org.compensationModel === "margin";
+
+  const quotes = await listQuotesForPartner({
+    orgId: ctx.org.id,
+    repId: ctx.kind === "rep" ? ctx.rep!.id : null,
+  });
+
+  // Commission-model orgs can't author quotes, but they can still receive
+  // referral quotes created by Logos RX on their behalf. Only when they have
+  // none do we explain that pricing is managed by Logos RX.
+  if (!canCreate && quotes.length === 0) {
     return (
       <div>
         <h1 className="text-2xl font-bold text-navy">Pricing Quotes</h1>
@@ -36,7 +46,8 @@ export default async function PartnerQuotesPage() {
           <p className="text-sm text-navy/65">
             Custom pricing quotes are available on the wholesale/margin model.
             Your organization earns a commission percentage, so pricing is managed
-            by Logos RX — use your{" "}
+            by Logos RX. Any quote Logos RX creates and credits to you will appear
+            here — meanwhile, use your{" "}
             <Link href="/partners/links" className="text-magenta hover:underline">
               referral links
             </Link>{" "}
@@ -47,27 +58,25 @@ export default async function PartnerQuotesPage() {
     );
   }
 
-  const quotes = await listQuotesForPartner({
-    orgId: ctx.org.id,
-    repId: ctx.kind === "rep" ? ctx.rep!.id : null,
-  });
-
   return (
     <div>
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-navy">Pricing Quotes</h1>
           <p className="mt-1 text-sm text-navy/60">
-            Send a prospective clinic a password-gated custom price list. Clinics
-            that accept are added to your network automatically.
+            {canCreate
+              ? "Send a prospective clinic a password-gated custom price list. Clinics that accept are added to your network automatically."
+              : "Quotes Logos RX created and credited to you. Clinics that accept are added to your network automatically."}
           </p>
         </div>
-        <Link
-          href="/partners/quotes/new"
-          className="inline-flex shrink-0 items-center gap-2 rounded-full bg-magenta px-5 py-2.5 text-sm font-semibold text-white hover:bg-magenta/90"
-        >
-          + New quote
-        </Link>
+        {canCreate && (
+          <Link
+            href="/partners/quotes/new"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-magenta px-5 py-2.5 text-sm font-semibold text-white hover:bg-magenta/90"
+          >
+            + New quote
+          </Link>
+        )}
       </div>
 
       {quotes.length === 0 ? (
@@ -97,8 +106,15 @@ export default async function PartnerQuotesPage() {
                   >
                     <td className="px-5 py-4">
                       <Link href={`/partners/quotes/${q.id}`} className="block">
-                        <div className="font-medium text-navy">
-                          {q.clinicName?.trim() || q.contactName?.trim() || "—"}
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-navy">
+                            {q.clinicName?.trim() || q.contactName?.trim() || "—"}
+                          </span>
+                          {q.adminReferral && (
+                            <span className="inline-flex rounded-full bg-navy/5 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-navy/55">
+                              via Logos RX
+                            </span>
+                          )}
                         </div>
                         <div className="text-xs text-navy/50">{q.email}</div>
                       </Link>

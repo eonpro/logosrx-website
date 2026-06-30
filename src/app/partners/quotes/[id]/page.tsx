@@ -79,7 +79,14 @@ export default async function PartnerQuoteDetailPage({ params }: PageProps) {
         <div className="mb-4 break-all rounded-lg bg-cream/60 px-3 py-2 font-mono text-xs text-navy/70">
           {url}
         </div>
-        <PartnerQuoteActions id={quote.id} url={url} status={quote.status} />
+        {quote.adminReferral ? (
+          <p className="text-xs text-navy/55">
+            This quote was created by Logos RX and credited to you. You can copy
+            the link, but it&apos;s managed by Logos RX.
+          </p>
+        ) : (
+          <PartnerQuoteActions id={quote.id} url={url} status={quote.status} />
+        )}
       </section>
 
       <section className="mt-5 rounded-2xl border border-beige bg-white p-6">

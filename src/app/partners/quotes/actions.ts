@@ -117,10 +117,14 @@ export async function createPartnerQuote(
   return result;
 }
 
-/** Confirms a quote belongs to the caller's scope before a mutation. */
-async function assertOwned(id: number, ctx: PartnerContext): Promise<boolean> {
+/**
+ * Confirms a quote belongs to the caller's scope AND is partner-managed before a
+ * mutation. Admin-created referral quotes (`adminReferral`) are read-only for the
+ * partner — they get the credit, but Logos RX owns the quote.
+ */
+async function assertManageable(id: number, ctx: PartnerContext): Promise<boolean> {
   const data = await getPartnerQuoteWithItems(id, scopeFor(ctx));
-  return Boolean(data);
+  return Boolean(data) && !data!.quote.adminReferral;
 }
 
 export interface RegenerateResult {
@@ -136,6 +140,9 @@ export async function regeneratePartnerQuotePassword(
   assertId(id);
   const data = await getPartnerQuoteWithItems(id, scopeFor(ctx));
   if (!data) return { ok: false, error: "Quote not found." };
+  if (data.quote.adminReferral) {
+    return { ok: false, error: "This quote is managed by Logos RX." };
+  }
   if (data.quote.status === "claimed") {
     return { ok: false, error: "This quote has already been used." };
   }
@@ -158,7 +165,7 @@ export async function regeneratePartnerQuotePassword(
 export async function revokePartnerQuote(id: number) {
   const ctx = await requirePartner();
   assertId(id);
-  if (!(await assertOwned(id, ctx))) return;
+  if (!(await assertManageable(id, ctx))) return;
   await db
     .update(pricingQuotes)
     .set({ status: "revoked", updatedAt: new Date() })
@@ -172,7 +179,7 @@ export async function reactivatePartnerQuote(id: number) {
   const ctx = await requirePartner();
   assertId(id);
   const data = await getPartnerQuoteWithItems(id, scopeFor(ctx));
-  if (!data || data.quote.status === "claimed") return;
+  if (!data || data.quote.adminReferral || data.quote.status === "claimed") return;
   await db
     .update(pricingQuotes)
     .set({ status: "active", updatedAt: new Date() })
@@ -185,7 +192,7 @@ export async function reactivatePartnerQuote(id: number) {
 export async function deletePartnerQuote(id: number) {
   const ctx = await requirePartner();
   assertId(id);
-  if (!(await assertOwned(id, ctx))) return;
+  if (!(await assertManageable(id, ctx))) return;
   await db.delete(pricingQuotes).where(eq(pricingQuotes.id, id));
   await recordPartnerAudit(ctx, "quote.delete", { type: "quote", id });
   revalidatePath("/partners/quotes");

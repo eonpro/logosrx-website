@@ -1,9 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { pricingQuotes } from "@/lib/db/schema";
+import { partnerOrgs, partnerReps, pricingQuotes } from "@/lib/db/schema";
 import { ADMIN_ROLE, requireAdmin } from "@/lib/auth/admin";
 import { recordAdminAudit } from "@/lib/audit/log";
 import {
@@ -29,6 +29,10 @@ export interface CreateQuoteInput {
   discountPct: number;
   expiresInDays: number;
   items: QuoteItemInput[];
+  /** Optional partner org to credit (referrer). */
+  partnerOrgId?: number | null;
+  /** Optional sales rep within that org to credit. */
+  partnerRepId?: number | null;
 }
 
 export type CreateQuoteResult = CreateQuoteRecordResult;
@@ -37,16 +41,72 @@ function assertId(id: number, label = "id") {
   if (!Number.isFinite(id) || id <= 0) throw new Error(`invalid ${label}`);
 }
 
+interface ResolvedReferrer {
+  partnerOrgId: number | null;
+  partnerRepId: number | null;
+}
+
+/**
+ * Validates the optional referrer selection on an admin quote. The org must
+ * exist and be active; a rep (if given) must be active and belong to that org.
+ * Returns `{ error }` on a bad selection so the caller can surface it; an empty
+ * selection resolves to no attribution.
+ */
+async function resolveReferrer(
+  partnerOrgId?: number | null,
+  partnerRepId?: number | null,
+): Promise<{ error?: string } & Partial<ResolvedReferrer>> {
+  const orgId = Number(partnerOrgId) || null;
+  const repId = Number(partnerRepId) || null;
+
+  if (!orgId) {
+    // A rep can't be credited without its org.
+    return { partnerOrgId: null, partnerRepId: null };
+  }
+
+  const [org] = await db
+    .select({ id: partnerOrgs.id, status: partnerOrgs.status })
+    .from(partnerOrgs)
+    .where(eq(partnerOrgs.id, orgId))
+    .limit(1);
+  if (!org) return { error: "Selected partner org was not found." };
+  if (org.status !== "active") {
+    return { error: "Selected partner org is not active." };
+  }
+
+  if (!repId) return { partnerOrgId: orgId, partnerRepId: null };
+
+  const [rep] = await db
+    .select({ id: partnerReps.id, status: partnerReps.status })
+    .from(partnerReps)
+    .where(and(eq(partnerReps.id, repId), eq(partnerReps.orgId, orgId)))
+    .limit(1);
+  if (!rep) {
+    return { error: "Selected rep doesn't belong to the chosen partner org." };
+  }
+  if (rep.status !== "active") {
+    return { error: "Selected rep is not active." };
+  }
+
+  return { partnerOrgId: orgId, partnerRepId: repId };
+}
+
 /**
  * Creates a password-gated pricing quote and its line items. Returns the public
  * link and the generated password — shown to the admin exactly once, since only
  * its hash is persisted. Admin quotes are unconstrained (full catalog, ad-hoc
- * items, catalog-wide discount) and carry no partner attribution.
+ * items, catalog-wide discount). An optional referrer (partner org + rep) can be
+ * attributed so the clinic that claims is credited to them on claim.
  */
 export async function createQuote(
   input: CreateQuoteInput,
 ): Promise<CreateQuoteResult> {
   const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
+
+  const referrer = await resolveReferrer(input.partnerOrgId, input.partnerRepId);
+  if (referrer.error) return { ok: false, error: referrer.error };
+  const partnerOrgId = referrer.partnerOrgId ?? null;
+  const partnerRepId = referrer.partnerRepId ?? null;
 
   const result = await createQuoteRecord({
     clinicName: input.clinicName,
@@ -64,13 +124,23 @@ export async function createQuote(
     })),
     createdBy: ctx.userId,
     createdByEmail: ctx.email,
+    partnerOrgId,
+    partnerRepId,
+    // Mark as an admin referral when attributed, so the partner sees it
+    // read-only in their portal (they get credit; Logos RX owns the quote).
+    adminReferral: partnerOrgId != null,
   });
 
   if (result.ok) {
     await recordAdminAudit(ctx, "quote.create", {
       type: "quote",
       id: result.quote?.id ?? null,
-    }, { email: input.email, discountPct: input.discountPct });
+    }, {
+      email: input.email,
+      discountPct: input.discountPct,
+      partnerOrgId,
+      partnerRepId,
+    });
     revalidatePath("/admin/quotes");
     revalidatePath("/admin");
   }

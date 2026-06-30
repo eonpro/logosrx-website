@@ -138,6 +138,23 @@ export async function getPartnerQuoteWithItems(
   return data;
 }
 
+/** True when a partner has at least one quote in scope (for portal nav gating). */
+export async function partnerHasQuotes(scope: PartnerScope): Promise<boolean> {
+  const where =
+    scope.repId != null
+      ? and(
+          eq(pricingQuotes.partnerOrgId, scope.orgId),
+          eq(pricingQuotes.partnerRepId, scope.repId),
+        )
+      : eq(pricingQuotes.partnerOrgId, scope.orgId);
+  const [row] = await db
+    .select({ id: pricingQuotes.id })
+    .from(pricingQuotes)
+    .where(where)
+    .limit(1);
+  return Boolean(row);
+}
+
 /** Count of live (openable) quotes — for the admin overview card. */
 export async function countActiveQuotes(): Promise<number> {
   const rows = await db
