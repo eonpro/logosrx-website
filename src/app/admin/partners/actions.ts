@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   clinics,
@@ -23,8 +23,10 @@ import { deleteOrgFloor, upsertOrgFloor } from "@/lib/partners/pricing";
 import {
   buildPartnerActivateUrl,
   createPartnerClerkUser,
+  isClerkPhoneTaken,
   PartnerProvisionError,
 } from "@/lib/partners/provision";
+import { parseForm, partnerOrgEditSchema } from "@/lib/validation/forms";
 import {
   clerkErrorMessage,
   setClerkUserPassword,
@@ -254,6 +256,101 @@ export async function approvePartnerOrg(
       });
     })(),
   );
+
+  revalidateOrg(orgId);
+  return { ok: true };
+}
+
+/**
+ * Edits a partner org's contact details (name, contact, email, phone, website).
+ *
+ * The primary use case: an application can't be approved because its phone
+ * number collides with another account. An admin fixes the number here, then
+ * re-approves. Email and phone are unique account identifiers, so we reject a
+ * change that would collide with another org or an existing Clerk account
+ * before persisting — the same guarantees the public application form enforces.
+ */
+export async function updatePartnerOrgContact(
+  orgId: number,
+  input: {
+    orgName: string;
+    contactName: string;
+    email: string;
+    phone: string;
+    website: string;
+  },
+): Promise<AdminPartnerResult> {
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(orgId, "orgId");
+
+  const parsed = parseForm(partnerOrgEditSchema, input);
+  if (!parsed.ok) return { ok: false, error: parsed.error };
+  const { orgName, contactName, email } = parsed.data;
+  const phone = parsed.data.phone ?? null;
+  const website = parsed.data.website ?? null;
+
+  const [org] = await db
+    .select()
+    .from(partnerOrgs)
+    .where(eq(partnerOrgs.id, orgId))
+    .limit(1);
+  if (!org) return { ok: false, error: "Org not found." };
+
+  // Email uniqueness across other orgs (the column is uniquely indexed).
+  if (email !== org.contactEmail) {
+    const [emailOrg] = await db
+      .select({ id: partnerOrgs.id })
+      .from(partnerOrgs)
+      .where(and(eq(partnerOrgs.contactEmail, email), ne(partnerOrgs.id, orgId)))
+      .limit(1);
+    if (emailOrg) {
+      return {
+        ok: false,
+        error: "Another partner org already uses this email.",
+      };
+    }
+  }
+
+  // Phone uniqueness — only re-validate when it actually changed, so an
+  // unchanged number (possibly already attached to this org's own Clerk
+  // account) is never falsely rejected.
+  if (phone && phone !== org.contactPhone) {
+    const [phoneOrg] = await db
+      .select({ id: partnerOrgs.id })
+      .from(partnerOrgs)
+      .where(and(eq(partnerOrgs.contactPhone, phone), ne(partnerOrgs.id, orgId)))
+      .limit(1);
+    if (phoneOrg) {
+      return {
+        ok: false,
+        error: "Another partner org already uses this phone number.",
+      };
+    }
+    if (await isClerkPhoneTaken(phone)) {
+      return {
+        ok: false,
+        error:
+          "Another account is already using this phone number. Enter a unique one.",
+      };
+    }
+  }
+
+  await db
+    .update(partnerOrgs)
+    .set({
+      name: orgName,
+      contactName,
+      contactEmail: email,
+      contactPhone: phone,
+      website,
+      updatedAt: new Date(),
+    })
+    .where(eq(partnerOrgs.id, orgId));
+
+  await recordAdminAudit(ctx, "partner_org.update_contact", {
+    type: "partner_org",
+    id: orgId,
+  }, { orgName });
 
   revalidateOrg(orgId);
   return { ok: true };

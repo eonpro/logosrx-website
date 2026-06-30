@@ -88,6 +88,24 @@ export const partnerApplicationSchema = z.object({
 });
 export type PartnerApplicationParsed = z.infer<typeof partnerApplicationSchema>;
 
+/**
+ * Admin-side edit of a partner org's contact details. Mirrors the application
+ * fields but lets an admin fix data before/after approval — most importantly a
+ * duplicate phone number that blocks Clerk account provisioning. Phone is
+ * optional here (the org record allows none); when present it must look valid.
+ */
+export const partnerOrgEditSchema = z.object({
+  orgName: requiredString(200, "Organization name"),
+  contactName: requiredString(200, "Contact name"),
+  email: emailField,
+  phone: optionalString(30, "Phone").refine(
+    (v) => v == null || v.replace(/\D/g, "").length >= 7,
+    "Please enter a valid phone number.",
+  ),
+  website: optionalString(255, "Website"),
+});
+export type PartnerOrgEditParsed = z.infer<typeof partnerOrgEditSchema>;
+
 export type ValidationResult<T> =
   | { ok: true; data: T }
   | { ok: false; error: string };

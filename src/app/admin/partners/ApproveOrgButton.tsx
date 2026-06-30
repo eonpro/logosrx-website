@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { approvePartnerOrg } from "./actions";
 
 /**
@@ -43,7 +44,17 @@ export default function ApproveOrgButton({ orgId }: { orgId: number }) {
           {pending ? "Approving…" : "Approve"}
         </button>
       </div>
-      {error && <span className="text-[11px] text-red-600">{error}</span>}
+      {error && (
+        <div className="flex flex-col items-end gap-0.5 text-right">
+          <span className="text-[11px] text-red-600">{error}</span>
+          <Link
+            href={`/admin/partners/${orgId}?edit=1`}
+            className="text-[11px] font-semibold text-magenta hover:underline"
+          >
+            Edit contact details →
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

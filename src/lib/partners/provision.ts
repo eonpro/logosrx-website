@@ -114,8 +114,9 @@ function clerkErrorInfo(err: unknown): { code?: string; param?: string; message?
  * The auth instance requires (and uniquely indexes) a phone number, so we send
  * the org's phone. Phone uniqueness is validated up front on the application
  * form (`isClerkPhoneTaken`); if a duplicate still reaches here, we surface a
- * clear "phone already in use" message. Throws `PartnerProvisionError` with a
- * safe, specific message on genuine failure.
+ * clear "phone already in use" message so an admin can edit the org's contact
+ * details to a unique number and re-approve. Throws `PartnerProvisionError`
+ * with a safe, specific message on genuine failure.
  */
 export async function createPartnerClerkUser(args: {
   email: string;
@@ -186,7 +187,7 @@ export async function createPartnerClerkUser(args: {
     log.error("partner createUser failed", { error: err });
     if (info.code === "form_identifier_exists" && info.param === "phone_number") {
       throw new PartnerProvisionError(
-        "Another account is already using this phone number. Update the partner's phone number to a unique one and try again.",
+        "Another account is already using this phone number. Edit the partner's contact details to a unique number, then approve again.",
       );
     }
     // Surface the actual offending field so the cause is unambiguous.

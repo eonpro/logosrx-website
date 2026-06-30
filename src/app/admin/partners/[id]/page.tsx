@@ -20,14 +20,18 @@ import { standardCatalogPrice } from "@/data/catalog";
 import { getCatalogProducts } from "@/lib/catalog/store";
 import PartnerOrgManager from "./PartnerOrgManager";
 import OrgFloorManager from "./OrgFloorManager";
+import EditOrgContact from "./EditOrgContact";
 
 export default async function AdminPartnerDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ edit?: string }>;
 }) {
   await requireAdmin();
   const { id: raw } = await params;
+  const { edit } = await searchParams;
   const orgId = Number(raw);
   if (!Number.isInteger(orgId) || orgId <= 0) notFound();
 
@@ -185,6 +189,17 @@ export default async function AdminPartnerDetailPage({
             {org.notes}
           </p>
         )}
+        <EditOrgContact
+          defaultOpen={edit === "1"}
+          org={{
+            id: org.id,
+            orgName: org.name,
+            contactName: org.contactName ?? "",
+            email: org.contactEmail,
+            phone: org.contactPhone ?? "",
+            website: org.website ?? "",
+          }}
+        />
         <p className="mt-3 text-sm">
           <span className="text-navy/55">Marketing Services Agreement: </span>
           {org.msaSignedAt ? (
