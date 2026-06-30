@@ -46,11 +46,18 @@ export default function AuthShell({
   children,
   subtitle,
   footerLink,
+  crossLink,
   width = "narrow",
 }: {
   children: React.ReactNode;
   subtitle?: string;
   footerLink?: { label: string; text: string; href: string };
+  /**
+   * Optional pointer to the *other* portal (e.g. from the clinic/provider
+   * sign-in to the partner sign-in). Rendered as a subtle secondary line so a
+   * person who landed on the wrong portal can self-correct.
+   */
+  crossLink?: { label: string; text: string; href: string };
   /** `wide` widens the content column for richer pages (e.g. a pricing quote). */
   width?: "narrow" | "wide";
 }) {
@@ -127,6 +134,17 @@ export default function AuthShell({
                 className="text-magenta-light hover:text-white transition-colors font-medium"
               >
                 {footerLink.label}
+              </Link>
+            </p>
+          )}
+          {crossLink && (
+            <p className="-mt-3 text-[13px] text-white/40">
+              {crossLink.text}{" "}
+              <Link
+                href={crossLink.href}
+                className="text-white/60 underline-offset-2 transition-colors hover:text-white hover:underline"
+              >
+                {crossLink.label}
               </Link>
             </p>
           )}

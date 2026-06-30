@@ -11,6 +11,7 @@ import {
   getFeaturedProductIds,
 } from "@/lib/portal/merchandising";
 import { getPrimaryEmail, roleForEmail } from "@/lib/auth/admin";
+import { getPartnerContext } from "@/lib/auth/partner";
 import { SITE } from "@/lib/constants";
 
 export const metadata: Metadata = {
@@ -26,11 +27,12 @@ export default async function DashboardPage() {
 
   const gate = await getClinicGate(userId);
   // Gate: incomplete intake must finish onboarding first. Allowlisted admins
-  // don't have a clinic profile — never trap them in the clinic account-setup
-  // wizard; route them to the admin console instead.
+  // and affiliate partners don't have a clinic profile — never trap them in the
+  // clinic account-setup wizard; route them to their own surface instead.
   if (!gate.onboardingCompleted) {
     const email = await getPrimaryEmail(userId, sessionClaims);
     if (roleForEmail(email)) redirect("/admin");
+    if (await getPartnerContext()) redirect("/partners");
     redirect("/onboarding");
   }
 

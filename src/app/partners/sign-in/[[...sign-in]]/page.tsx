@@ -13,6 +13,11 @@ export default function PartnerSignInPage() {
         label: "Apply",
         href: "/partners/apply",
       }}
+      crossLink={{
+        text: "Clinic or provider?",
+        label: "Sign in to the provider portal",
+        href: "/sign-in",
+      }}
     >
       <SignIn
         routing="path"

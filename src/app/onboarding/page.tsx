@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
 import { getClinicProfile } from "@/lib/onboarding/data";
+import { getPartnerContext } from "@/lib/auth/partner";
 
 export const metadata: Metadata = {
   title: "Account Set Up",
@@ -18,6 +19,12 @@ export default async function OnboardingPage() {
   if (!userId) {
     return <OnboardingWizard mode="signup" />;
   }
+
+  // Affiliate partners have their own portal and no clinic profile — this
+  // clinic intake wizard isn't for them. Bounce them to the partner portal
+  // instead of trapping them in the questionnaire (e.g. when they reach here
+  // via the shared sign-up/sign-in fallbacks).
+  if (await getPartnerContext()) redirect("/partners");
 
   // Already signed in: finished clinics go straight to their dashboard;
   // otherwise let them finish intake without minting a second account.
