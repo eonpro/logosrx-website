@@ -16,7 +16,6 @@ import CatalogFiltersSidebar from "@/components/catalog/CatalogFiltersSidebar";
 import CatalogMobileFilters from "@/components/catalog/CatalogMobileFilters";
 import CatalogSearch from "@/components/catalog/CatalogSearch";
 import CatalogSortSelect from "@/components/catalog/CatalogSortSelect";
-import CatalogTierSelect from "@/components/catalog/CatalogTierSelect";
 import CatalogActiveFilters from "@/components/catalog/CatalogActiveFilters";
 import CatalogResultsSummary from "@/components/catalog/CatalogResultsSummary";
 import CatalogTable from "@/components/catalog/CatalogTable";
@@ -66,7 +65,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
 
   const catalogProducts = await getCatalogProducts();
   const matched = filterCatalog(catalogProducts, filters);
-  const sorted = sortCatalog(matched, filters.sort, filters.tier);
+  const sorted = sortCatalog(matched, filters.sort);
   const pageData = paginateCatalog(sorted, filters.page, CATALOG_CONFIG.pageSize);
   const counts = getFilterCounts(catalogProducts, filters);
   const detailSlugs = products.map((p) => p.slug);
@@ -92,14 +91,13 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
                 <CatalogMobileFilters filters={filters} counts={counts} />
               </div>
               <div className="flex-1">
-                <CatalogSortSelect value={filters.sort} tier={filters.tier} />
+                <CatalogSortSelect value={filters.sort} />
               </div>
             </div>
 
             {/* Desktop controls. */}
             <div className="hidden items-center gap-3 lg:flex">
-              <CatalogTierSelect value={filters.tier} />
-              <CatalogSortSelect value={filters.sort} tier={filters.tier} />
+              <CatalogSortSelect value={filters.sort} />
             </div>
           </div>
         </div>
@@ -107,11 +105,6 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
 
       <section className="bg-white pb-16 sm:pb-24">
         <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">
-          {/* Mobile: tier "show price" segmented control above the list. */}
-          <div className="lg:hidden">
-            <CatalogTierSelect value={filters.tier} />
-          </div>
-
           {/* Active filter chips + result count */}
           <div className="flex flex-col-reverse gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
             <CatalogResultsSummary
@@ -144,11 +137,10 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
                   {/* Mobile: tappable cards. Desktop: dense table. */}
                   <CatalogProductCards
                     items={pageData.items}
-                    tier={filters.tier}
                     detailSlugs={detailSlugs}
                   />
                   <div className="hidden lg:block">
-                    <CatalogTable items={pageData.items} tier={filters.tier} />
+                    <CatalogTable items={pageData.items} />
                   </div>
                   <CatalogPagination
                     filters={filters}

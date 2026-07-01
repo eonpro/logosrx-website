@@ -3,16 +3,13 @@
 import { useId, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  CATALOG_CONFIG,
   parseCatalogSearchParams,
   serializeCatalogSearchParams,
   type CatalogSort,
-  type CatalogTier,
 } from "@/data/catalog";
 
 interface CatalogSortSelectProps {
   value: CatalogSort;
-  tier: CatalogTier;
 }
 
 const SORT_OPTIONS: { value: CatalogSort; label: string }[] = [
@@ -27,7 +24,7 @@ const SORT_OPTIONS: { value: CatalogSort; label: string }[] = [
  *   - mobile gets the platform-native picker (much better UX on iOS/Android)
  *   - no need for a JS popover library
  */
-export default function CatalogSortSelect({ value, tier }: CatalogSortSelectProps) {
+export default function CatalogSortSelect({ value }: CatalogSortSelectProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [, startTransition] = useTransition();
@@ -47,8 +44,6 @@ export default function CatalogSortSelect({ value, tier }: CatalogSortSelectProp
       router.replace(`${pathname}${qs}`, { scroll: false });
     });
   }
-
-  const tierLabel = CATALOG_CONFIG.priceTierLabels[tier];
 
   return (
     <div className="flex w-full items-center gap-2 lg:w-auto">
@@ -79,14 +74,12 @@ export default function CatalogSortSelect({ value, tier }: CatalogSortSelectProp
           id={id}
           value={value}
           onChange={handleChange}
-          aria-label={`Sort catalog by ${tierLabel} price or name`}
+          aria-label="Sort catalog by price or name"
           className="min-h-11 w-full appearance-none rounded-full border border-beige bg-white py-2 pl-10 pr-9 text-sm font-medium text-navy hover:border-navy/30 focus:border-magenta focus:outline-none focus-visible:ring-2 focus-visible:ring-magenta cursor-pointer lg:min-h-0 lg:w-auto lg:pl-3.5"
         >
           {SORT_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
-              {opt.value === "name"
-                ? opt.label
-                : `${opt.label} — ${tierLabel}`}
+              {opt.label}
             </option>
           ))}
         </select>

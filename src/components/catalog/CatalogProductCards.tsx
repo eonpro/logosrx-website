@@ -1,17 +1,14 @@
 import Link from "next/link";
 import {
+  baseCatalogPrice,
   CATALOG_CONFIG,
-  CATALOG_TIERS,
   formatPrice,
   resolveDetailSlug,
   type CatalogProduct,
-  type CatalogTier,
 } from "@/data/catalog";
 
 interface CatalogProductCardsProps {
   items: CatalogProduct[];
-  /** Tier to feature as the headline price on each card. */
-  tier: CatalogTier;
   /**
    * Known product detail-page slugs. A card deep-links to `/products/<slug>`
    * when its SKU id resolves to one of these; otherwise it renders as a
@@ -31,7 +28,6 @@ interface CatalogProductCardsProps {
  */
 export default function CatalogProductCards({
   items,
-  tier,
   detailSlugs,
 }: CatalogProductCardsProps) {
   return (
@@ -40,7 +36,6 @@ export default function CatalogProductCards({
         <li key={product.id}>
           <CatalogProductCard
             product={product}
-            tier={tier}
             slug={resolveDetailSlug(product.id, detailSlugs)}
           />
         </li>
@@ -51,18 +46,15 @@ export default function CatalogProductCards({
 
 interface CatalogProductCardProps {
   product: CatalogProduct;
-  tier: CatalogTier;
   slug: string | undefined;
 }
 
-function CatalogProductCard({ product, tier, slug }: CatalogProductCardProps) {
+function CatalogProductCard({ product, slug }: CatalogProductCardProps) {
   const meta = [product.strength, product.form, product.unit ?? "Each"].filter(
     Boolean,
   ) as string[];
 
-  const headlinePrice = product.pricing[tier];
-  const headlineLabel = CATALOG_CONFIG.priceTierLabels[tier];
-  const secondaryTiers = CATALOG_TIERS.filter((t) => t !== tier);
+  const basePrice = baseCatalogPrice(product);
 
   const body = (
     <>
@@ -106,41 +98,20 @@ function CatalogProductCard({ product, tier, slug }: CatalogProductCardProps) {
       </div>
 
       <div className="mt-4 flex items-end justify-between gap-4">
-        {/* Headline tier */}
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-magenta">
-            {headlineLabel}
+            {CATALOG_CONFIG.basePriceLabel}
           </p>
           <p
             className={`mt-0.5 text-2xl font-bold tabular-nums leading-none ${
-              headlinePrice === null
+              basePrice === null || basePrice === undefined
                 ? "text-navy/40"
-                : headlinePrice === undefined
-                  ? "text-navy/30"
-                  : "text-navy"
+                : "text-navy"
             }`}
           >
-            {headlinePrice === null
-              ? "Not available"
-              : formatPrice(headlinePrice)}
+            {basePrice === null ? "Not available" : formatPrice(basePrice)}
           </p>
         </div>
-
-        {/* Secondary tiers */}
-        <dl className="flex shrink-0 gap-4 text-right">
-          {secondaryTiers.map((t) => (
-            <div key={t}>
-              <dt className="text-[10px] font-semibold uppercase tracking-wider text-navy/45">
-                {CATALOG_CONFIG.priceTierLabels[t]}
-              </dt>
-              <dd className="mt-0.5 text-sm font-semibold tabular-nums text-navy/70">
-                {product.pricing[t] === null
-                  ? "—"
-                  : formatPrice(product.pricing[t])}
-              </dd>
-            </div>
-          ))}
-        </dl>
       </div>
 
       {product.details && (

@@ -1,19 +1,12 @@
 import {
+  baseCatalogPrice,
   CATALOG_CONFIG,
-  CATALOG_TIERS,
   formatPrice,
   type CatalogProduct,
-  type CatalogTier,
 } from "@/data/catalog";
 
 interface CatalogTableProps {
   items: CatalogProduct[];
-  /**
-   * The tier to highlight in the table. Pricing for all three tiers is always
-   * rendered; the highlighted tier gets a stronger column background + bolder
-   * type so the eye finds it first.
-   */
-  tier: CatalogTier;
 }
 
 /**
@@ -26,13 +19,14 @@ interface CatalogTableProps {
  *     mode.
  *   - Column widths align across rows without flex juggling.
  */
-export default function CatalogTable({ items, tier }: CatalogTableProps) {
+export default function CatalogTable({ items }: CatalogTableProps) {
   return (
     <div className="overflow-hidden rounded-2xl border border-beige bg-white">
       <div className="overflow-x-auto">
         <table className="min-w-full border-collapse text-sm">
           <caption className="sr-only">
-            Catalog of compounded medications with pricing for retail, provider, and volume tiers.
+            Catalog of compounded medications with base pricing. Contact your
+            Logos sales rep for volume and custom preferred pricing.
           </caption>
           <thead>
             <tr className="border-b border-beige bg-cream/60 text-left">
@@ -60,19 +54,12 @@ export default function CatalogTable({ items, tier }: CatalogTableProps) {
               >
                 Unit
               </th>
-              {CATALOG_TIERS.map((t) => (
-                <th
-                  key={t}
-                  scope="col"
-                  className={`px-4 py-3.5 text-right text-xs font-bold uppercase tracking-wider whitespace-nowrap ${
-                    t === tier
-                      ? "bg-magenta/10 text-magenta"
-                      : "text-navy/70"
-                  }`}
-                >
-                  {CATALOG_CONFIG.priceTierLabels[t]}
-                </th>
-              ))}
+              <th
+                scope="col"
+                className="px-4 py-3.5 text-right text-xs font-bold uppercase tracking-wider whitespace-nowrap text-magenta"
+              >
+                {CATALOG_CONFIG.basePriceLabel}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -80,7 +67,6 @@ export default function CatalogTable({ items, tier }: CatalogTableProps) {
               <CatalogRow
                 key={product.id}
                 product={product}
-                tier={tier}
                 isLast={idx === items.length - 1}
               />
             ))}
@@ -93,7 +79,6 @@ export default function CatalogTable({ items, tier }: CatalogTableProps) {
 
 interface CatalogRowProps {
   product: CatalogProduct;
-  tier: CatalogTier;
   isLast: boolean;
 }
 
@@ -103,7 +88,8 @@ interface CatalogRowProps {
  * columns and is intentionally rendered as a separate `<tr>` so that screen
  * readers still announce it in row context.
  */
-function CatalogRow({ product, tier, isLast }: CatalogRowProps) {
+function CatalogRow({ product, isLast }: CatalogRowProps) {
+  const basePrice = baseCatalogPrice(product);
   const rowClass = `transition-colors hover:bg-cream/60 ${isLast && !product.details ? "" : "border-b border-beige/70"}`;
 
   return (
@@ -131,21 +117,15 @@ function CatalogRow({ product, tier, isLast }: CatalogRowProps) {
         <td className="px-4 py-3.5 text-sm text-navy/75 whitespace-nowrap">
           {product.unit ?? "Each"}
         </td>
-        {CATALOG_TIERS.map((t) => {
-          const value = product.pricing[t];
-          const isHighlight = t === tier;
-          const isUnavailable = value === null;
-          return (
-            <td
-              key={t}
-              className={`px-4 py-3.5 text-right text-sm tabular-nums whitespace-nowrap ${
-                isHighlight ? "bg-magenta/5 font-bold text-magenta" : "font-medium text-navy/75"
-              } ${isUnavailable ? "text-navy/40 italic" : ""}`}
-            >
-              {formatPrice(value)}
-            </td>
-          );
-        })}
+        <td
+          className={`px-4 py-3.5 text-right text-sm font-bold tabular-nums whitespace-nowrap ${
+            basePrice === null || basePrice === undefined
+              ? "text-navy/40 italic"
+              : "text-magenta"
+          }`}
+        >
+          {formatPrice(basePrice)}
+        </td>
       </tr>
 
       {product.details && (
@@ -154,7 +134,7 @@ function CatalogRow({ product, tier, isLast }: CatalogRowProps) {
           aria-describedby={`sku-${product.id}`}
         >
           <td
-            colSpan={4 + CATALOG_TIERS.length}
+            colSpan={5}
             className="bg-cream/40 px-4 pb-3 pt-0 text-xs text-navy/70 leading-relaxed"
           >
             <span className="mr-1 font-semibold uppercase tracking-wider text-navy/55">

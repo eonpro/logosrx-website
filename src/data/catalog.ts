@@ -99,6 +99,15 @@ export interface CatalogConfig {
   /** Default tier highlighted in the table and used for price sorting. */
   defaultTier: CatalogTier;
 
+  /** Column/label for the single published price shown on the public catalog. */
+  basePriceLabel: string;
+
+  /**
+   * Note steering viewers to a sales rep for better pricing. Volume and
+   * custom/preferred pricing are intentionally not published on the catalog.
+   */
+  salesNote: string;
+
   /** Rows per page. Default 50; the reference site uses ~34. */
   pageSize: number;
 
@@ -205,6 +214,9 @@ export const CATALOG_CONFIG: CatalogConfig = {
     volume: "Volume",
   },
   defaultTier: "provider",
+  basePriceLabel: "Base price",
+  salesNote:
+    "Contact your Logos sales rep for volume and custom preferred pricing.",
   pageSize: 50,
   indexable: false,
 };
@@ -787,7 +799,6 @@ export function filterCatalog(
 export function sortCatalog(
   products: readonly CatalogProduct[],
   sort: CatalogSort,
-  tier: CatalogTier,
 ): CatalogProduct[] {
   const arr = [...products];
   if (sort === "name") {
@@ -795,8 +806,8 @@ export function sortCatalog(
   }
   const direction = sort === "price-asc" ? 1 : -1;
   return arr.sort((a, b) => {
-    const av = a.pricing[tier];
-    const bv = b.pricing[tier];
+    const av = baseCatalogPrice(a);
+    const bv = baseCatalogPrice(b);
     const aMissing = av === undefined || av === null;
     const bMissing = bv === undefined || bv === null;
     if (aMissing && bMissing) return a.name.localeCompare(b.name, "en");
@@ -906,6 +917,21 @@ export function standardCatalogPrice(p: CatalogProduct): number | null {
   if (typeof provider === "number") return provider;
   if (typeof retail === "number") return retail;
   return null;
+}
+
+/**
+ * The single "base" price published on the public catalog: the highest tier we
+ * have on file — retail, falling back to provider, then volume. Returns
+ * `undefined`/`null` (rendered as "—"/"Not Available") when no tier is priced.
+ *
+ * Volume and custom/preferred pricing are intentionally NOT published; viewers
+ * are directed to a sales rep instead (see `CATALOG_CONFIG.salesNote`).
+ */
+export function baseCatalogPrice(
+  p: CatalogProduct,
+): number | null | undefined {
+  const { retail, provider, volume } = p.pricing;
+  return retail ?? provider ?? volume;
 }
 
 /** Format a price cell. `null` → "Not Available", `undefined` → "—". */

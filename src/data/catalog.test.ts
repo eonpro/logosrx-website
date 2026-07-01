@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  baseCatalogPrice,
   CATALOG_CONFIG,
   CATALOG_TIERS,
   countActiveFilters,
@@ -242,9 +243,33 @@ describe("filterCatalog", () => {
   });
 });
 
+describe("baseCatalogPrice", () => {
+  it("uses retail when present", () => {
+    expect(baseCatalogPrice(fixtures[0])).toBe(100); // a: retail 100
+  });
+
+  it("falls back to provider, then volume", () => {
+    expect(
+      baseCatalogPrice({ id: "x", name: "X", form: "Tablet", pricing: { provider: 42, volume: 30 } }),
+    ).toBe(42);
+    expect(
+      baseCatalogPrice({ id: "y", name: "Y", form: "Tablet", pricing: { volume: 30 } }),
+    ).toBe(30);
+  });
+
+  it("skips null/undefined tiers", () => {
+    expect(
+      baseCatalogPrice({ id: "z", name: "Z", form: "Tablet", pricing: { retail: null, provider: 15 } }),
+    ).toBe(15);
+    expect(
+      baseCatalogPrice({ id: "w", name: "W", form: "Tablet", pricing: {} }),
+    ).toBeUndefined();
+  });
+});
+
 describe("sortCatalog", () => {
   it("sorts alphabetically by name (default)", () => {
-    expect(sortCatalog(fixtures, "name", "provider").map((p) => p.id)).toEqual([
+    expect(sortCatalog(fixtures, "name").map((p) => p.id)).toEqual([
       "a",
       "b",
       "c",
@@ -252,30 +277,42 @@ describe("sortCatalog", () => {
     ]);
   });
 
-  it("sorts by ascending price within the selected tier", () => {
-    expect(
-      sortCatalog(fixtures, "price-asc", "retail").map((p) => p.id),
-    ).toEqual(["b", "c", "a", "d"]);
+  it("sorts by ascending base price", () => {
+    // Base prices: a=100, b=20, c=40, d=350
+    expect(sortCatalog(fixtures, "price-asc").map((p) => p.id)).toEqual([
+      "b",
+      "c",
+      "a",
+      "d",
+    ]);
   });
 
-  it("sorts by descending price within the selected tier", () => {
-    expect(
-      sortCatalog(fixtures, "price-desc", "retail").map((p) => p.id),
-    ).toEqual(["d", "a", "c", "b"]);
+  it("sorts by descending base price", () => {
+    expect(sortCatalog(fixtures, "price-desc").map((p) => p.id)).toEqual([
+      "d",
+      "a",
+      "c",
+      "b",
+    ]);
   });
 
-  it("pushes products with missing tier prices to the end of the sort", () => {
-    // For `provider` tier, `c.pricing.provider` is null and should sort last
-    // regardless of direction.
-    const asc = sortCatalog(fixtures, "price-asc", "provider").map((p) => p.id);
-    const desc = sortCatalog(fixtures, "price-desc", "provider").map((p) => p.id);
-    expect(asc[asc.length - 1]).toBe("c");
-    expect(desc[desc.length - 1]).toBe("c");
+  it("pushes products with no base price to the end of the sort", () => {
+    const unpriced: CatalogProduct = {
+      id: "e",
+      name: "Echo (unpriced)",
+      form: "Tablet",
+      pricing: {},
+    };
+    const withUnpriced = [...fixtures, unpriced];
+    const asc = sortCatalog(withUnpriced, "price-asc").map((p) => p.id);
+    const desc = sortCatalog(withUnpriced, "price-desc").map((p) => p.id);
+    expect(asc[asc.length - 1]).toBe("e");
+    expect(desc[desc.length - 1]).toBe("e");
   });
 
   it("does not mutate the source array", () => {
     const original = [...fixtures];
-    sortCatalog(fixtures, "price-asc", "retail");
+    sortCatalog(fixtures, "price-asc");
     expect(fixtures).toEqual(original);
   });
 });
