@@ -28,6 +28,20 @@ const DEFAULT_DIR = "/Users/italo/Desktop/LOGOS RX CATALOG 2026";
 const MAX_WIDTH = 1600; // 3300px source → 1600px is plenty for screen + zoom
 const WEBP_QUALITY = 80;
 
+/**
+ * Loose product pages that aren't part of the numbered `N. ….jpg` sequence.
+ * They're inserted right after the numbered page `EXTRA_AFTER_INDEX`, so they
+ * stay grouped with the product pages and ahead of the back-matter
+ * (white-label / shipping / states / label / end). Adjust the order of this
+ * list or the anchor index to reposition them.
+ */
+const EXTRA_PAGES = [
+  "peptides.jpg",
+  "cyanocobalamin prodcut.jpg", // note: source filename has this spelling
+  "tadalafil product page.jpg",
+];
+const EXTRA_AFTER_INDEX = 25; // after "25. LDS", before "26. White Label Packaging"
+
 interface SourcePage {
   index: number;
   file: string;
@@ -43,6 +57,33 @@ function numberedPages(files: string[]): SourcePage[] {
     })
     .filter((p): p is SourcePage => p !== null)
     .sort((a, b) => a.index - b.index);
+}
+
+/**
+ * Full ordered list of page filenames: the numbered sequence with the loose
+ * `EXTRA_PAGES` spliced in after `EXTRA_AFTER_INDEX` (or appended if that
+ * anchor page isn't present).
+ */
+function orderedPageFiles(files: string[]): string[] {
+  const numbered = numberedPages(files);
+  const present = new Set(files);
+  const extras = EXTRA_PAGES.filter((f) => present.has(f));
+  const missing = EXTRA_PAGES.filter((f) => !present.has(f));
+  if (missing.length > 0) {
+    console.warn(`  ⚠ Skipping missing extra page(s): ${missing.join(", ")}`);
+  }
+
+  const result: string[] = [];
+  let inserted = false;
+  for (const page of numbered) {
+    result.push(page.file);
+    if (page.index === EXTRA_AFTER_INDEX) {
+      result.push(...extras);
+      inserted = true;
+    }
+  }
+  if (!inserted) result.push(...extras);
+  return result;
 }
 
 async function main() {
@@ -64,20 +105,20 @@ async function main() {
     process.exit(1);
   }
 
-  const pages = numberedPages(entries);
-  if (pages.length === 0) {
+  const pageFiles = orderedPageFiles(entries);
+  if (pageFiles.length === 0) {
     console.error(`No numbered page images (e.g. "1. ….jpg") found in ${dir}`);
     process.exit(1);
   }
 
-  console.log(`Found ${pages.length} pages. Optimizing → WebP and uploading…`);
+  console.log(`Found ${pageFiles.length} pages. Optimizing → WebP and uploading…`);
 
   const urls: string[] = [];
   let i = 0;
-  for (const page of pages) {
+  for (const file of pageFiles) {
     i += 1;
     const slot = String(i).padStart(2, "0");
-    const input = await readFile(join(dir, page.file));
+    const input = await readFile(join(dir, file));
     const webp = await sharp(input)
       .resize({ width: MAX_WIDTH, withoutEnlargement: true })
       .webp({ quality: WEBP_QUALITY })
@@ -91,7 +132,7 @@ async function main() {
     });
     urls.push(blob.url);
     const kb = (webp.length / 1024).toFixed(0);
-    console.log(`  [${slot}/${pages.length}] ${page.file} → ${kb} KB`);
+    console.log(`  [${slot}/${pageFiles.length}] ${file} → ${kb} KB`);
   }
 
   const manifest = {
