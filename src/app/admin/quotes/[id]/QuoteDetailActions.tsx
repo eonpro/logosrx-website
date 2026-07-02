@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   deleteQuote,
@@ -80,6 +81,12 @@ export default function QuoteDetailActions({
             Regenerate password
           </button>
         )}
+        <Link
+          href={`/admin/quotes/new?from=${id}`}
+          className="rounded-full border border-beige-dark px-4 py-2 text-sm font-semibold text-navy hover:bg-beige/50"
+        >
+          Duplicate
+        </Link>
         {!claimed && (
           <button
             type="button"

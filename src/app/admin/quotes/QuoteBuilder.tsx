@@ -26,6 +26,20 @@ interface LineItem {
   standardDollars: number | null;
 }
 
+export interface QuotePrefill {
+  intro: string;
+  tier: "standard" | "preferred" | "vip";
+  discountPct: number;
+  partnerOrgId: number | null;
+  partnerRepId: number | null;
+  items: {
+    productId: string | null;
+    productName: string;
+    priceDollars: number;
+    unit: string | null;
+  }[];
+}
+
 const inputClass =
   "w-full rounded-lg border border-beige-dark bg-white px-3 py-2 text-sm text-navy outline-none focus:border-magenta focus:ring-1 focus:ring-magenta";
 
@@ -38,21 +52,42 @@ function nextKey() {
 export default function QuoteBuilder({
   productOptions,
   referrerOrgs = [],
+  prefill = null,
 }: {
   productOptions: ProductOption[];
   referrerOrgs?: ReferrerOrg[];
+  prefill?: QuotePrefill | null;
 }) {
   const [clinicName, setClinicName] = useState("");
   const [contactName, setContactName] = useState("");
   const [email, setEmail] = useState("");
-  const [intro, setIntro] = useState("");
-  const [tier, setTier] = useState<"standard" | "preferred" | "vip">("standard");
-  const [discountPct, setDiscountPct] = useState("0");
+  const [intro, setIntro] = useState(prefill?.intro ?? "");
+  const [tier, setTier] = useState<"standard" | "preferred" | "vip">(
+    prefill?.tier ?? "standard",
+  );
+  const [discountPct, setDiscountPct] = useState(
+    prefill ? String(prefill.discountPct) : "0",
+  );
   const [expiresInDays, setExpiresInDays] = useState("14");
-  const [items, setItems] = useState<LineItem[]>([]);
+  const [items, setItems] = useState<LineItem[]>(() =>
+    (prefill?.items ?? []).map((it) => ({
+      key: nextKey(),
+      productId: it.productId,
+      productName: it.productName,
+      priceDollars: it.priceDollars ? String(it.priceDollars) : "",
+      unit: it.unit ?? "",
+      standardDollars:
+        productOptions.find((o) => o.id === it.productId)?.standardDollars ??
+        null,
+    })),
+  );
   const [picker, setPicker] = useState("");
-  const [partnerOrgId, setPartnerOrgId] = useState("");
-  const [partnerRepId, setPartnerRepId] = useState("");
+  const [partnerOrgId, setPartnerOrgId] = useState(
+    prefill?.partnerOrgId ? String(prefill.partnerOrgId) : "",
+  );
+  const [partnerRepId, setPartnerRepId] = useState(
+    prefill?.partnerRepId ? String(prefill.partnerRepId) : "",
+  );
   const [error, setError] = useState("");
   const [created, setCreated] = useState<CreateQuoteResult["quote"] | null>(null);
   const [pending, startTransition] = useTransition();
@@ -223,7 +258,16 @@ export default function QuoteBuilder({
         <Link href="/admin/quotes" className="text-sm text-navy/60 hover:text-navy">
           ← Quotes
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-navy">New pricing quote</h1>
+        <h1 className="mt-2 text-2xl font-bold text-navy">
+          {prefill ? "Duplicate quote" : "New pricing quote"}
+        </h1>
+        {prefill && (
+          <p className="mt-1 text-sm text-navy/60">
+            Products, pricing and referrer were copied from the original quote.
+            Enter the new recipient below — a fresh link and password will be
+            generated.
+          </p>
+        )}
       </div>
 
       <section className="rounded-2xl border border-beige-dark bg-white p-6">
