@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SmoothScroll from "@/components/SmoothScroll";
 import HashScroller from "@/components/HashScroller";
+import ChatWidget from "@/components/ChatWidget";
 import { ReducedMotionProvider } from "@/components/ReducedMotionProvider";
 
 export default function MarketingLayout({
@@ -18,6 +19,7 @@ export default function MarketingLayout({
         {children}
       </main>
       <Footer />
+      <ChatWidget />
     </ReducedMotionProvider>
   );
 }

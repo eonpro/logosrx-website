@@ -17,6 +17,7 @@ interface ProductStickyCTAProps {
 export default function ProductStickyCTA({ productName }: ProductStickyCTAProps) {
   return (
     <div
+      data-bottom-bar
       className="safe-pb fixed inset-x-0 bottom-0 z-40 border-t border-beige bg-white/90 backdrop-blur-lg lg:hidden"
       role="region"
       aria-label="Prescribe this product"

@@ -1,8 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+const { amplitudeInit, amplitudeTrack } = vi.hoisted(() => ({
+  amplitudeInit: vi.fn(),
+  amplitudeTrack: vi.fn(),
+}));
+
+vi.mock("@amplitude/analytics-browser", () => ({
+  init: amplitudeInit,
+  track: amplitudeTrack,
+}));
+
 /**
- * `GA_ID` / `VITALS_ENDPOINT` are captured from env at module load, so each test
- * stubs env, then `resetModules()` + dynamic `import()` to get a fresh copy.
+ * `GA_ID` / `AMPLITUDE_API_KEY` / `VITALS_ENDPOINT` are captured from env at
+ * module load, so each test stubs env, then `resetModules()` + dynamic
+ * `import()` to get a fresh copy.
  */
 async function loadAnalytics() {
   vi.resetModules();
@@ -13,6 +24,7 @@ afterEach(() => {
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
   vi.resetModules();
+  vi.clearAllMocks();
   delete (window as unknown as { gtag?: unknown }).gtag;
 });
 
@@ -53,6 +65,45 @@ describe("analytics", () => {
       "event",
       "CLS",
       expect.objectContaining({ value: 123, non_interaction: true }),
+    );
+  });
+
+  it("does not load or init Amplitude when its key is unset", async () => {
+    vi.stubEnv("NEXT_PUBLIC_AMPLITUDE_API_KEY", "");
+    const mod = await loadAnalytics();
+
+    expect(mod.amplitudeEnabled()).toBe(false);
+    expect(await mod.initAmplitude()).toBeNull();
+    mod.track("cta_call");
+    await Promise.resolve();
+    expect(amplitudeInit).not.toHaveBeenCalled();
+    expect(amplitudeTrack).not.toHaveBeenCalled();
+  });
+
+  it("initializes Amplitude once and mirrors tracked events when configured", async () => {
+    vi.stubEnv("NEXT_PUBLIC_AMPLITUDE_API_KEY", "amp-test-key");
+    const mod = await loadAnalytics();
+
+    expect(mod.amplitudeEnabled()).toBe(true);
+    await mod.initAmplitude();
+    await mod.initAmplitude(); // memoized — must not re-init
+    expect(amplitudeInit).toHaveBeenCalledTimes(1);
+    expect(amplitudeInit).toHaveBeenCalledWith(
+      "amp-test-key",
+      expect.objectContaining({
+        autocapture: expect.objectContaining({
+          pageViews: true,
+          formInteractions: false,
+          elementInteractions: false,
+        }),
+      }),
+    );
+
+    mod.track("cta_onboarding_start", { location: "test" });
+    await vi.waitFor(() =>
+      expect(amplitudeTrack).toHaveBeenCalledWith("cta_onboarding_start", {
+        location: "test",
+      }),
     );
   });
 

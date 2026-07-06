@@ -59,7 +59,36 @@ export function buildCsp(options: CspOptions = {}): string {
     "https://*.vercel-storage.com",
   ];
 
-  const connectSrc = ["'self'", ...CLERK, "https://*.clerk-telemetry.com"];
+  // Amplitude Browser SDK: event ingestion (api2.amplitude.com) + remote
+  // config fetch (sr-client-cfg.amplitude.com) both live under *.amplitude.com.
+  const AMPLITUDE = ["https://*.amplitude.com"];
+
+  // LeadConnector (GoHighLevel) chat widget (components/ChatWidget.tsx):
+  //   - loader + web-component bundle from widgets.leadconnectorhq.com, which
+  //     then dynamically imports helper modules from sibling subdomains
+  //     (services.…/user-session.js, stcdn.…/intl-tel-input) — so script-src
+  //     needs the wildcard, not just widgets.
+  //   - config/messaging APIs + live-chat socket across other GHL subdomains
+  //   - uploaded branding assets (agent avatars, sounds) served from the GHL
+  //     media library on *.msgsndr.com and storage.googleapis.com/msgsndr/
+  const LEADCONNECTOR_SCRIPT = ["https://*.leadconnectorhq.com"];
+  const LEADCONNECTOR_CONNECT = [
+    "https://*.leadconnectorhq.com",
+    "wss://*.leadconnectorhq.com",
+  ];
+  const LEADCONNECTOR_ASSETS = [
+    "https://*.leadconnectorhq.com",
+    "https://*.msgsndr.com",
+    "https://storage.googleapis.com/msgsndr/",
+  ];
+
+  const connectSrc = [
+    "'self'",
+    ...CLERK,
+    "https://*.clerk-telemetry.com",
+    ...AMPLITUDE,
+    ...LEADCONNECTOR_CONNECT,
+  ];
 
   // With a nonce we use 'strict-dynamic': supporting browsers ignore the host
   // allow-list and trust only nonce'd scripts (and scripts they load), so the
@@ -71,20 +100,29 @@ export function buildCsp(options: CspOptions = {}): string {
         "'strict-dynamic'",
         ...(isDev ? ["'unsafe-eval'"] : []),
         ...CLERK,
+        ...LEADCONNECTOR_SCRIPT,
       ]
     : [
         "'self'",
         "'unsafe-inline'",
         ...(isDev ? ["'unsafe-eval'"] : []),
         ...CLERK,
+        ...LEADCONNECTOR_SCRIPT,
       ];
 
   const styleSrc = ["'self'", "'unsafe-inline'", ...TYPEKIT];
-  const fontSrc = ["'self'", "data:", ...TYPEKIT];
-  const imgSrc = ["'self'", "data:", "blob:", "https://img.clerk.com", ...VERCEL];
-  const frameSrc = ["'self'", ...CLERK];
+  const fontSrc = ["'self'", "data:", ...TYPEKIT, ...LEADCONNECTOR_ASSETS];
+  const imgSrc = [
+    "'self'",
+    "data:",
+    "blob:",
+    "https://img.clerk.com",
+    ...VERCEL,
+    ...LEADCONNECTOR_ASSETS,
+  ];
+  const frameSrc = ["'self'", ...CLERK, ...LEADCONNECTOR_SCRIPT];
   const workerSrc = ["'self'", "blob:"];
-  const mediaSrc = ["'self'"];
+  const mediaSrc = ["'self'", ...LEADCONNECTOR_ASSETS];
 
   return [
     "default-src 'self'",

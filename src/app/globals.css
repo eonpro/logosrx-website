@@ -230,6 +230,31 @@ textarea {
 }
 
 /*
+ * LeadConnector chat (see components/ChatWidget.tsx). The vendor loader
+ * injects a `<chat-widget>` element with its own launcher bubble; we replace
+ * that launcher with our branded button, so the vendor element stays hidden
+ * until our button opens it (ChatWidget toggles the `lc-open` class). When
+ * the visitor closes the chat, the class is removed and it disappears again.
+ */
+chat-widget:not(.lc-open) {
+  display: none !important;
+}
+
+/*
+ * Branded chat launcher. Bottom offset honors the iOS home indicator, and
+ * on <lg viewports adds clearance for pages with a fixed bottom action bar
+ * (product pages' sticky "Prescribe" CTA) so the two never overlap.
+ */
+.chat-launcher {
+  bottom: calc(1.25rem + env(safe-area-inset-bottom));
+}
+@media (max-width: 63.9375rem) {
+  body:has([data-bottom-bar]) .chat-launcher {
+    bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  }
+}
+
+/*
  * Clerk dark-form styling lives entirely in `clerk-dark-appearance.ts` via
  * Clerk's supported `appearance` API (`variables` + `elements`). We deliberately
  * avoid hand-written `.cl-*` CSS here: those selectors target Clerk's internal

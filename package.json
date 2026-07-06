@@ -30,6 +30,7 @@
     "e2e:install": "playwright install chromium"
   },
   "dependencies": {
+    "@amplitude/analytics-browser": "^2.44.4",
     "@aws-sdk/client-sesv2": "^3.1057.0",
     "@aws-sdk/rds-signer": "^3.1019.0",
     "@clerk/nextjs": "^7.0.7",
