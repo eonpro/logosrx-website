@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { getPartnerContext } from "@/lib/auth/partner";
+import { roleAtLeast } from "@/lib/auth/partner-roles";
 import { getOrgFloorMap } from "@/lib/partners/pricing";
 import { getCatalogProducts } from "@/lib/catalog/store";
 import PartnerNoAccess from "../../PartnerNoAccess";
@@ -10,6 +11,11 @@ import PartnerQuoteBuilder, { type FloorOption } from "../PartnerQuoteBuilder";
 export default async function NewPartnerQuotePage() {
   const ctx = await getPartnerContext();
   if (!ctx) return <PartnerNoAccess />;
+  // Quote creation mutates pricing state — org viewers are read-only (the
+  // createPartnerQuote action enforces the same minRole).
+  if (ctx.kind === "org" && !roleAtLeast(ctx.role, "admin")) {
+    return <PartnerNoAccess />;
+  }
 
   if (ctx.org.compensationModel !== "margin") {
     return (

@@ -83,6 +83,7 @@ const limiters = {
   email: makeLimiter("email", 3, 60), // 3 newsletter signups / minute / key
   resume: makeLimiter("resume", 2, 60 * 5), // 2 resume uploads / 5 minutes / key
   download: makeLimiter("download", 10, 60), // 10 token attempts / minute / key
+  report: makeLimiter("report", 30, 60), // 30 CSP reports / minute / key
 } as const;
 
 const memoryConfig = {
@@ -90,6 +91,7 @@ const memoryConfig = {
   email: { limit: 3, windowMs: 60_000 },
   resume: { limit: 2, windowMs: 5 * 60_000 },
   download: { limit: 10, windowMs: 60_000 },
+  report: { limit: 30, windowMs: 60_000 },
 } as const;
 
 export type LimiterKey = keyof typeof limiters;
@@ -142,12 +144,12 @@ export async function rateLimitKey(
         remaining: result.remaining,
       };
     } catch (err) {
-      // Fail OPEN: rate limiting is a guardrail, not a gate. An Upstash/Redis
-      // outage must never turn legitimate requests into 500s (previously the
-      // error propagated to API-route callers, which is exactly how a
-      // dependency blip cascaded into user-facing errors). Allow the request,
-      // but log + report so the degraded state is visible to ops.
-      log.warn("rate-limit limiter error; failing open", {
+      // Degrade, don't fail open: an Upstash/Redis outage must never turn
+      // legitimate requests into 500s, but unconditionally allowing every
+      // request would drop all throttling for the duration of the outage.
+      // Fall back to the per-instance in-memory limiter (weaker — not shared
+      // across instances — but still a real cap) and report the degradation.
+      log.warn("rate-limit limiter error; falling back to in-memory limit", {
         bucket,
         error: err instanceof Error ? err.message : "unknown",
       });
@@ -155,7 +157,8 @@ export async function rateLimitKey(
         tags: { surface: "rate-limit", bucket },
         level: "warning",
       });
-      return { success: true, reset: Date.now(), remaining: 1 };
+      const cfg = memoryConfig[bucket];
+      return memoryLimit(`${bucket}:${key}`, cfg.limit, cfg.windowMs);
     }
   }
 

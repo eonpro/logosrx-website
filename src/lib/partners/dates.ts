@@ -24,6 +24,21 @@ export interface ResolvedDateRange {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * Renders a transaction date for display. Transaction dates are stored as UTC
+ * midnights (CSV imports parse `YYYY-MM-DD` as UTC), so they must be formatted
+ * in UTC — a server-local `toLocaleDateString()` shifts them a day earlier on
+ * US deployments and disagrees with the CSV exports.
+ */
+export function formatTransactionDate(d: Date): string {
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
 /** Resolves a `?range=` query param to a concrete lower bound. */
 export function resolveDateRange(
   raw: string | undefined,

@@ -14,11 +14,15 @@
  * the app is serving traffic, so we keep it tiny and self-contained.
  */
 
-type Requirement = "always" | "production";
+type Requirement = "always" | "production" | "deployed";
 
 interface EnvRule {
   name: string;
-  /** `always` = needed in every environment; `production` = only enforced in prod. */
+  /**
+   * `always` = needed in every environment; `production` = only enforced in
+   * prod; `deployed` = enforced in prod AND on Vercel preview deployments
+   * (publicly reachable, may point at real data).
+   */
   required: Requirement;
   /** Human-readable purpose, shown in the error so ops can fix it fast. */
   description: string;
@@ -109,6 +113,11 @@ function isProduction(): boolean {
   );
 }
 
+/** True on any publicly-reachable Vercel deployment (production or preview). */
+function isDeployed(env: NodeJS.ProcessEnv = process.env): boolean {
+  return env.VERCEL_ENV === "production" || env.VERCEL_ENV === "preview";
+}
+
 const RULES: EnvRule[] = [
   // --- Database (RDS IAM auth) ---
   { name: "PGHOST", required: "production", description: "Postgres host (Aurora endpoint)" },
@@ -144,7 +153,7 @@ const RULES: EnvRule[] = [
   // --- Crypto / cookie signing ---
   {
     name: "ONBOARDING_ENCRYPTION_KEY",
-    required: "production",
+    required: "deployed",
     description: "Master secret for at-rest encryption + quote cookie signing",
     validate: (v) => (v.length >= 16 ? null : "must be at least 16 characters"),
   },
@@ -253,7 +262,10 @@ export function checkEnv(
 
   for (const rule of RULES) {
     const value = env[rule.name];
-    const enforced = rule.required === "always" || (rule.required === "production" && prod);
+    const enforced =
+      rule.required === "always" ||
+      (rule.required === "production" && prod) ||
+      (rule.required === "deployed" && (prod || isDeployed(env)));
 
     if (!value) {
       if (enforced) {

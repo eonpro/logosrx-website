@@ -19,13 +19,33 @@ function isoDate(d: Date | null): string {
   return d ? d.toISOString().slice(0, 10) : "";
 }
 
-function csvResponse(filename: string, csv: string): NextResponse {
+/** Hard caps so a single export can't hold a connection open indefinitely. */
+const TRANSACTIONS_EXPORT_LIMIT = 5000;
+const BOOK_EXPORT_LIMIT = 1000; // enforced inside listBookOfBusiness
+
+/**
+ * Visible truncation marker. Appended as a final row (and mirrored in a
+ * response header) so a partner reconciling against the file knows the tail
+ * is missing instead of silently trusting an incomplete export.
+ */
+function truncationRow(columns: number, limit: number): (string | number)[] {
+  const row = new Array<string | number>(columns).fill("");
+  row[0] = `NOTE: export truncated at ${limit} rows — narrow the date range to get the rest.`;
+  return row;
+}
+
+function csvResponse(
+  filename: string,
+  csv: string,
+  truncated = false,
+): NextResponse {
   return new NextResponse(csv, {
     status: 200,
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
       "Content-Disposition": `attachment; filename="${filename}"`,
       "Cache-Control": "no-store",
+      ...(truncated ? { "X-Export-Truncated": "true" } : {}),
     },
   });
 }
@@ -56,60 +76,70 @@ export async function GET(
 
   if (dataset === "book") {
     const rows = await listBookOfBusiness(ctx, from);
-    const csv = toCsv(
-      [
-        "Company",
-        "Contact",
-        "Email",
-        ...(ctx.kind === "org" ? ["Rep"] : []),
-        "Stage",
-        "Verification",
-        "Revenue",
-        "Commission",
-        "Transactions",
-        "Last activity",
-        "Joined",
-      ],
-      rows.map((r) => [
-        r.clinicName ?? "",
-        r.contactName ?? "",
-        r.contactEmail ?? "",
-        ...(ctx.kind === "org" ? [r.repName ?? "Organization"] : []),
-        STAGE_LABELS[r.stage] ?? r.stage,
-        r.verificationStatus,
-        centsToDollarString(r.revenueCents),
-        centsToDollarString(r.commissionCents),
-        r.txCount,
-        isoDate(r.lastTransactionDate),
-        isoDate(r.createdAt),
-      ]),
-    );
-    return csvResponse("book-of-business.csv", csv);
+    const truncated = rows.length >= BOOK_EXPORT_LIMIT;
+    const headers = [
+      "Company",
+      "Contact",
+      "Email",
+      ...(ctx.kind === "org" ? ["Rep"] : []),
+      "Stage",
+      "Verification",
+      "Revenue",
+      "Commission",
+      "Transactions",
+      "Last activity",
+      "Joined",
+    ];
+    const body: (string | number)[][] = rows.map((r) => [
+      r.clinicName ?? "",
+      r.contactName ?? "",
+      r.contactEmail ?? "",
+      ...(ctx.kind === "org" ? [r.repName ?? "Organization"] : []),
+      STAGE_LABELS[r.stage] ?? r.stage,
+      r.verificationStatus,
+      centsToDollarString(r.revenueCents),
+      centsToDollarString(r.commissionCents),
+      r.txCount,
+      isoDate(r.lastTransactionDate),
+      isoDate(r.createdAt),
+    ]);
+    if (truncated) body.push(truncationRow(headers.length, BOOK_EXPORT_LIMIT));
+    return csvResponse("book-of-business.csv", toCsv(headers, body), truncated);
   }
 
   if (dataset === "transactions") {
-    const rows = await listPartnerTransactions(ctx, from, 5000);
-    const csv = toCsv(
-      [
-        "Date",
-        "Company",
-        ...(ctx.kind === "org" ? ["Rep"] : []),
-        "Reference",
-        "Description",
-        "Revenue",
-        "Your commission",
-      ],
-      rows.map((r) => [
-        isoDate(r.transactionDate),
-        r.clinicName ?? "",
-        ...(ctx.kind === "org" ? [r.repName ?? "Organization"] : []),
-        r.reference ?? "",
-        r.description ?? "",
-        centsToDollarString(r.revenueCents),
-        centsToDollarString(r.ownCommissionCents),
-      ]),
+    // Fetch one extra row so truncation is detected exactly.
+    const fetched = await listPartnerTransactions(
+      ctx,
+      from,
+      TRANSACTIONS_EXPORT_LIMIT + 1,
     );
-    return csvResponse("transactions.csv", csv);
+    const truncated = fetched.length > TRANSACTIONS_EXPORT_LIMIT;
+    const rows = truncated
+      ? fetched.slice(0, TRANSACTIONS_EXPORT_LIMIT)
+      : fetched;
+    const headers = [
+      "Date",
+      "Company",
+      ...(ctx.kind === "org" ? ["Rep"] : []),
+      "Reference",
+      "Description",
+      "Revenue",
+      "Your commission",
+    ];
+    const body: (string | number)[][] = rows.map((r) => [
+      isoDate(r.transactionDate),
+      r.clinicName ?? "",
+      ...(ctx.kind === "org" ? [r.repName ?? "Organization"] : []),
+      r.reference ?? "",
+      r.description ?? "",
+      centsToDollarString(r.revenueCents),
+      centsToDollarString(r.ownCommissionCents),
+    ]);
+    if (truncated) {
+      body.push(truncationRow(headers.length, TRANSACTIONS_EXPORT_LIMIT));
+    }
+    return csvResponse("transactions.csv", toCsv(headers, body), truncated);
   }
 
   if (dataset === "reps") {

@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { requireAdmin } from "@/lib/auth/admin";
+import { ADMIN_ROLE, requireAdmin } from "@/lib/auth/admin";
 import { listQuotes, isQuoteExpired } from "@/lib/quotes/data";
 import type { PricingQuote } from "@/lib/db/schema";
 
@@ -24,7 +24,8 @@ function fmtDate(d: Date | null): string {
 }
 
 export default async function QuotesPage() {
-  await requireAdmin();
+  const ctx = await requireAdmin();
+  const canEdit = ctx.role === ADMIN_ROLE;
   const quotes = await listQuotes();
 
   return (
@@ -36,12 +37,14 @@ export default async function QuotesPage() {
             Password-gated custom pricing links for prospective clinics.
           </p>
         </div>
-        <Link
-          href="/admin/quotes/new"
-          className="inline-flex items-center gap-2 rounded-full bg-magenta px-5 py-2.5 text-sm font-semibold text-white hover:bg-magenta/90"
-        >
-          + New quote
-        </Link>
+        {canEdit && (
+          <Link
+            href="/admin/quotes/new"
+            className="inline-flex items-center gap-2 rounded-full bg-magenta px-5 py-2.5 text-sm font-semibold text-white hover:bg-magenta/90"
+          >
+            + New quote
+          </Link>
+        )}
       </div>
 
       {quotes.length === 0 ? (

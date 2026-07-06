@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { formatCents } from "@/lib/partners/commission";
 import { resetOrgFloorPrice, setOrgFloorPrice } from "../actions";
 
@@ -25,6 +26,7 @@ export default function OrgFloorManager({
   /** Whether the org is currently on the margin model (affects the hint only). */
   active: boolean;
 }) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
@@ -58,7 +60,13 @@ export default function OrgFloorManager({
         floorDollars,
         unit: p.unit ?? "",
       });
-      if (!res.ok) setError(res.error ?? "Could not save the floor.");
+      if (!res.ok) {
+        setError(res.error ?? "Could not save the floor.");
+        return;
+      }
+      // Refresh the `floors` prop so the saved floor shows in the default
+      // (configured-only) view instead of appearing to vanish.
+      router.refresh();
     });
   }
 
@@ -66,7 +74,11 @@ export default function OrgFloorManager({
     setError("");
     startTransition(async () => {
       const res = await resetOrgFloorPrice(orgId, productId);
-      if (!res.ok) setError(res.error ?? "Could not clear the floor.");
+      if (!res.ok) {
+        setError(res.error ?? "Could not clear the floor.");
+        return;
+      }
+      router.refresh();
     });
   }
 

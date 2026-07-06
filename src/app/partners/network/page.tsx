@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getPartnerContext } from "@/lib/auth/partner";
 import { formatBps, formatCents } from "@/lib/partners/commission";
 import { getRepProduction, listBookOfBusiness } from "@/lib/partners/crm";
+import { formatTransactionDate } from "@/lib/partners/dates";
 import PartnerNoAccess from "../PartnerNoAccess";
 import BookTable from "./BookTable";
 
@@ -112,11 +113,7 @@ export default async function PartnerNetworkPage() {
             revenueCents: c.revenueCents,
             commissionCents: c.commissionCents,
             lastActivityLabel: c.lastTransactionDate
-              ? c.lastTransactionDate.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })
+              ? formatTransactionDate(c.lastTransactionDate)
               : null,
           }))}
         />

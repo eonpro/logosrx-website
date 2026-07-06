@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   addPartnerTransaction,
   importPartnerTransactionsCsv,
@@ -14,6 +15,7 @@ export default function TransactionEntry({
 }: {
   clinics: { id: number; label: string }[];
 }) {
+  const router = useRouter();
   const [clinicId, setClinicId] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [amount, setAmount] = useState("");
@@ -62,6 +64,8 @@ export default function TransactionEntry({
       setDescription("");
       setReference("");
       setNotice("Transaction recorded — commission entries generated.");
+      // Show the new row in the table below without a manual reload.
+      router.refresh();
     });
   }
 
@@ -81,6 +85,7 @@ export default function TransactionEntry({
           `${res.imported} transaction${res.imported === 1 ? "" : "s"} imported.`,
         );
         setCsvText("");
+        router.refresh();
       } else if (res.errors.length === 0) {
         setError("Nothing to import.");
       }

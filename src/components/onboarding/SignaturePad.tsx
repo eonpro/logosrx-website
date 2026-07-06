@@ -18,6 +18,11 @@ export default function SignaturePad({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
   const last = useRef<{ x: number; y: number } | null>(null);
+  // Ink presence is tracked in a ref so `end()` sees it synchronously; the
+  // state mirror only drives the placeholder/clear-button UI. Reading the
+  // `hasInk` state in `end()` raced React's re-render and could drop a quick
+  // single-stroke signature.
+  const inkRef = useRef(Boolean(value));
   const [hasInk, setHasInk] = useState(Boolean(value));
 
   // Size the backing store to the element for crisp lines on HiDPI screens,
@@ -41,6 +46,7 @@ export default function SignaturePad({
       const img = new Image();
       img.onload = () => ctx.drawImage(img, 0, 0, rect.width, rect.height);
       img.src = value;
+      inkRef.current = true;
       setHasInk(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -67,7 +73,10 @@ export default function SignaturePad({
     ctx.lineTo(p.x, p.y);
     ctx.stroke();
     last.current = p;
-    if (!hasInk) setHasInk(true);
+    if (!inkRef.current) {
+      inkRef.current = true;
+      setHasInk(true);
+    }
   }
 
   function end() {
@@ -75,7 +84,7 @@ export default function SignaturePad({
     drawing.current = false;
     last.current = null;
     const canvas = canvasRef.current;
-    if (canvas && hasInk) onChange(canvas.toDataURL("image/png"));
+    if (canvas && inkRef.current) onChange(canvas.toDataURL("image/png"));
   }
 
   function clear() {
@@ -84,6 +93,7 @@ export default function SignaturePad({
     if (canvas && ctx) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
+    inkRef.current = false;
     setHasInk(false);
     onChange("");
   }

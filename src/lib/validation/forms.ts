@@ -61,15 +61,16 @@ export const clinicSignupSchema = z.object({
 });
 export type ClinicSignupInput = z.infer<typeof clinicSignupSchema>;
 
-const MAX_APPLICATION_FIELD = 1024;
+// Limits mirror the `employment_applications` column widths (schema.ts) so
+// validation rejects with a friendly 400 instead of the insert throwing a 500.
 export const employmentApplicationSchema = z.object({
-  firstName: requiredString(MAX_APPLICATION_FIELD, "First name"),
-  lastName: requiredString(MAX_APPLICATION_FIELD, "Last name"),
+  firstName: requiredString(100, "First name"),
+  lastName: requiredString(100, "Last name"),
   email: emailField,
-  phone: requiredString(MAX_APPLICATION_FIELD, "Phone"),
-  position: requiredString(MAX_APPLICATION_FIELD, "Position"),
-  referralSource: optionalString(MAX_APPLICATION_FIELD, "Referral source"),
-  willingToRelocate: optionalString(MAX_APPLICATION_FIELD, "Relocation"),
+  phone: requiredString(30, "Phone"),
+  position: requiredString(200, "Position"),
+  referralSource: optionalString(50, "Referral source"),
+  willingToRelocate: optionalString(10, "Relocation"),
 });
 export type EmploymentApplicationInput = z.infer<
   typeof employmentApplicationSchema

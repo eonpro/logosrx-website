@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { getPartnerContext } from "@/lib/auth/partner";
 import { formatCents } from "@/lib/partners/commission";
-import { resolveDateRange } from "@/lib/partners/dates";
+import { formatTransactionDate, resolveDateRange } from "@/lib/partners/dates";
 import {
   getCommissionSummary,
   getRevenueSummary,
@@ -80,11 +80,7 @@ export default async function PartnerTransactionsPage({
               {transactions.map((tx) => (
                 <tr key={tx.id}>
                   <td className="px-5 py-3 whitespace-nowrap">
-                    {tx.transactionDate.toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
+                    {formatTransactionDate(tx.transactionDate)}
                   </td>
                   <td className="px-5 py-3">
                     <span className="font-medium">{tx.clinicName ?? "—"}</span>

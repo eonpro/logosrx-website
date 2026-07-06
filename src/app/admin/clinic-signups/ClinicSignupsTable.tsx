@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { ClinicSignup } from "@/lib/db/schema";
 import { updateClinicStatus } from "./actions";
 
@@ -16,6 +17,7 @@ export function ClinicSignupsTable({
 }: {
   signups: ClinicSignup[];
 }) {
+  const router = useRouter();
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   return (
@@ -43,9 +45,8 @@ export function ClinicSignupsTable({
         </thead>
         <tbody className="divide-y divide-beige">
           {signups.map((signup) => (
-            <>
+            <Fragment key={signup.id}>
               <tr
-                key={signup.id}
                 className="hover:bg-cream/30 transition-colors cursor-pointer"
                 onClick={() =>
                   setExpandedId(expandedId === signup.id ? null : signup.id)
@@ -89,7 +90,7 @@ export function ClinicSignupsTable({
                 </td>
               </tr>
               {expandedId === signup.id && (
-                <tr key={`${signup.id}-detail`}>
+                <tr>
                   <td colSpan={6} className="px-6 py-5 bg-cream/30">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
                       <div>
@@ -148,6 +149,9 @@ export function ClinicSignupsTable({
                           onClick={async (e) => {
                             e.stopPropagation();
                             await updateClinicStatus(signup.id, status);
+                            // Pull the revalidated status into this client
+                            // view — otherwise the badge never updates.
+                            router.refresh();
                           }}
                           disabled={signup.status === status}
                           className={`rounded-full px-3.5 py-1.5 text-xs font-semibold capitalize transition-colors ${
@@ -163,7 +167,7 @@ export function ClinicSignupsTable({
                   </td>
                 </tr>
               )}
-            </>
+            </Fragment>
           ))}
         </tbody>
       </table>

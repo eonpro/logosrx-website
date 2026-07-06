@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { getPartnerContext } from "@/lib/auth/partner";
+import { roleAtLeast } from "@/lib/auth/partner-roles";
 import { bpsToPercent, formatBps, formatCents } from "@/lib/partners/commission";
 import { listOrgReps } from "@/lib/partners/queries";
 import { getRepProduction } from "@/lib/partners/crm";
@@ -10,9 +11,12 @@ import RepsManager from "./RepsManager";
 
 export default async function PartnerRepsPage() {
   const ctx = await getPartnerContext();
-  // Rep management is owner-only: reps don't get to see (or edit) each
-  // other's rates.
-  if (!ctx || ctx.kind !== "org") return <PartnerNoAccess />;
+  // Rep management is org admin+ only: reps don't get to see (or edit) each
+  // other's rates, and org viewers are read-only (matches the nav's adminOnly
+  // flag and the rep-management server actions).
+  if (!ctx || ctx.kind !== "org" || !roleAtLeast(ctx.role, "admin")) {
+    return <PartnerNoAccess />;
+  }
 
   const [reps, production] = await Promise.all([
     listOrgReps(ctx.org.id),

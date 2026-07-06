@@ -32,9 +32,20 @@ export interface CreatePartnerQuoteInput {
 
 export type CreatePartnerQuoteResult = CreateQuoteRecordResult;
 
-function assertId(id: number) {
-  if (!Number.isFinite(id) || id <= 0) throw new Error("invalid id");
+export interface PartnerQuoteActionResult {
+  ok: boolean;
+  error?: string;
 }
+
+/** Malformed ids come from tampered clients — reply, don't 500. */
+function invalidId(id: number): boolean {
+  return !Number.isFinite(id) || id <= 0;
+}
+
+const INVALID_ID: PartnerQuoteActionResult = {
+  ok: false,
+  error: "Quote not found.",
+};
 
 function scopeFor(ctx: PartnerContext) {
   return {
@@ -52,7 +63,9 @@ function scopeFor(ctx: PartnerContext) {
 export async function createPartnerQuote(
   input: CreatePartnerQuoteInput,
 ): Promise<CreatePartnerQuoteResult> {
-  const ctx = await requirePartner();
+  // Org viewers are read-only; reps manage their own quotes (minRole only
+  // constrains org sessions, mirroring pricing/links/goals actions).
+  const ctx = await requirePartner({ minRole: "admin" });
   if (ctx.org.compensationModel !== "margin") {
     return {
       ok: false,
@@ -136,8 +149,8 @@ export interface RegenerateResult {
 export async function regeneratePartnerQuotePassword(
   id: number,
 ): Promise<RegenerateResult> {
-  const ctx = await requirePartner();
-  assertId(id);
+  const ctx = await requirePartner({ minRole: "admin" });
+  if (invalidId(id)) return { ok: false, error: "Quote not found." };
   const data = await getPartnerQuoteWithItems(id, scopeFor(ctx));
   if (!data) return { ok: false, error: "Quote not found." };
   if (data.quote.adminReferral) {
@@ -162,10 +175,14 @@ export async function regeneratePartnerQuotePassword(
   return { ok: true, password };
 }
 
-export async function revokePartnerQuote(id: number) {
-  const ctx = await requirePartner();
-  assertId(id);
-  if (!(await assertManageable(id, ctx))) return;
+export async function revokePartnerQuote(
+  id: number,
+): Promise<PartnerQuoteActionResult> {
+  const ctx = await requirePartner({ minRole: "admin" });
+  if (invalidId(id)) return INVALID_ID;
+  if (!(await assertManageable(id, ctx))) {
+    return { ok: false, error: "This quote can't be revoked from the portal." };
+  }
   await db
     .update(pricingQuotes)
     .set({ status: "revoked", updatedAt: new Date() })
@@ -173,13 +190,21 @@ export async function revokePartnerQuote(id: number) {
   await recordPartnerAudit(ctx, "quote.revoke", { type: "quote", id });
   revalidatePath("/partners/quotes");
   revalidatePath(`/partners/quotes/${id}`);
+  return { ok: true };
 }
 
-export async function reactivatePartnerQuote(id: number) {
-  const ctx = await requirePartner();
-  assertId(id);
+export async function reactivatePartnerQuote(
+  id: number,
+): Promise<PartnerQuoteActionResult> {
+  const ctx = await requirePartner({ minRole: "admin" });
+  if (invalidId(id)) return INVALID_ID;
   const data = await getPartnerQuoteWithItems(id, scopeFor(ctx));
-  if (!data || data.quote.adminReferral || data.quote.status === "claimed") return;
+  if (!data || data.quote.adminReferral || data.quote.status === "claimed") {
+    return {
+      ok: false,
+      error: "This quote can't be reactivated from the portal.",
+    };
+  }
   await db
     .update(pricingQuotes)
     .set({ status: "active", updatedAt: new Date() })
@@ -187,13 +212,19 @@ export async function reactivatePartnerQuote(id: number) {
   await recordPartnerAudit(ctx, "quote.reactivate", { type: "quote", id });
   revalidatePath("/partners/quotes");
   revalidatePath(`/partners/quotes/${id}`);
+  return { ok: true };
 }
 
-export async function deletePartnerQuote(id: number) {
-  const ctx = await requirePartner();
-  assertId(id);
-  if (!(await assertManageable(id, ctx))) return;
+export async function deletePartnerQuote(
+  id: number,
+): Promise<PartnerQuoteActionResult> {
+  const ctx = await requirePartner({ minRole: "admin" });
+  if (invalidId(id)) return INVALID_ID;
+  if (!(await assertManageable(id, ctx))) {
+    return { ok: false, error: "This quote can't be deleted from the portal." };
+  }
   await db.delete(pricingQuotes).where(eq(pricingQuotes.id, id));
   await recordPartnerAudit(ctx, "quote.delete", { type: "quote", id });
   revalidatePath("/partners/quotes");
+  return { ok: true };
 }

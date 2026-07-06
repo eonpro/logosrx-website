@@ -38,7 +38,16 @@ export async function getClinicProfile(
         .where(eq(clinics.clerkUserId, clerkUserId))
         .limit(1),
       db
-        .select({ cardLast4: clinicPayments.cardLast4 })
+        .select({
+          cardLast4: clinicPayments.cardLast4,
+          // Non-sensitive metadata is hydrated into the form so dashboard
+          // edits don't silently drop it. Card number + CVV stay server-only.
+          cardholderName: clinicPayments.cardholderName,
+          cardType: clinicPayments.cardType,
+          expiration: clinicPayments.expiration,
+          billingAddress: clinicPayments.billingAddress,
+          billingZip: clinicPayments.billingZip,
+        })
         .from(clinicPayments)
         .where(eq(clinicPayments.clerkUserId, clerkUserId))
         .limit(1),
@@ -71,6 +80,14 @@ export async function getClinicProfile(
 
   const state: OnboardingFormState = {
     ...base,
+    payment: {
+      ...base.payment,
+      cardholderName: payment?.cardholderName ?? "",
+      cardType: payment?.cardType ?? "",
+      expiration: payment?.expiration ?? "",
+      billingAddress: payment?.billingAddress ?? "",
+      billingZip: payment?.billingZip ?? "",
+    },
     productsOfInterest: row.productsOfInterest ?? [],
     orderVolume: row.orderVolume ?? "",
     referralSource: row.referralSource ?? "",

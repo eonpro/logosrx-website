@@ -2,12 +2,29 @@
  * Minimal, dependency-free CSV builder for partner data exports. Pure (no DB),
  * so it's unit-testable. Fields containing commas, quotes, or newlines are
  * wrapped in double quotes with embedded quotes doubled (RFC 4180).
+ *
+ * Formula-injection defense: string fields starting with `=`, `+`, `-`, `@`
+ * (or a tab/CR) are prefixed with a single quote so Excel/Sheets render them
+ * as text instead of executing them as formulas — clinic/rep names are
+ * attacker-controllable data. Numeric values are never prefixed.
  */
 
 export type CsvValue = string | number | null | undefined;
 
+const FORMULA_LEAD = /^[=+\-@\t\r]/;
+/** Plain numerics (e.g. "-12.34" from centsToDollarString) are safe as-is. */
+const PLAIN_NUMBER = /^-?\d+(\.\d+)?$/;
+
 function escapeField(value: CsvValue): string {
-  const s = value == null ? "" : String(value);
+  if (value == null) return "";
+  let s = String(value);
+  if (
+    typeof value === "string" &&
+    FORMULA_LEAD.test(s) &&
+    !PLAIN_NUMBER.test(s)
+  ) {
+    s = `'${s}`;
+  }
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 

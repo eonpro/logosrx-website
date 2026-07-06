@@ -15,6 +15,12 @@ export function generateStaticParams() {
   return articles.map((article) => ({ slug: article.slug }));
 }
 
+/** Estimated reading time from word count (~200 wpm), minimum 1 minute. */
+function readingTimeMinutes(paragraphs: string[]): number {
+  const words = paragraphs.join(" ").split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.round(words / 200));
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -97,7 +103,7 @@ export default async function ArticlePage({
               })}
             </time>
             <span className="w-1 h-1 rounded-full bg-navy/20" />
-            <span>{article.content.length} min read</span>
+            <span>{readingTimeMinutes(article.content)} min read</span>
           </div>
         </div>
       </div>

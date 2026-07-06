@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPartnerContext } from "@/lib/auth/partner";
 import { formatCents } from "@/lib/partners/commission";
+import { formatTransactionDate } from "@/lib/partners/dates";
 import {
   getClinicDetail,
   getClinicMeta,
@@ -146,11 +147,7 @@ export default async function PartnerClinicDetailPage({
               {clinic.transactions.map((tx) => (
                 <tr key={tx.id}>
                   <td className="px-5 py-3 whitespace-nowrap">
-                    {tx.transactionDate.toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
+                    {formatTransactionDate(tx.transactionDate)}
                   </td>
                   <td className="px-5 py-3">{tx.description ?? "—"}</td>
                   <td className="px-5 py-3 font-mono text-xs">

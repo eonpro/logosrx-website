@@ -45,17 +45,28 @@ export default function PartnerQuoteActions({
   }
 
   function toggleRevoke() {
+    setError("");
     startTransition(async () => {
-      if (revoked) await reactivatePartnerQuote(id);
-      else await revokePartnerQuote(id);
+      const res = revoked
+        ? await reactivatePartnerQuote(id)
+        : await revokePartnerQuote(id);
+      if (!res.ok) {
+        setError(res.error ?? "Could not update the quote.");
+        return;
+      }
       router.refresh();
     });
   }
 
   function remove() {
     if (!confirm("Delete this quote permanently? This cannot be undone.")) return;
+    setError("");
     startTransition(async () => {
-      await deletePartnerQuote(id);
+      const res = await deletePartnerQuote(id);
+      if (!res.ok) {
+        setError(res.error ?? "Could not delete the quote.");
+        return;
+      }
       router.push("/partners/quotes");
     });
   }

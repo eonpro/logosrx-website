@@ -11,17 +11,17 @@
  * secrets, mirroring the previous behavior of the individual modules.
  */
 
-/** Deterministic dev-only fallback. NEVER used in production (we throw instead). */
+/** Deterministic dev-only fallback. NEVER used on deployed environments. */
 export const DEV_FALLBACK_SECRET = "logos-dev-fallback-key";
 
-function isProductionRuntime(): boolean {
-  return (
-    process.env.NODE_ENV === "production" &&
-    // Vercel sets VERCEL_ENV to "preview" | "production" | "development".
-    // Treat anything that isn't an explicit non-prod marker as production.
-    process.env.VERCEL_ENV !== "preview" &&
-    process.env.VERCEL_ENV !== "development"
-  );
+function requiresRealSecret(): boolean {
+  // Vercel sets VERCEL_ENV to "preview" | "production" | "development".
+  // Preview deployments are publicly reachable and can point at real data, so
+  // they must NOT silently fall back to this publicly-known key — anyone could
+  // decrypt at-rest secrets or forge quote cookies on the preview URL.
+  const vercelEnv = process.env.VERCEL_ENV;
+  if (vercelEnv === "production" || vercelEnv === "preview") return true;
+  return process.env.NODE_ENV === "production" && vercelEnv !== "development";
 }
 
 /**
@@ -34,11 +34,12 @@ export function getAppSecret(): string {
   const raw = process.env.ONBOARDING_ENCRYPTION_KEY;
   if (raw && raw.length > 0) return raw;
 
-  if (isProductionRuntime()) {
+  if (requiresRealSecret()) {
     throw new Error(
-      "ONBOARDING_ENCRYPTION_KEY is required in production. It is used for " +
-        "at-rest encryption and for signing quote-access cookies; refusing to " +
-        "fall back to a public development key.",
+      "ONBOARDING_ENCRYPTION_KEY is required on deployed environments " +
+        "(production AND preview). It is used for at-rest encryption and for " +
+        "signing quote-access cookies; refusing to fall back to a public " +
+        "development key.",
     );
   }
   return DEV_FALLBACK_SECRET;

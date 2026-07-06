@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import { useSignIn } from "@clerk/nextjs/legacy";
 import AuthShell from "@/components/auth/AuthShell";
 import { activateSetPassword } from "./actions";
@@ -20,6 +21,7 @@ export default function ActivateClient({
 }) {
   const router = useRouter();
   const { isLoaded, signIn, setActive } = useSignIn();
+  const { isLoaded: authLoaded, isSignedIn } = useAuth();
   const [phase, setPhase] = useState<Phase>("activating");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -31,6 +33,17 @@ export default function ActivateClient({
 
   useEffect(() => {
     if (attempted.current) return;
+    if (!authLoaded) return;
+
+    // Already signed in (e.g. the ticket was consumed on a previous load and
+    // the page was refreshed): skip re-consuming the single-use ticket and go
+    // straight to the password form.
+    if (isSignedIn) {
+      attempted.current = true;
+      setPhase("ready");
+      return;
+    }
+
     if (!ticket) {
       setPhase("expired");
       return;
@@ -51,7 +64,7 @@ export default function ActivateClient({
         setPhase("expired");
       }
     })();
-  }, [ticket, isLoaded, signIn, setActive]);
+  }, [ticket, isLoaded, signIn, setActive, authLoaded, isSignedIn]);
 
   async function submit() {
     setError("");

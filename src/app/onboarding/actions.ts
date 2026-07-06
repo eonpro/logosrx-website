@@ -40,6 +40,8 @@ const SHIPPING_METHODS = new Set(["direct_to_patient", "ship_to_practice"]);
 export interface ActionResult {
   ok: boolean;
   error?: string;
+  /** Non-fatal problem the user should know about (e.g. quote not applied). */
+  warning?: string;
 }
 
 export interface CreateAccountResult extends ActionResult {
@@ -48,6 +50,9 @@ export interface CreateAccountResult extends ActionResult {
 }
 
 const MIN_PASSWORD_LENGTH = 8;
+
+const QUOTE_APPLY_WARNING =
+  "Your account was created, but the pricing quote you accepted could not be applied — it may have already been claimed. Please contact us so we can honor your quoted pricing.";
 
 const PRODUCT_LABELS: Record<string, string> = {
   weight_loss: "Weight Loss",
@@ -150,10 +155,18 @@ async function upsertSignatures(
     });
 }
 
+const MIN_CARD_DIGITS = 13;
+
 /**
  * Persists card details to the isolated `clinic_payments` table. Sensitive
- * values are AES-256-GCM encrypted. Skips writing when no card number was
- * entered (e.g. editing other fields later without re-entering the card).
+ * values are AES-256-GCM encrypted.
+ *
+ * Behavior depends on what was entered:
+ * - New card number (>= 13 digits): full upsert. The CVV is only overwritten
+ *   when one was entered, so replacing metadata never silently wipes it.
+ * - No / partial card number: metadata-only UPDATE of the existing row
+ *   (cardholder, type, expiration, billing). The stored card + CVV are kept —
+ *   the dashboard's "leave blank to keep current" contract.
  */
 async function upsertPayment(
   tx: DbTransaction,
@@ -161,24 +174,41 @@ async function upsertPayment(
   s: OnboardingFormState,
 ) {
   const number = s.payment.cardNumber.replace(/\s/g, "");
-  if (!number) return;
   const now = new Date();
-  const values = {
-    clerkUserId,
+  const metadata = {
     cardholderName: s.payment.cardholderName.trim() || null,
-    cardNumberEnc: encrypt(number),
-    cardLast4: number.slice(-4),
     cardType: s.payment.cardType || null,
     expiration: s.payment.expiration.trim() || null,
-    cvvEnc: encrypt(s.payment.cvv.trim()),
     billingAddress: s.payment.billingAddress.trim() || null,
     billingZip: s.payment.billingZip.trim() || null,
     updatedAt: now,
   };
+
+  if (number.length < MIN_CARD_DIGITS) {
+    // No (valid) new card entered: update metadata on the existing row only.
+    // Never insert — a payment row without a card number is meaningless.
+    await tx
+      .update(clinicPayments)
+      .set(metadata)
+      .where(eq(clinicPayments.clerkUserId, clerkUserId));
+    return;
+  }
+
+  const cvv = s.payment.cvv.trim();
+  const values = {
+    clerkUserId,
+    ...metadata,
+    cardNumberEnc: encrypt(number),
+    cardLast4: number.slice(-4),
+    // Only overwrite the stored CVV when one was entered.
+    ...(cvv ? { cvvEnc: encrypt(cvv) } : {}),
+  };
+  const { clerkUserId: _target, ...set } = values;
+  void _target;
   await tx
     .insert(clinicPayments)
     .values(values)
-    .onConflictDoUpdate({ target: clinicPayments.clerkUserId, set: values });
+    .onConflictDoUpdate({ target: clinicPayments.clerkUserId, set });
 }
 
 /**
@@ -236,11 +266,15 @@ export async function completeOnboarding(
     // Best-effort by design; runs after the profile write so the row exists.
     await stampClinicAttribution(userId);
     // Apply an accepted custom pricing quote (from the `quote_claim` cookie),
-    // if this clinic reached onboarding by accepting one. Best-effort.
-    await applyClaimedQuote(userId);
+    // if this clinic reached onboarding by accepting one. Never blocks
+    // completion, but the user is told when their quote could not be applied.
+    const quoteResult = await applyClaimedQuote(userId);
     // Admin Slack ping is non-critical: don't make the clinic wait on it.
     runAfterResponse(notifyNewClinic(toClinicNotification(state)));
-    return { ok: true };
+    return {
+      ok: true,
+      warning: quoteResult === "failed" ? QUOTE_APPLY_WARNING : undefined,
+    };
   } catch (err) {
     log.error("onboarding completeOnboarding failed", { error: err });
     return { ok: false, error: "Could not submit your application." };
@@ -370,8 +404,11 @@ export async function createAccountAndComplete(
   // Partner referral attribution (from the /join/<code> cookie, if any).
   await stampClinicAttribution(newUserId);
   // Apply an accepted custom pricing quote (from the `quote_claim` cookie), if
-  // this visitor reached onboarding by accepting one. Best-effort.
-  await applyClaimedQuote(newUserId);
+  // this visitor reached onboarding by accepting one. Never blocks account
+  // creation, but the user is told when their quote could not be applied.
+  const quoteResult = await applyClaimedQuote(newUserId);
+  const warning =
+    quoteResult === "failed" ? QUOTE_APPLY_WARNING : undefined;
 
   // Notify admins (resilient: never throws / never blocks the response).
   runAfterResponse(notifyNewClinic(toClinicNotification(state)));
@@ -382,14 +419,28 @@ export async function createAccountAndComplete(
       userId: newUserId,
       expiresInSeconds: 600,
     });
-    return { ok: true, ticket: token.token };
+    return { ok: true, ticket: token.token, warning };
   } catch (err) {
     // Account + profile exist; the client can fall back to /sign-in.
     log.warn("onboarding createSignInToken failed", {
       error: err instanceof Error ? err.message : "unknown",
     });
-    return { ok: true };
+    return { ok: true, warning };
   }
+}
+
+/**
+ * Dashboard-specific payment validation: an empty card number means "keep the
+ * card on file" (unlike the wizard, where a card is required), but a partial
+ * card or a new card without its CVV is rejected.
+ */
+function validateDashboardPayment(s: OnboardingFormState): string | null {
+  const number = s.payment.cardNumber.replace(/\s/g, "");
+  if (!number) return null;
+  if (number.length < MIN_CARD_DIGITS) return "Enter a valid card number.";
+  if (!s.payment.cvv.trim())
+    return "Enter the CVV for your new card.";
+  return null;
 }
 
 /** Saves profile edits from the dashboard (no completion-state change). */
@@ -398,6 +449,17 @@ export async function updateClinicProfile(
 ): Promise<ActionResult> {
   const { userId } = await auth();
   if (!userId) return { ok: false, error: "Not authenticated." };
+
+  // Server-side validation mirrors the wizard so a completed profile can't be
+  // degraded below the intake requirements. The payment step is special-cased:
+  // dashboard edits may keep the existing card instead of re-entering it.
+  for (const id of STEP_IDS) {
+    const err =
+      id === "payment"
+        ? validateDashboardPayment(state)
+        : validateStep(id, state);
+    if (err) return { ok: false, error: err };
+  }
 
   try {
     await db.transaction(async (tx) => {

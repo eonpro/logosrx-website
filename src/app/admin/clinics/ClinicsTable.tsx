@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { Fragment, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { ClinicProvider } from "@/lib/db/schema";
@@ -115,9 +115,8 @@ export function ClinicsTable({ clinics }: { clinics: ClinicRow[] }) {
               .map((p) => optionLabel(PRODUCT_OPTIONS, p))
               .join(", ");
             return (
-              <>
+              <Fragment key={c.id}>
                 <tr
-                  key={c.id}
                   className="hover:bg-cream/30 transition-colors cursor-pointer"
                   onClick={() =>
                     setExpandedId(expandedId === c.id ? null : c.id)
@@ -311,7 +310,7 @@ export function ClinicsTable({ clinics }: { clinics: ClinicRow[] }) {
                     </td>
                   </tr>
                 )}
-              </>
+              </Fragment>
             );
           })}
         </tbody>

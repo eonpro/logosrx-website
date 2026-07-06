@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { formatCents } from "@/lib/partners/commission";
 import { refundPartnerTransaction } from "../actions";
 
@@ -16,6 +17,7 @@ export default function RefundButton({
   transactionId: number;
   remainingCents: number;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [error, setError] = useState("");
@@ -40,6 +42,10 @@ export default function RefundButton({
       }
       setOpen(false);
       setAmount("");
+      // Pull the revalidated rows into this client view; without it the row
+      // keeps its stale amounts and still shows the Refund control, inviting
+      // an accidental double refund.
+      router.refresh();
     });
   }
 

@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
+import { rateLimit } from "@/lib/security/rate-limit";
+import { readJsonBody } from "@/lib/http/body";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+// Reporting-API batches are small; anything bigger is abuse, not a browser.
+const MAX_REPORT_BYTES = 64 * 1024;
 
 /**
  * CSP violation report sink.
@@ -85,14 +90,19 @@ function normalize(report: CspReportBody | undefined) {
 }
 
 export async function POST(req: NextRequest) {
-  let payload: unknown;
-  try {
-    payload = await req.json();
-  } catch {
+  // Unauthenticated public sink: throttle per client so a bot can't burn CPU
+  // or Sentry quota by spraying synthetic reports. Always 204 — report
+  // senders never retry usefully and get no signal either way.
+  const limit = await rateLimit("report", req);
+  if (!limit.success) return new NextResponse(null, { status: 204 });
+
+  const read = await readJsonBody(req, MAX_REPORT_BYTES, { allowArray: true });
+  if (!read.ok) {
     // Browsers occasionally send empty bodies on tabs that close before the
     // report flushes. Acknowledge with 204 so they don't retry.
     return new NextResponse(null, { status: 204 });
   }
+  const payload: unknown = read.body;
 
   const reports: Array<ReturnType<typeof normalize>> = [];
 

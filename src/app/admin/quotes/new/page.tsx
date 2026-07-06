@@ -18,7 +18,20 @@ interface PageProps {
 }
 
 export default async function NewQuotePage({ searchParams }: PageProps) {
-  await requireAdmin({ minRole: ADMIN_ROLE });
+  // Viewers get a friendly read-only notice instead of the error boundary
+  // that requireAdmin({ minRole }) throwing would produce.
+  const ctx = await requireAdmin();
+  if (ctx.role !== ADMIN_ROLE) {
+    return (
+      <div className="mx-auto max-w-3xl px-6 py-12 text-center">
+        <h1 className="text-xl font-bold text-navy">Read-only access</h1>
+        <p className="mt-2 text-sm text-navy/60">
+          Your admin account is read-only — creating pricing quotes requires
+          full admin access.
+        </p>
+      </div>
+    );
+  }
   const { from } = await searchParams;
 
   const [catalogProducts, orgs, reps] = await Promise.all([

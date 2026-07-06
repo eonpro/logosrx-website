@@ -8,12 +8,22 @@ export default function Newsletter() {
   // Honeypot: hidden field that bots tend to fill. Humans never see/touch it.
   const [companyWebsite, setCompanyWebsite] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [message, setMessage] = useState("");
+
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    // The form is `noValidate` (native browser bubbles clash with the dark
+    // design), so give explicit feedback instead of silently ignoring clicks.
+    if (!email.trim() || !EMAIL_RE.test(email.trim())) {
+      setStatus("error");
+      setMessage("Please enter a valid email address.");
+      return;
+    }
 
     setStatus("loading");
+    setMessage("");
     try {
       const res = await fetch("/api/email-signups", {
         method: "POST",
@@ -99,7 +109,8 @@ export default function Newsletter() {
                   role="alert"
                   className="text-xs text-red-200"
                 >
-                  We couldn&rsquo;t subscribe you. Please check your email and try again.
+                  {message ||
+                    "We couldn\u2019t subscribe you. Please check your email and try again."}
                 </p>
               )}
             </form>

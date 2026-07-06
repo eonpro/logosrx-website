@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { getPartnerContext } from "@/lib/auth/partner";
 import { formatBps, formatCents } from "@/lib/partners/commission";
 import { getRepDetail } from "@/lib/partners/crm";
+import { formatTransactionDate } from "@/lib/partners/dates";
 import PartnerNoAccess from "../../PartnerNoAccess";
 import MonthlyTrend from "../../MonthlyTrend";
 import { KpiCard, StatusBadge } from "../../Kpi";
@@ -118,11 +119,7 @@ export default async function PartnerRepDetailPage({
                   </td>
                   <td className="px-5 py-3 whitespace-nowrap text-navy/70">
                     {c.lastTransactionDate
-                      ? c.lastTransactionDate.toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })
+                      ? formatTransactionDate(c.lastTransactionDate)
                       : "—"}
                   </td>
                 </tr>

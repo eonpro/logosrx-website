@@ -25,18 +25,22 @@ export interface GoalProgress {
   pct: number;
 }
 
-/** Start of the current period (server-local), for measuring goal progress. */
+/**
+ * Start of the current period (UTC), for measuring goal progress.
+ *
+ * UTC on purpose: transaction dates are stored as UTC midnights (CSV imports
+ * parse `YYYY-MM-DD` with the Date constructor's UTC semantics), so a
+ * server-local boundary would drop early-period transactions on any non-UTC
+ * deployment.
+ */
 export function periodStart(period: GoalPeriod, now: Date = new Date()): Date {
-  const d = new Date(now);
-  d.setHours(0, 0, 0, 0);
-  if (period === "month") {
-    d.setDate(1);
-  } else if (period === "quarter") {
-    d.setMonth(Math.floor(d.getMonth() / 3) * 3, 1);
-  } else {
-    d.setMonth(0, 1);
+  const y = now.getUTCFullYear();
+  const m = now.getUTCMonth();
+  if (period === "month") return new Date(Date.UTC(y, m, 1));
+  if (period === "quarter") {
+    return new Date(Date.UTC(y, Math.floor(m / 3) * 3, 1));
   }
-  return d;
+  return new Date(Date.UTC(y, 0, 1));
 }
 
 /** Progress percent, clamped to 0..100 (0 target → 0%). */

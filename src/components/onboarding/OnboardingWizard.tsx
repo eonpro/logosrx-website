@@ -68,6 +68,9 @@ export default function OnboardingWizard({
   );
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  // Non-fatal completion warning (e.g. accepted quote couldn't be applied).
+  // Shown on an interstitial so the user actually sees it before the dashboard.
+  const [completionWarning, setCompletionWarning] = useState("");
   // Credentials live only in component state for signup mode; never persisted
   // to the clinic profile (Clerk owns them).
   const [password, setPassword] = useState("");
@@ -134,13 +137,18 @@ export default function OnboardingWizard({
     if (stepId === "providerAgreement") {
       setBusy(true);
       try {
-        const ok =
+        const result =
           mode === "signup"
             ? await submitSignup()
             : await submitAuthenticated();
-        if (ok) {
-          router.push("/dashboard");
-          router.refresh();
+        if (result.ok) {
+          if (result.warning) {
+            // Hold the user on a notice screen; they continue manually.
+            setCompletionWarning(result.warning);
+          } else {
+            router.push("/dashboard");
+            router.refresh();
+          }
         }
       } catch {
         // Never leave the button stuck spinning on an unexpected failure.
@@ -156,20 +164,37 @@ export default function OnboardingWizard({
     const nextIndex = index + 1;
     goTo(nextIndex);
     // Authenticated users autosave progress; anonymous signup keeps everything
-    // client-side until the account is created on submit.
+    // client-side until the account is created on submit. A failed autosave
+    // doesn't block the wizard, but the user is told so a refresh won't
+    // silently lose their answers.
     if (mode === "authenticated") {
-      void saveProgress(stateRef.current, nextIndex);
+      saveProgress(stateRef.current, nextIndex)
+        .then((res) => {
+          if (!res.ok) {
+            setError(
+              "We couldn't save your progress just now — your answers are still here, but don't refresh this page until the next step saves.",
+            );
+          }
+        })
+        .catch(() => {
+          setError(
+            "We couldn't save your progress just now — your answers are still here, but don't refresh this page until the next step saves.",
+          );
+        });
     }
   }
 
   /** Existing signed-in user finishing intake. */
-  async function submitAuthenticated(): Promise<boolean> {
+  async function submitAuthenticated(): Promise<{
+    ok: boolean;
+    warning?: string;
+  }> {
     const res = await completeOnboarding(stateRef.current);
     if (!res.ok) {
       setError(res.error ?? "Something went wrong.");
-      return false;
+      return { ok: false };
     }
-    return true;
+    return { ok: true, warning: res.warning };
   }
 
   /**
@@ -177,14 +202,14 @@ export default function OnboardingWizard({
    * with the returned one-time ticket. Falls back to /sign-in if the ticket is
    * unavailable (account still exists).
    */
-  async function submitSignup(): Promise<boolean> {
+  async function submitSignup(): Promise<{ ok: boolean; warning?: string }> {
     const res = await createAccountAndComplete(
       stateRef.current,
       passwordRef.current,
     );
     if (!res.ok) {
       setError(res.error ?? "Something went wrong.");
-      return false;
+      return { ok: false };
     }
 
     if (res.ticket && signInLoaded && signIn && setActive) {
@@ -195,7 +220,7 @@ export default function OnboardingWizard({
         });
         if (attempt.status === "complete" && attempt.createdSessionId) {
           await setActive({ session: attempt.createdSessionId });
-          return true;
+          return { ok: true, warning: res.warning };
         }
       } catch {
         // Fall through to the sign-in fallback below.
@@ -205,15 +230,45 @@ export default function OnboardingWizard({
     // Account exists but we couldn't auto-sign-in: send them to sign in.
     const email = encodeURIComponent(stateRef.current.contactEmail.trim());
     router.push(`/sign-in?redirect_url=/dashboard&email=${email}`);
-    return false;
+    return { ok: false };
   }
 
-  // The transitional "saving" screen auto-advances.
+  // The transitional "saving" screen auto-advances. The advance also persists
+  // the new step index, otherwise a reload would land back on this screen.
   useEffect(() => {
     if (stepId !== "saving") return;
-    const t = setTimeout(() => goTo(index + 1), 2200);
+    const t = setTimeout(() => {
+      const nextIndex = index + 1;
+      goTo(nextIndex);
+      if (mode === "authenticated") {
+        void saveProgress(stateRef.current, nextIndex).catch(() => {});
+      }
+    }, 2200);
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepId, index]);
+
+  if (completionWarning) {
+    return (
+      <OnboardingShell progress={100}>
+        <StepHeading title="Your account is ready" />
+        <p
+          role="alert"
+          className="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+        >
+          {completionWarning}
+        </p>
+        <NavButtons
+          showBack={false}
+          nextLabel="Continue to your dashboard"
+          onNext={() => {
+            router.push("/dashboard");
+            router.refresh();
+          }}
+        />
+      </OnboardingShell>
+    );
+  }
 
   return (
     <OnboardingShell progress={progress}>

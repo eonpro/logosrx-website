@@ -9,6 +9,7 @@ import {
   rateLimitHeaders,
 } from "@/lib/security/rate-limit";
 import { log } from "@/lib/observability/logger";
+import { readJsonBody } from "@/lib/http/body";
 import { emailSignupSchema, parseForm } from "@/lib/validation/forms";
 
 export const runtime = "nodejs";
@@ -33,10 +34,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const contentLength = Number(req.headers.get("content-length") ?? "0");
-    if (contentLength > MAX_BODY_BYTES) return bad("Payload too large", 413);
-
-    const body = (await req.json()) as Record<string, unknown>;
+    const read = await readJsonBody(req, MAX_BODY_BYTES);
+    if (!read.ok) return bad(read.error, read.status);
+    // Arrays are rejected by readJsonBody unless opted into.
+    const body = read.body as Record<string, unknown>;
 
     if (isHoneypotTripped(body[HONEYPOT_FIELD])) {
       return NextResponse.json({ success: true }, { status: 201 });

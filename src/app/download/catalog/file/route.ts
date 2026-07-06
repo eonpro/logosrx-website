@@ -69,6 +69,41 @@ export async function GET(req: NextRequest) {
     });
   }
 
+  // Sanity-check the first bytes are actually a PDF before labeling the
+  // response `application/pdf` — a misconfigured CATALOG_PDF_URL (or a
+  // replaced blob) would otherwise ship arbitrary bytes as a trusted PDF.
+  // Peek only the first chunk so the ~34 MB still streams through.
+  const reader = upstream.body.getReader();
+  const first = await reader.read().catch(() => null);
+  if (!first || first.done || !startsWithPdfMagic(first.value)) {
+    reader.cancel().catch(() => {});
+    log.error("catalog file: upstream content is not a PDF", {
+      status: upstream.status,
+      contentType: upstream.headers.get("content-type"),
+    });
+    return new NextResponse("Catalog is temporarily unavailable.", {
+      status: 502,
+    });
+  }
+
+  // Re-attach the peeked chunk in front of the remaining stream.
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(first.value);
+    },
+    async pull(controller) {
+      const { done, value } = await reader.read();
+      if (done) {
+        controller.close();
+        return;
+      }
+      controller.enqueue(value);
+    },
+    cancel(reason) {
+      return reader.cancel(reason);
+    },
+  });
+
   const headers = new Headers({
     "Content-Type": "application/pdf",
     "Content-Disposition": `attachment; filename="${CATALOG_DOWNLOAD_FILENAME}"`,
@@ -79,5 +114,12 @@ export async function GET(req: NextRequest) {
   const contentLength = upstream.headers.get("content-length");
   if (contentLength) headers.set("Content-Length", contentLength);
 
-  return new NextResponse(upstream.body, { status: 200, headers });
+  return new NextResponse(body, { status: 200, headers });
+}
+
+const PDF_MAGIC = [0x25, 0x50, 0x44, 0x46, 0x2d]; // %PDF-
+
+function startsWithPdfMagic(chunk: Uint8Array): boolean {
+  if (chunk.length < PDF_MAGIC.length) return false;
+  return PDF_MAGIC.every((b, i) => chunk[i] === b);
 }

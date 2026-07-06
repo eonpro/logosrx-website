@@ -5,7 +5,7 @@ import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { getPartnerContext } from "@/lib/auth/partner";
 import { formatBps, formatCents } from "@/lib/partners/commission";
-import { resolveDateRange } from "@/lib/partners/dates";
+import { formatTransactionDate, resolveDateRange } from "@/lib/partners/dates";
 import {
   countNetworkClinics,
   getCommissionSummary,
@@ -185,11 +185,7 @@ export default async function PartnerDashboardPage({
               {recent.map((tx) => (
                 <tr key={tx.id}>
                   <td className="px-6 py-3 whitespace-nowrap">
-                    {tx.transactionDate.toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
+                    {formatTransactionDate(tx.transactionDate)}
                   </td>
                   <td className="px-6 py-3">{tx.clinicName ?? "—"}</td>
                   <td className="px-6 py-3 text-right tabular-nums">

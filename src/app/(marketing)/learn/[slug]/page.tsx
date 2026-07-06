@@ -67,7 +67,7 @@ export default async function LearningArticlePage({
       <Breadcrumbs
         items={[
           { name: "Home", path: "/" },
-          { name: "Learn", path: "/support" },
+          { name: "Support Center", path: "/support" },
           { name: article.title, path },
         ]}
       />
@@ -75,13 +75,13 @@ export default async function LearningArticlePage({
       <section className="bg-gradient-to-b from-cream via-white to-white pt-12 sm:pt-20 pb-12 sm:pb-16">
         <div className="mx-auto max-w-5xl px-6 lg:px-8">
           <Link
-            href={relatedProduct ? `/products/${relatedProduct.slug}` : "/products"}
+            href={relatedProduct ? `/products/${relatedProduct.slug}` : "/catalog"}
             className="inline-flex items-center gap-2 text-sm font-medium text-navy/65 hover:text-magenta transition-colors mb-8"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            {relatedProduct ? `Back to ${relatedProduct.name}` : "Back to Products"}
+            {relatedProduct ? `Back to ${relatedProduct.name}` : "Back to Catalog"}
           </Link>
 
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-sky mb-4">

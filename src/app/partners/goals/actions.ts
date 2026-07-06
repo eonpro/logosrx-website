@@ -16,6 +16,16 @@ export interface GoalActionResult {
 const METRICS = ["revenue", "commission"] as const;
 const PERIODS = ["month", "quarter", "year"] as const;
 
+/** Postgres `unique_violation` SQLSTATE — a row hit a UNIQUE constraint/index. */
+function isUniqueViolation(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code?: unknown }).code === "23505"
+  );
+}
+
 /**
  * Creates or updates a goal/quota. Org owners only. `repId` null = an org-wide
  * goal. Idempotent per (org, rep, metric, period): re-setting updates the
@@ -61,14 +71,28 @@ export async function setGoal(input: {
       .set({ targetCents, updatedAt: new Date() })
       .where(eq(partnerGoals.id, existing.id));
   } else {
-    await db.insert(partnerGoals).values({
-      orgId: ctx.org.id,
-      repId: input.repId,
-      metric,
-      period,
-      targetCents,
-      createdBy: ctx.userId,
-    });
+    try {
+      await db.insert(partnerGoals).values({
+        orgId: ctx.org.id,
+        repId: input.repId,
+        metric,
+        period,
+        targetCents,
+        createdBy: ctx.userId,
+      });
+    } catch (err) {
+      // Unique-violation from a concurrent setGoal for the same scope (the
+      // rep-level composite index or the org-wide partial index): the goal now
+      // exists, so converge on an update instead of surfacing an error.
+      if (!isUniqueViolation(err)) throw err;
+      const raced = await findGoal(ctx.org.id, input.repId, metric, period);
+      if (raced) {
+        await db
+          .update(partnerGoals)
+          .set({ targetCents, updatedAt: new Date() })
+          .where(eq(partnerGoals.id, raced.id));
+      }
+    }
   }
 
   await recordPartnerAudit(

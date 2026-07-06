@@ -40,7 +40,7 @@ export default async function CityPage({ params }: PageProps) {
   const crumbs = [
     { name: "Home", path: "/" },
     { name: "Locations", path: "/locations" },
-    { name: location.stateName, path: "/locations" },
+    { name: location.stateName, path: "/locations/fl" },
     { name: location.city, path },
   ];
 

@@ -22,11 +22,6 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
-const ALLOWED_TYPES = [
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-];
 
 function bad(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
@@ -83,16 +78,15 @@ export async function POST(req: NextRequest) {
     let resumeBlobUrl: string | null = null;
 
     if (resume instanceof File && resume.size > 0) {
-      if (!ALLOWED_TYPES.includes(resume.type)) {
-        return bad("Resume must be a PDF, DOC, or DOCX file.");
-      }
       if (resume.size > MAX_FILE_SIZE) {
         return bad("Resume must be under 25 MB.");
       }
 
-      // Magic-byte verification: the browser-supplied `resume.type` is just a
-      // hint derived from the filename, so an attacker could rename a `.exe`
-      // to `.pdf`. We trust only the actual leading bytes.
+      // Content verification only: the browser-supplied `resume.type` is just
+      // a hint derived from the filename — spoofable in both directions (a
+      // renamed `.exe`, or a legit PDF sent as `application/octet-stream`).
+      // We trust only the actual bytes: magic numbers plus container
+      // structure for the Office formats.
       const verifiedType = await detectResumeMime(resume);
       if (!verifiedType) {
         return bad(

@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { EmploymentApplication } from "@/lib/db/schema";
 import { updateApplicationStatus } from "./actions";
 
@@ -15,6 +16,7 @@ export function ApplicationsTable({
 }: {
   applications: EmploymentApplication[];
 }) {
+  const router = useRouter();
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   return (
@@ -163,6 +165,9 @@ export function ApplicationsTable({
                             onClick={async (e) => {
                               e.stopPropagation();
                               await updateApplicationStatus(app.id, status);
+                              // Pull the revalidated status into this client
+                              // view — otherwise the badge never updates.
+                              router.refresh();
                             }}
                             disabled={app.status === status}
                             className={`rounded-full px-3.5 py-1.5 text-xs font-semibold capitalize transition-colors ${
