@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { useSignIn } from "@clerk/nextjs/legacy";
 import AuthShell from "@/components/auth/AuthShell";
@@ -19,7 +18,6 @@ export default function ActivateClient({
   ticket: string;
   next?: string;
 }) {
-  const router = useRouter();
   const { isLoaded, signIn, setActive } = useSignIn();
   const { isLoaded: authLoaded, isSignedIn } = useAuth();
   const [phase, setPhase] = useState<Phase>("activating");
@@ -81,13 +79,17 @@ export default function ActivateClient({
       const res = await activateSetPassword(password);
       if (!res.ok) {
         setError(res.error ?? "Something went wrong.");
+        setBusy(false);
         return;
       }
-      router.push(next);
-      router.refresh();
+      // Hard navigation (not router.push): the destination portal is fully
+      // dynamic and can take seconds on a cold start. A client-side push gave
+      // no feedback and re-enabled the button, so activation looked like a
+      // dead click. location.assign keeps the button busy until the browser
+      // actually leaves the page and shows native loading progress.
+      window.location.assign(next);
     } catch {
       setError("Something went wrong. Please try again.");
-    } finally {
       setBusy(false);
     }
   }
