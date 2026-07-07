@@ -14,7 +14,10 @@ interface ContactProps {
 }
 
 const inputClass =
-  "h-10 rounded-lg border border-beige bg-cream/50 px-3 text-sm text-navy outline-none focus:border-magenta";
+  "h-10 rounded-2xl border border-beige-dark bg-white px-3.5 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10";
+
+const labelClass =
+  "text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45";
 
 /**
  * Inline editor for a partner org's contact details. Most useful for fixing a
@@ -65,7 +68,7 @@ export default function EditOrgContact({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-3 inline-flex rounded-full border border-beige px-4 py-1.5 text-xs font-semibold text-navy/70 transition-colors hover:border-navy/30"
+        className="mt-3 inline-flex rounded-full border border-beige-dark bg-white px-4 py-1.5 text-xs font-semibold text-navy/70 transition-all hover:border-navy/40 hover:text-navy"
       >
         Edit contact details
       </button>
@@ -73,10 +76,10 @@ export default function EditOrgContact({
   }
 
   return (
-    <div className="mt-4 max-w-2xl rounded-2xl border border-beige bg-white p-5">
+    <div className="mt-4 max-w-2xl rounded-3xl border border-beige/70 bg-white p-6 shadow-soft">
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-navy/60">
+          <span className={labelClass}>
             Organization name
           </span>
           <input
@@ -87,7 +90,7 @@ export default function EditOrgContact({
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-navy/60">Contact name</span>
+          <span className={labelClass}>Contact name</span>
           <input
             value={contactName}
             onChange={(e) => setContactName(e.target.value)}
@@ -96,7 +99,7 @@ export default function EditOrgContact({
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-navy/60">Email</span>
+          <span className={labelClass}>Email</span>
           <input
             type="email"
             value={email}
@@ -106,7 +109,7 @@ export default function EditOrgContact({
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-navy/60">Phone</span>
+          <span className={labelClass}>Phone</span>
           <input
             type="tel"
             value={phone}
@@ -117,7 +120,7 @@ export default function EditOrgContact({
           />
         </label>
         <label className="flex flex-col gap-1 sm:col-span-2">
-          <span className="text-xs font-medium text-navy/60">
+          <span className={labelClass}>
             Website (optional)
           </span>
           <input
@@ -134,7 +137,7 @@ export default function EditOrgContact({
           type="button"
           disabled={pending}
           onClick={save}
-          className="h-10 rounded-full bg-navy px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+          className="h-10 rounded-full bg-navy px-5 text-sm font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98] disabled:opacity-60"
         >
           {pending ? "Saving…" : "Save details"}
         </button>
@@ -146,7 +149,7 @@ export default function EditOrgContact({
             setError("");
             setNotice("");
           }}
-          className="h-10 rounded-full border border-beige px-5 text-sm font-semibold text-navy/70 transition-colors hover:border-navy/30 disabled:opacity-60"
+          className="h-10 rounded-full border border-beige-dark bg-white px-5 text-sm font-semibold text-navy transition-all hover:border-navy/40 disabled:opacity-60"
         >
           Cancel
         </button>

@@ -6,6 +6,7 @@ import { getPartnerContext } from "@/lib/auth/partner";
 import { getPartnerQuoteWithItems, isQuoteExpired } from "@/lib/quotes/data";
 import { SITE_URL } from "@/lib/constants";
 import { formatCents } from "@/lib/portal/pricing";
+import { Badge, btnGhost } from "@/components/ui/portal";
 import PartnerNoAccess from "../../PartnerNoAccess";
 import PartnerQuoteActions from "./PartnerQuoteActions";
 
@@ -55,28 +56,28 @@ export default async function PartnerQuoteDetailPage({ params }: PageProps) {
 
   return (
     <div className="max-w-3xl">
-      <div className="mb-6">
-        <Link href="/partners/quotes" className="text-sm text-navy/60 hover:text-navy">
+      <div className="mb-8">
+        <Link href="/partners/quotes" className={`${btnGhost} -ml-4`}>
           ← Quotes
         </Link>
-        <div className="mt-2 flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold text-navy">
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <h1 className="text-3xl font-bold tracking-tight text-navy sm:text-4xl">
             {quote.clinicName?.trim() || quote.contactName?.trim() || quote.email}
           </h1>
-          <span className="rounded-full bg-cream px-3 py-0.5 text-xs font-medium capitalize text-navy/70">
+          <Badge tone="neutral">
             {isQuoteExpired(quote) && quote.status === "active"
               ? "expired"
               : quote.status}
-          </span>
+          </Badge>
         </div>
-        <p className="mt-1 text-sm text-navy/60">{quote.email}</p>
+        <p className="mt-2 text-[15px] leading-relaxed text-navy/55">{quote.email}</p>
       </div>
 
-      <section className="rounded-2xl border border-beige bg-white p-6">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-navy/55">
+      <section className="rounded-3xl border border-beige/70 bg-white p-6 shadow-soft sm:p-7">
+        <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
           Share
         </h2>
-        <div className="mb-4 break-all rounded-lg bg-cream/60 px-3 py-2 font-mono text-xs text-navy/70">
+        <div className="mb-4 break-all rounded-xl bg-cream/60 px-3 py-2 font-mono text-xs text-navy/70">
           {url}
         </div>
         {quote.adminReferral ? (
@@ -89,8 +90,8 @@ export default async function PartnerQuoteDetailPage({ params }: PageProps) {
         )}
       </section>
 
-      <section className="mt-5 rounded-2xl border border-beige bg-white p-6">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-navy/55">
+      <section className="mt-5 rounded-3xl border border-beige/70 bg-white p-6 shadow-soft sm:p-7">
+        <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
           Timeline
         </h2>
         <dl className="grid grid-cols-1 gap-1.5 text-sm sm:grid-cols-2">
@@ -104,16 +105,16 @@ export default async function PartnerQuoteDetailPage({ params }: PageProps) {
       </section>
 
       {quote.intro?.trim() && (
-        <section className="mt-5 rounded-2xl border border-beige bg-white p-6">
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-navy/55">
+        <section className="mt-5 rounded-3xl border border-beige/70 bg-white p-6 shadow-soft sm:p-7">
+          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
             Intro message
           </h2>
           <p className="whitespace-pre-wrap text-sm text-navy/70">{quote.intro}</p>
         </section>
       )}
 
-      <section className="mt-5 rounded-2xl border border-beige bg-white p-6">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-navy/55">
+      <section className="mt-5 rounded-3xl border border-beige/70 bg-white p-6 shadow-soft sm:p-7">
+        <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
           Quoted products ({items.length})
         </h2>
         <table className="w-full text-left text-sm">

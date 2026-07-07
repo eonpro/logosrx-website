@@ -55,7 +55,9 @@ export default function QuoteGate({
             <path d="M7 11V7a5 5 0 0 1 10 0v4" />
           </svg>
         </div>
-        <h1 className="text-xl font-semibold text-navy">{greeting}</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-navy">
+          {greeting}
+        </h1>
         <p className="mt-1 text-sm text-navy/60">
           {clinicName?.trim()
             ? `A custom pricing quote for ${clinicName.trim()} is ready.`
@@ -66,7 +68,7 @@ export default function QuoteGate({
 
       <form onSubmit={submit} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium uppercase tracking-wider text-navy/55">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
             Quote password
           </span>
           <input
@@ -78,13 +80,13 @@ export default function QuoteGate({
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="XXXX-XXXX-XXXX"
-            className="h-12 rounded-xl border border-beige-dark bg-white px-4 text-center font-mono text-base tracking-widest text-navy outline-none transition-colors placeholder:text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta/30"
+            className="h-12 rounded-2xl border border-beige-dark bg-white px-4 text-center font-mono text-base tracking-widest text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10"
             autoFocus
           />
         </label>
 
         {error && (
-          <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+          <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </p>
         )}
@@ -92,7 +94,7 @@ export default function QuoteGate({
         <button
           type="submit"
           disabled={pending || !password.trim()}
-          className="h-12 rounded-xl bg-magenta text-[15px] font-semibold text-white transition-colors hover:bg-magenta-dark disabled:opacity-60"
+          className="h-12 rounded-full bg-magenta text-[15px] font-semibold text-white transition-all hover:bg-magenta-dark active:scale-[0.99] disabled:opacity-60"
         >
           {pending ? "Checking…" : "View my quote"}
         </button>

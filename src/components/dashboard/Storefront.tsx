@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { Badge, EmptyState, cardClass, inputClass } from "@/components/ui/portal";
 import { discountPercent, formatCents } from "@/lib/portal/pricing";
 import type { StorefrontProduct } from "@/lib/portal/storefront";
 import type { StorefrontPromotion } from "@/lib/portal/merchandising";
@@ -113,19 +114,19 @@ export default function Storefront({
       {/* Page heading + pricing summary */}
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-navy sm:text-3xl">Storefront</h1>
-          <p className="mt-1 text-sm text-navy/60">
+          <h1 className="text-3xl font-bold tracking-tight text-navy sm:text-4xl">
+            Storefront
+          </h1>
+          <p className="mt-1 text-[15px] leading-relaxed text-navy/55">
             Your live catalog and pricing. Prescribe through LifeFile to order.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-navy/5 px-3 py-1.5 text-xs font-semibold text-navy">
+          <Badge tone="neutral">
             {TIER_LABELS[pricingTier] ?? "Standard"} pricing
-          </span>
+          </Badge>
           {discountPct > 0 && (
-            <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1.5 text-xs font-semibold text-green-700">
-              {discountPct}% off standard
-            </span>
+            <Badge tone="success">{discountPct}% off standard</Badge>
           )}
         </div>
       </div>
@@ -146,7 +147,9 @@ export default function Storefront({
       {/* Featured products */}
       {featured.length > 0 && (
         <section className="mt-10">
-          <h2 className="mb-4 text-lg font-bold text-navy">Featured</h2>
+          <h2 className="mb-4 text-lg font-bold tracking-tight text-navy">
+            Featured
+          </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {featured.map(({ product, label }) => (
               <ProductCard
@@ -164,7 +167,9 @@ export default function Storefront({
       {/* Toolbar: search + category filter */}
       <section id="all-products" className="mt-10 scroll-mt-24">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg font-bold text-navy">All products</h2>
+          <h2 className="text-lg font-bold tracking-tight text-navy">
+            All products
+          </h2>
           <div className="relative w-full sm:max-w-xs">
             <input
               type="search"
@@ -172,7 +177,7 @@ export default function Storefront({
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search products…"
               aria-label="Search products"
-              className="w-full rounded-full border border-beige-dark bg-white px-4 py-2 text-sm text-navy placeholder:text-navy/40 focus:border-magenta focus:outline-none focus:ring-2 focus:ring-magenta/20"
+              className={inputClass}
             />
           </div>
         </div>
@@ -183,10 +188,10 @@ export default function Storefront({
               key={cat}
               type="button"
               onClick={() => setCategory(cat)}
-              className={`whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+              className={`whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-semibold transition-all ${
                 category === cat
-                  ? "bg-magenta text-white"
-                  : "bg-white text-navy/60 hover:bg-beige hover:text-navy"
+                  ? "bg-navy text-white shadow-soft"
+                  : "border border-beige bg-white text-navy/60 hover:border-navy/30 hover:text-navy"
               }`}
             >
               {cat}
@@ -195,9 +200,12 @@ export default function Storefront({
         </div>
 
         {filtered.length === 0 ? (
-          <p className="mt-10 rounded-2xl border border-dashed border-beige-dark bg-white py-16 text-center text-sm text-navy/50">
-            No products match your search.
-          </p>
+          <div className={`mt-10 ${cardClass}`}>
+            <EmptyState
+              title="No products match your search"
+              body="Try a different search term or category."
+            />
+          </div>
         ) : (
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map((p) => (
@@ -271,14 +279,14 @@ function HeroBanner({
               <button
                 type="button"
                 onClick={() => onSelectCategory(ctaCategory)}
-                className="rounded-full bg-navy px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-navy-deep"
+                className="rounded-full bg-navy px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-navy-deep active:scale-[0.98]"
               >
                 {promo.ctaLabel}
               </button>
             ) : (
               <a
                 href={promo.ctaHref}
-                className="rounded-full bg-navy px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-navy-deep"
+                className="rounded-full bg-navy px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-navy-deep active:scale-[0.98]"
               >
                 {promo.ctaLabel}
               </a>
@@ -315,7 +323,7 @@ function CategoryTile({
   const ctaCategory = categoryFromHref(promo.ctaHref);
   const inner = (
     <div
-      className="relative flex h-28 items-center overflow-hidden rounded-2xl px-5 transition-transform duration-150 hover:scale-[1.01]"
+      className="relative flex h-28 items-center overflow-hidden rounded-3xl px-5 transition-transform duration-150 hover:scale-[1.01]"
       style={{
         background: `linear-gradient(135deg, ${bg}, color-mix(in srgb, ${bg} 55%, black))`,
       }}
@@ -372,7 +380,7 @@ function PromotionCard({
   const isNews = promo.kind === "news";
   return (
     <div
-      className={`flex flex-col gap-2 rounded-2xl border p-5 ${
+      className={`flex flex-col gap-2 rounded-3xl border p-6 ${
         isNews
           ? "border-navy/10 bg-navy/[0.03]"
           : "border-magenta/20 bg-magenta/[0.04]"
@@ -438,8 +446,8 @@ function ProductCard({
 
   return (
     <div
-      className={`flex flex-col rounded-2xl border bg-white p-5 shadow-[0_1px_2px_rgba(38,34,98,0.04)] ${
-        highlight ? "border-magenta/30" : "border-beige"
+      className={`flex flex-col rounded-3xl border bg-white p-6 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-soft-lg ${
+        highlight ? "border-magenta/30" : "border-beige/70"
       }`}
     >
       <div className="flex items-start justify-between gap-2">
@@ -480,9 +488,9 @@ function ProductCard({
               </span>
             )}
             {off > 0 && (
-              <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700">
+              <Badge tone="success">
                 {p.isOverride ? "Your price" : `${off}% off`}
-              </span>
+              </Badge>
             )}
           </div>
         )}
@@ -492,14 +500,14 @@ function ProductCard({
             href={lifefileUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 rounded-full bg-magenta px-4 py-2 text-center text-sm font-semibold text-white transition-colors hover:bg-magenta-dark"
+            className="flex-1 rounded-full bg-navy px-4 py-2 text-center text-sm font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98]"
           >
             Prescribe
           </a>
           {p.detailSlug && (
             <Link
               href={`/products/${p.detailSlug}`}
-              className="rounded-full border border-beige-dark px-4 py-2 text-center text-sm font-semibold text-navy/70 transition-colors hover:border-navy hover:text-navy"
+              className="rounded-full border border-beige-dark bg-white px-4 py-2 text-center text-sm font-semibold text-navy transition-all hover:border-navy/40 active:scale-[0.98]"
             >
               Details
             </Link>

@@ -5,15 +5,25 @@ import { auditEvents } from "@/lib/db/schema";
 import { count, desc } from "drizzle-orm";
 import { requireAdmin } from "@/lib/auth/admin";
 import { ADMIN_LIST_LIMIT } from "@/lib/constants";
+import {
+  Badge,
+  Card,
+  EmptyState,
+  PageHeader,
+  rowClass,
+  tableWrapClass,
+  theadClass,
+  type BadgeTone,
+} from "@/components/ui/portal";
 
-function actorBadgeClass(actorType: string): string {
+function actorBadgeTone(actorType: string): BadgeTone {
   switch (actorType) {
     case "admin":
-      return "bg-magenta/10 text-magenta";
+      return "accent";
     case "partner":
-      return "bg-navy/10 text-navy";
+      return "neutral";
     default:
-      return "bg-beige-dark/50 text-navy/65";
+      return "neutral";
   }
 }
 
@@ -41,40 +51,46 @@ export default async function AuditLogPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-navy">Audit Log</h1>
-        <p className="mt-1 text-sm text-navy/70">
-          Immutable record of privileged changes — approvals, suspensions,
-          pricing/commission edits, payouts, quotes, and card reveals.
-        </p>
-        {overflow && (
-          <p className="mt-1 text-xs text-navy/55">
-            Showing the {events.length} most recent of {total}.
-          </p>
-        )}
-      </div>
+      <PageHeader
+        eyebrow="Admin"
+        title="Audit Log"
+        description={
+          <>
+            Immutable record of privileged changes — approvals, suspensions,
+            pricing/commission edits, payouts, quotes, and card reveals.
+            {overflow && (
+              <span className="block text-xs text-navy/45">
+                Showing the {events.length} most recent of {total}.
+              </span>
+            )}
+          </>
+        }
+      />
 
       {events.length === 0 ? (
-        <div className="rounded-2xl border border-beige bg-white p-12 text-center">
-          <p className="text-sm text-navy/65">No audit events recorded yet.</p>
-        </div>
+        <Card pad={false}>
+          <EmptyState
+            title="No audit events yet"
+            body="Privileged changes will be recorded here as they happen."
+          />
+        </Card>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-beige bg-white">
+        <div className={tableWrapClass}>
           <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-beige bg-cream/50 text-xs uppercase tracking-wider text-navy/60">
-                <th className="px-5 py-3.5 text-left font-semibold">When</th>
-                <th className="px-5 py-3.5 text-left font-semibold">Actor</th>
-                <th className="px-5 py-3.5 text-left font-semibold">Action</th>
-                <th className="px-5 py-3.5 text-left font-semibold">Target</th>
-                <th className="px-5 py-3.5 text-left font-semibold">Details</th>
+            <thead className={theadClass}>
+              <tr>
+                <th className="px-5 py-4 font-semibold">When</th>
+                <th className="px-5 py-4 font-semibold">Actor</th>
+                <th className="px-5 py-4 font-semibold">Action</th>
+                <th className="px-5 py-4 font-semibold">Target</th>
+                <th className="px-5 py-4 font-semibold">Details</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-beige">
+            <tbody>
               {events.map((e) => {
                 const meta = formatMetadata(e.metadata);
                 return (
-                  <tr key={e.id} className="align-top transition-colors hover:bg-cream/30">
+                  <tr key={e.id} className={`${rowClass} align-top`}>
                     <td className="whitespace-nowrap px-5 py-4 text-navy/65">
                       {new Date(e.createdAt).toLocaleString("en-US", {
                         month: "short",
@@ -85,11 +101,9 @@ export default async function AuditLogPage() {
                       })}
                     </td>
                     <td className="px-5 py-4">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${actorBadgeClass(e.actorType)}`}
-                      >
+                      <Badge tone={actorBadgeTone(e.actorType)}>
                         {e.actorType}
-                      </span>
+                      </Badge>
                       {e.actorEmail && (
                         <div className="mt-1 text-xs text-navy/55">{e.actorEmail}</div>
                       )}

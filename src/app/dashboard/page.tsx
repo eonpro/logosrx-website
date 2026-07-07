@@ -12,6 +12,7 @@ import {
 } from "@/lib/portal/merchandising";
 import { getPrimaryEmail, roleForEmail } from "@/lib/auth/admin";
 import { getPartnerContext } from "@/lib/auth/partner";
+import { btnSecondary } from "@/components/ui/portal";
 import { SITE } from "@/lib/constants";
 
 export const metadata: Metadata = {
@@ -41,20 +42,19 @@ export default async function DashboardPage() {
   if (gate.verificationStatus !== "verified") {
     return (
       <main className="mx-auto max-w-3xl px-6 py-10">
-        <h1 className="mb-1 text-2xl font-bold text-navy">Storefront</h1>
-        <p className="mb-6 text-sm text-navy/60">
+        <h1 className="mb-1 text-3xl font-bold tracking-tight text-navy sm:text-4xl">
+          Storefront
+        </h1>
+        <p className="mb-6 text-[15px] leading-relaxed text-navy/55">
           Your catalog and pricing unlock once your account is approved.
         </p>
         <VerificationBanner status={gate.verificationStatus} />
-        <div className="rounded-2xl border border-dashed border-beige-dark bg-white px-6 py-16 text-center">
+        <div className="rounded-3xl border border-dashed border-beige-dark bg-white px-6 py-16 text-center">
           <p className="mx-auto max-w-md text-sm text-navy/60">
             We&rsquo;re reviewing your account. You&rsquo;ll get full access to
             product pricing and prescribing as soon as you&rsquo;re verified.
           </p>
-          <Link
-            href="/dashboard/account"
-            className="mt-5 inline-flex rounded-full border border-navy/20 px-5 py-2 text-sm font-semibold text-navy transition-colors hover:bg-navy hover:text-white"
-          >
+          <Link href="/dashboard/account" className={`mt-5 ${btnSecondary}`}>
             Review your account details
           </Link>
         </div>

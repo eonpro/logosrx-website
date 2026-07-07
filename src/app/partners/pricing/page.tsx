@@ -8,6 +8,7 @@ import { getPartnerContext } from "@/lib/auth/partner";
 import { getOrgFloorMap } from "@/lib/partners/pricing";
 import { listNetworkClinics } from "@/lib/partners/queries";
 import { getCatalogProducts } from "@/lib/catalog/store";
+import { PageHeader, EmptyState, btnGhost } from "@/components/ui/portal";
 import PartnerNoAccess from "../PartnerNoAccess";
 import ClinicPricingManager from "./ClinicPricingManager";
 
@@ -22,13 +23,12 @@ export default async function PartnerPricingPage({
   if (ctx.org.compensationModel !== "margin") {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-navy">Clinic Pricing</h1>
-        <div className="mt-6 rounded-2xl border border-beige bg-white p-10 text-center">
-          <p className="text-sm text-navy/65">
-            Clinic pricing control is available on the wholesale/margin model.
-            Your organization currently earns a commission percentage, so
-            pricing is managed by Logos RX.
-          </p>
+        <PageHeader eyebrow="Partner Portal" title="Clinic Pricing" />
+        <div className="rounded-3xl border border-beige/70 bg-white shadow-soft">
+          <EmptyState
+            title="Pricing is managed by Logos RX"
+            body="Clinic pricing control is available on the wholesale/margin model. Your organization currently earns a commission percentage, so pricing is managed by Logos RX."
+          />
         </div>
       </div>
     );
@@ -89,35 +89,35 @@ export default async function PartnerPricingPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-navy">Clinic Pricing</h1>
-        <p className="text-navy/70 text-sm mt-1">
-          Set each clinic&rsquo;s selling price at or above your wholesale
-          floor. You earn the spread on every sale.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Partner Portal"
+        title="Clinic Pricing"
+        description="Set each clinic's selling price at or above your wholesale floor. You earn the spread on every sale."
+      />
 
       {floorMap.size === 0 ? (
-        <div className="rounded-2xl border border-beige bg-white p-10 text-center">
-          <p className="text-sm text-navy/65">
-            No wholesale floor prices are set for your organization yet. Contact
-            Logos RX to configure your price list.
-          </p>
+        <div className="rounded-3xl border border-beige/70 bg-white shadow-soft">
+          <EmptyState
+            title="No wholesale floor prices yet"
+            body="No wholesale floor prices are set for your organization yet. Contact Logos RX to configure your price list."
+          />
         </div>
       ) : clinicList.length === 0 ? (
-        <div className="rounded-2xl border border-beige bg-white p-10 text-center">
-          <p className="text-sm text-navy/65">
-            No clinics in your network yet. Share your{" "}
-            <Link href="/partners/links" className="text-magenta hover:underline">
-              referral links
-            </Link>{" "}
-            to add clinics.
-          </p>
+        <div className="rounded-3xl border border-beige/70 bg-white shadow-soft">
+          <EmptyState
+            title="No clinics in your network yet"
+            body="Share your referral links to add clinics."
+            action={
+              <Link href="/partners/links" className={btnGhost}>
+                Go to referral links →
+              </Link>
+            }
+          />
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-          <aside className="rounded-2xl border border-beige bg-white p-3">
-            <p className="px-2 py-1 text-xs font-semibold uppercase tracking-wide text-navy/55">
+          <aside className="rounded-3xl border border-beige/70 bg-white p-3 shadow-soft">
+            <p className="px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
               Clinics
             </p>
             <ul className="mt-1 space-y-0.5">
@@ -128,9 +128,9 @@ export default async function PartnerPricingPage({
                     <Link
                       href={`/partners/pricing?clinic=${c.id}`}
                       aria-current={active ? "page" : undefined}
-                      className={`block rounded-lg px-3 py-2 text-sm transition-colors ${
+                      className={`block rounded-full px-4 py-2 text-sm transition-colors ${
                         active
-                          ? "bg-navy text-white"
+                          ? "bg-navy font-semibold text-white shadow-soft"
                           : "text-navy/75 hover:bg-cream"
                       }`}
                     >
@@ -144,10 +144,8 @@ export default async function PartnerPricingPage({
 
           <div>
             {!selected ? (
-              <div className="rounded-2xl border border-beige bg-white p-10 text-center">
-                <p className="text-sm text-navy/65">
-                  Select a clinic to set its pricing.
-                </p>
+              <div className="rounded-3xl border border-beige/70 bg-white shadow-soft">
+                <EmptyState title="Select a clinic to set its pricing" />
               </div>
             ) : (
               <ClinicPricingManager

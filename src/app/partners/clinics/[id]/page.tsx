@@ -10,6 +10,7 @@ import {
   getClinicMeta,
   getClinicTimeline,
 } from "@/lib/partners/crm";
+import { EmptyState, btnGhost, tableWrapClass, theadClass, rowClass } from "@/components/ui/portal";
 import PartnerNoAccess from "../../PartnerNoAccess";
 import MonthlyTrend from "../../MonthlyTrend";
 import { KpiCard, StageBadge, StatusBadge } from "../../Kpi";
@@ -38,21 +39,18 @@ export default async function PartnerClinicDetailPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <Link
-          href="/partners/network"
-          className="text-xs font-medium text-navy/55 hover:text-magenta"
-        >
+      <div className="mb-8">
+        <Link href="/partners/network" className={`${btnGhost} -ml-4`}>
           ← Book of business
         </Link>
-        <div className="mt-2 flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold text-navy">
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <h1 className="text-3xl font-bold tracking-tight text-navy sm:text-4xl">
             {clinic.clinicName ?? `Clinic #${clinic.id}`}
           </h1>
           <StageBadge stage={meta.stage} />
           <StatusBadge status={clinic.verificationStatus} />
         </div>
-        <p className="mt-1 text-sm text-navy/70">
+        <p className="mt-2 text-[15px] leading-relaxed text-navy/55">
           {clinic.contactName}
           {clinic.contactEmail ? ` · ${clinic.contactEmail}` : ""}
           {clinic.contactPhone ? ` · ${clinic.contactPhone}` : ""}
@@ -120,43 +118,41 @@ export default async function PartnerClinicDetailPage({
         <ActivityTimeline events={timeline} />
       </div>
 
-      <div className="mt-6 overflow-x-auto rounded-2xl border border-beige bg-white">
+      <div className={`mt-6 overflow-x-auto ${tableWrapClass}`}>
         <div className="border-b border-beige px-5 py-4">
-          <h2 className="text-sm font-semibold text-navy">
+          <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
             Transactions ({clinic.transactions.length})
           </h2>
         </div>
         {clinic.transactions.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-navy/65">
-            No transactions recorded for this company yet.
-          </p>
+          <EmptyState title="No transactions recorded for this company yet" />
         ) : (
           <table className="w-full min-w-[640px] text-left text-sm">
-            <thead className="bg-cream/60 text-xs uppercase tracking-wide text-navy/55">
+            <thead className={theadClass}>
               <tr>
-                <th className="px-5 py-3 font-semibold">Date</th>
-                <th className="px-5 py-3 font-semibold">Description</th>
-                <th className="px-5 py-3 font-semibold">Reference</th>
-                <th className="px-5 py-3 font-semibold text-right">Revenue</th>
-                <th className="px-5 py-3 font-semibold text-right">
+                <th className="px-5 py-4 font-semibold">Date</th>
+                <th className="px-5 py-4 font-semibold">Description</th>
+                <th className="px-5 py-4 font-semibold">Reference</th>
+                <th className="px-5 py-4 font-semibold text-right">Revenue</th>
+                <th className="px-5 py-4 font-semibold text-right">
                   Your commission
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-beige text-navy">
+            <tbody className="text-navy">
               {clinic.transactions.map((tx) => (
-                <tr key={tx.id}>
-                  <td className="px-5 py-3 whitespace-nowrap">
+                <tr key={tx.id} className={rowClass}>
+                  <td className="px-5 py-4 whitespace-nowrap">
                     {formatTransactionDate(tx.transactionDate)}
                   </td>
-                  <td className="px-5 py-3">{tx.description ?? "—"}</td>
-                  <td className="px-5 py-3 font-mono text-xs">
+                  <td className="px-5 py-4">{tx.description ?? "—"}</td>
+                  <td className="px-5 py-4 font-mono text-xs">
                     {tx.reference ?? "—"}
                   </td>
-                  <td className="px-5 py-3 text-right tabular-nums">
+                  <td className="px-5 py-4 text-right tabular-nums">
                     {formatCents(tx.revenueCents)}
                   </td>
-                  <td className="px-5 py-3 text-right tabular-nums font-semibold">
+                  <td className="px-5 py-4 text-right tabular-nums font-semibold">
                     {formatCents(tx.commissionCents)}
                   </td>
                 </tr>

@@ -4,6 +4,7 @@ import { getPartnerContext } from "@/lib/auth/partner";
 import { roleAtLeast } from "@/lib/auth/partner-roles";
 import { getAllGoalProgress } from "@/lib/partners/goals";
 import { listOrgReps } from "@/lib/partners/queries";
+import { PageHeader } from "@/components/ui/portal";
 import PartnerNoAccess from "../PartnerNoAccess";
 import GoalsManager from "./GoalsManager";
 
@@ -22,13 +23,11 @@ export default async function PartnerGoalsPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-navy">Goals &amp; Quotas</h1>
-        <p className="text-navy/70 text-sm mt-1">
-          Set revenue or commission targets for your organization or individual
-          reps. Progress tracks the current period&rsquo;s attributed actuals.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Partner Portal"
+        title="Goals & Quotas"
+        description="Set revenue or commission targets for your organization or individual reps. Progress tracks the current period's attributed actuals."
+      />
 
       <GoalsManager
         goals={goals}

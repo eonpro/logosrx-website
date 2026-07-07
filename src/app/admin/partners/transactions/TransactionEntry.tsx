@@ -8,7 +8,10 @@ import {
 } from "../actions";
 
 const inputClass =
-  "h-10 rounded-lg border border-beige bg-cream/50 px-3 text-sm text-navy outline-none focus:border-magenta";
+  "h-10 rounded-2xl border border-beige-dark bg-white px-3.5 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10";
+
+const labelClass =
+  "text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45";
 
 export default function TransactionEntry({
   clinics,
@@ -94,7 +97,7 @@ export default function TransactionEntry({
 
   return (
     <div className="grid gap-6 xl:grid-cols-2">
-      <div className="rounded-2xl border border-beige bg-white p-6">
+      <div className="rounded-3xl border border-beige/70 bg-white p-6 shadow-soft sm:p-7">
         <h2 className="text-sm font-semibold text-navy">Add a transaction</h2>
         <form
           className="mt-4 flex flex-col gap-3"
@@ -104,7 +107,7 @@ export default function TransactionEntry({
           }}
         >
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-navy/60">
+            <span className={labelClass}>
               Clinic (attributed only)
             </span>
             <select
@@ -123,7 +126,7 @@ export default function TransactionEntry({
           </label>
           <div className="flex gap-3">
             <label className="flex flex-1 flex-col gap-1">
-              <span className="text-xs font-medium text-navy/60">Date</span>
+              <span className={labelClass}>Date</span>
               <input
                 type="date"
                 value={date}
@@ -133,7 +136,7 @@ export default function TransactionEntry({
               />
             </label>
             <label className="flex flex-1 flex-col gap-1">
-              <span className="text-xs font-medium text-navy/60">
+              <span className={labelClass}>
                 Revenue ($)
               </span>
               <input
@@ -148,7 +151,7 @@ export default function TransactionEntry({
               />
             </label>
             <label className="flex flex-1 flex-col gap-1">
-              <span className="text-xs font-medium text-navy/60">
+              <span className={labelClass}>
                 Cost ($) — margin orgs
               </span>
               <input
@@ -163,7 +166,7 @@ export default function TransactionEntry({
             </label>
           </div>
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-navy/60">
+            <span className={labelClass}>
               Description (optional)
             </span>
             <input
@@ -174,7 +177,7 @@ export default function TransactionEntry({
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-navy/60">
+            <span className={labelClass}>
               Reference (optional, e.g. LifeFile order id)
             </span>
             <input
@@ -187,14 +190,14 @@ export default function TransactionEntry({
           <button
             type="submit"
             disabled={pending}
-            className="mt-1 h-10 rounded-full bg-magenta px-6 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+            className="mt-1 h-10 rounded-full bg-magenta px-6 text-sm font-semibold text-white transition-all hover:bg-magenta-dark active:scale-[0.98] disabled:opacity-60"
           >
             {pending ? "Working…" : "Record transaction"}
           </button>
         </form>
       </div>
 
-      <div className="rounded-2xl border border-beige bg-white p-6">
+      <div className="rounded-3xl border border-beige/70 bg-white p-6 shadow-soft sm:p-7">
         <h2 className="text-sm font-semibold text-navy">Import CSV</h2>
         <p className="mt-1 text-xs text-navy/60">
           Header row required:{" "}
@@ -208,13 +211,13 @@ export default function TransactionEntry({
           placeholder={
             "clinic_id,date,amount,description,reference\n42,2026-06-01,1250.00,June order,LF-10293"
           }
-          className="mt-3 h-44 w-full resize-none rounded-lg border border-beige bg-cream/50 p-3 font-mono text-xs text-navy outline-none focus:border-magenta"
+          className="mt-3 h-44 w-full resize-none rounded-2xl border border-beige-dark bg-white p-4 font-mono text-xs text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10"
         />
         <button
           type="button"
           disabled={pending}
           onClick={importCsv}
-          className="mt-3 h-10 rounded-full bg-navy px-6 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+          className="mt-3 h-10 rounded-full bg-navy px-6 text-sm font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98] disabled:opacity-60"
         >
           {pending ? "Importing…" : "Import"}
         </button>

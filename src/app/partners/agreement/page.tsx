@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { partnerAgreements } from "@/lib/db/schema";
 import { getPartnerContext } from "@/lib/auth/partner";
 import ExecutedAgreement from "@/components/partners/ExecutedAgreement";
+import { PageHeader, EmptyState } from "@/components/ui/portal";
 import PartnerNoAccess from "../PartnerNoAccess";
 import PrintButton from "./PrintButton";
 
@@ -34,18 +35,12 @@ export default async function PartnerAgreementPage() {
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-navy">
-            Your signed agreement
-          </h1>
-          <p className="mt-1 text-sm text-navy/70">
-            Your executed Marketing Services Agreement, kept on file for you and
-            the pharmacy.
-          </p>
-        </div>
-        {agreement && <PrintButton />}
-      </div>
+      <PageHeader
+        eyebrow="Partner Portal"
+        title="Your signed agreement"
+        description="Your executed Marketing Services Agreement, kept on file for you and the pharmacy."
+        actions={agreement ? <PrintButton /> : undefined}
+      />
 
       {agreement ? (
         <ExecutedAgreement
@@ -65,8 +60,8 @@ export default async function PartnerAgreementPage() {
           className="mx-auto max-w-3xl"
         />
       ) : (
-        <div className="rounded-2xl border border-beige bg-white p-10 text-center text-sm text-navy/65">
-          No signed agreement on file yet.
+        <div className="rounded-3xl border border-beige/70 bg-white shadow-soft">
+          <EmptyState title="No signed agreement on file yet" />
         </div>
       )}
     </div>

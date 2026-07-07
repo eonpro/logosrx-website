@@ -6,6 +6,7 @@ import { getPartnerContext } from "@/lib/auth/partner";
 import { formatBps, formatCents } from "@/lib/partners/commission";
 import { getRepDetail } from "@/lib/partners/crm";
 import { formatTransactionDate } from "@/lib/partners/dates";
+import { EmptyState, btnGhost, tableWrapClass, theadClass, rowClass } from "@/components/ui/portal";
 import PartnerNoAccess from "../../PartnerNoAccess";
 import MonthlyTrend from "../../MonthlyTrend";
 import { KpiCard, StatusBadge } from "../../Kpi";
@@ -28,22 +29,21 @@ export default async function PartnerRepDetailPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <Link
-          href="/partners/reps"
-          className="text-xs font-medium text-navy/55 hover:text-magenta"
-        >
+      <div className="mb-8">
+        <Link href="/partners/reps" className={`${btnGhost} -ml-4`}>
           ← Reps
         </Link>
-        <div className="mt-2 flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold text-navy">{rep.name}</h1>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <h1 className="text-3xl font-bold tracking-tight text-navy sm:text-4xl">
+            {rep.name}
+          </h1>
           <StatusBadge
             status={
               rep.status === "active" && !rep.activated ? "pending" : rep.status
             }
           />
         </div>
-        <p className="mt-1 text-sm text-navy/70">
+        <p className="mt-2 text-[15px] leading-relaxed text-navy/55">
           {rep.email} · {formatBps(rep.commissionRateBps)} commission rate
           {rep.status === "active" && !rep.activated && " · invite not yet activated"}
         </p>
@@ -76,31 +76,29 @@ export default async function PartnerRepDetailPage({
         <MonthlyTrend data={rep.trend} />
       </div>
 
-      <div className="mt-6 overflow-x-auto rounded-2xl border border-beige bg-white">
+      <div className={`mt-6 overflow-x-auto ${tableWrapClass}`}>
         <div className="border-b border-beige px-5 py-4">
-          <h2 className="text-sm font-semibold text-navy">
+          <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
             Book of business ({rep.clinics.length})
           </h2>
         </div>
         {rep.clinics.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-navy/65">
-            No companies linked to this rep yet.
-          </p>
+          <EmptyState title="No companies linked to this rep yet" />
         ) : (
           <table className="w-full min-w-[680px] text-left text-sm">
-            <thead className="bg-cream/60 text-xs uppercase tracking-wide text-navy/55">
+            <thead className={theadClass}>
               <tr>
-                <th className="px-5 py-3 font-semibold">Company</th>
-                <th className="px-5 py-3 font-semibold">Status</th>
-                <th className="px-5 py-3 font-semibold text-right">Revenue</th>
-                <th className="px-5 py-3 font-semibold text-right">Commission</th>
-                <th className="px-5 py-3 font-semibold">Last activity</th>
+                <th className="px-5 py-4 font-semibold">Company</th>
+                <th className="px-5 py-4 font-semibold">Status</th>
+                <th className="px-5 py-4 font-semibold text-right">Revenue</th>
+                <th className="px-5 py-4 font-semibold text-right">Commission</th>
+                <th className="px-5 py-4 font-semibold">Last activity</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-beige text-navy">
+            <tbody className="text-navy">
               {rep.clinics.map((c) => (
-                <tr key={c.id} className="hover:bg-cream/40">
-                  <td className="px-5 py-3">
+                <tr key={c.id} className={rowClass}>
+                  <td className="px-5 py-4">
                     <Link
                       href={`/partners/clinics/${c.id}`}
                       className="font-medium text-navy hover:text-magenta"
@@ -108,16 +106,16 @@ export default async function PartnerRepDetailPage({
                       {c.clinicName ?? `Clinic #${c.id}`}
                     </Link>
                   </td>
-                  <td className="px-5 py-3">
+                  <td className="px-5 py-4">
                     <StatusBadge status={c.verificationStatus} />
                   </td>
-                  <td className="px-5 py-3 text-right tabular-nums">
+                  <td className="px-5 py-4 text-right tabular-nums">
                     {formatCents(c.revenueCents)}
                   </td>
-                  <td className="px-5 py-3 text-right tabular-nums font-semibold">
+                  <td className="px-5 py-4 text-right tabular-nums font-semibold">
                     {formatCents(c.commissionCents)}
                   </td>
-                  <td className="px-5 py-3 whitespace-nowrap text-navy/70">
+                  <td className="px-5 py-4 whitespace-nowrap text-navy/70">
                     {c.lastTransactionDate
                       ? formatTransactionDate(c.lastTransactionDate)
                       : "—"}

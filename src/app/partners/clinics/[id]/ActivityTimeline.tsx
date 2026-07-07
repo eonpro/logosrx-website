@@ -23,8 +23,10 @@ export default function ActivityTimeline({
   events: TimelineEvent[];
 }) {
   return (
-    <div className="rounded-2xl border border-beige bg-white p-6">
-      <h2 className="text-sm font-semibold text-navy">Activity</h2>
+    <div className="rounded-3xl border border-beige/70 bg-white p-6 shadow-soft sm:p-7">
+      <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
+        Activity
+      </h2>
       {events.length === 0 ? (
         <p className="mt-4 text-sm text-navy/60">No activity yet.</p>
       ) : (

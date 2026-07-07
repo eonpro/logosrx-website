@@ -5,6 +5,7 @@ import { getPartnerContext } from "@/lib/auth/partner";
 import { roleAtLeast } from "@/lib/auth/partner-roles";
 import { getOrgFloorMap } from "@/lib/partners/pricing";
 import { getCatalogProducts } from "@/lib/catalog/store";
+import { PageHeader, EmptyState, btnGhost } from "@/components/ui/portal";
 import PartnerNoAccess from "../../PartnerNoAccess";
 import PartnerQuoteBuilder, { type FloorOption } from "../PartnerQuoteBuilder";
 
@@ -20,11 +21,12 @@ export default async function NewPartnerQuotePage() {
   if (ctx.org.compensationModel !== "margin") {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-navy">New pricing quote</h1>
-        <div className="mt-6 rounded-2xl border border-beige bg-white p-10 text-center">
-          <p className="text-sm text-navy/65">
-            Custom pricing quotes are available on the wholesale/margin model.
-          </p>
+        <PageHeader eyebrow="Partner Portal" title="New pricing quote" />
+        <div className="rounded-3xl border border-beige/70 bg-white shadow-soft">
+          <EmptyState
+            title="Quotes are unavailable on your plan"
+            body="Custom pricing quotes are available on the wholesale/margin model."
+          />
         </div>
       </div>
     );
@@ -49,17 +51,17 @@ export default async function NewPartnerQuotePage() {
   if (floorOptions.length === 0) {
     return (
       <div>
-        <div className="mb-6">
-          <Link href="/partners/quotes" className="text-sm text-navy/60 hover:text-navy">
+        <div className="mb-2">
+          <Link href="/partners/quotes" className={`${btnGhost} -ml-4`}>
             ← Quotes
           </Link>
-          <h1 className="mt-2 text-2xl font-bold text-navy">New pricing quote</h1>
         </div>
-        <div className="rounded-2xl border border-beige bg-white p-10 text-center">
-          <p className="text-sm text-navy/65">
-            No wholesale floor prices are set for your organization yet. Contact
-            Logos RX to configure your price list before creating quotes.
-          </p>
+        <PageHeader eyebrow="Partner Portal" title="New pricing quote" />
+        <div className="rounded-3xl border border-beige/70 bg-white shadow-soft">
+          <EmptyState
+            title="No wholesale floor prices yet"
+            body="No wholesale floor prices are set for your organization yet. Contact Logos RX to configure your price list before creating quotes."
+          />
         </div>
       </div>
     );

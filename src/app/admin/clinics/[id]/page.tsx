@@ -26,11 +26,18 @@ import {
 import { standardCatalogPrice } from "@/data/catalog";
 import { getCatalogProducts } from "@/lib/catalog/store";
 import ClinicManager from "./ClinicManager";
+import {
+  Badge,
+  Card,
+  PageHeader,
+  btnGhost,
+  type BadgeTone,
+} from "@/components/ui/portal";
 
-const statusStyles: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-700",
-  verified: "bg-green-100 text-green-700",
-  rejected: "bg-red-100 text-red-700",
+const statusTones: Record<string, BadgeTone> = {
+  pending: "warning",
+  verified: "success",
+  rejected: "danger",
 };
 
 function optionLabel(options: Option[], value: string | null | undefined) {
@@ -47,7 +54,7 @@ function Field({
 }) {
   return (
     <div>
-      <p className="mb-1 text-xs uppercase tracking-wider text-navy/55">
+      <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
         {label}
       </p>
       <p className="text-navy">{value || "—"}</p>
@@ -148,34 +155,32 @@ export default async function ClinicDetailPage({
 
   return (
     <div>
-      <div className="mb-6">
-        <Link
-          href="/admin/clinics"
-          className="text-sm text-navy/60 hover:text-magenta"
-        >
+      <div className="mb-4">
+        <Link href="/admin/clinics" className={`${btnGhost} -ml-4`}>
           ← Back to clinics
         </Link>
       </div>
 
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-navy">{name}</h1>
-          <p className="mt-1 text-sm text-navy/60">
+      <PageHeader
+        eyebrow="Clinic"
+        title={name}
+        description={
+          <>
             {clinic.contactName}
             {clinic.contactEmail ? ` · ${clinic.contactEmail}` : ""}
-          </p>
-        </div>
-        <span
-          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold capitalize ${statusStyles[clinic.verificationStatus]}`}
-        >
-          {clinic.verificationStatus}
-        </span>
-      </div>
+          </>
+        }
+        actions={
+          <Badge tone={statusTones[clinic.verificationStatus] ?? "neutral"}>
+            {clinic.verificationStatus}
+          </Badge>
+        }
+      />
 
       <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
         {/* Left: read-only intake details */}
-        <div className="rounded-2xl border border-beige bg-white p-6">
-          <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-navy/70">
+        <Card>
+          <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
             Intake details
           </h2>
           <div className="grid grid-cols-2 gap-4 text-sm">
@@ -254,14 +259,14 @@ export default async function ClinicDetailPage({
           </div>
 
           <div className="mt-5">
-            <p className="mb-2 text-xs uppercase tracking-wider text-navy/55">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
               Providers ({clinic.providers?.length ?? 0})
             </p>
             <div className="flex flex-col gap-2">
               {(clinic.providers ?? []).map((p, i) => (
                 <div
                   key={i}
-                  className="rounded-lg border border-beige bg-cream/30 px-3 py-2 text-sm text-navy/80"
+                  className="rounded-2xl border border-beige/70 bg-cream/50 px-4 py-2.5 text-sm text-navy/80"
                 >
                   <span className="font-medium text-navy">
                     {p.firstName} {p.lastName}
@@ -280,7 +285,7 @@ export default async function ClinicDetailPage({
 
           {accessLog.length > 0 && (
             <div className="mt-5 border-t border-beige pt-4">
-              <p className="mb-2 text-xs uppercase tracking-wider text-navy/55">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
                 Card access log
               </p>
               <ul className="flex flex-col gap-1 text-xs text-navy/60">
@@ -298,7 +303,7 @@ export default async function ClinicDetailPage({
               </ul>
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Right: interactive CRM controls */}
         <ClinicManager

@@ -47,7 +47,7 @@ export default function AuthShell({
             priority
           />
           {subtitle && (
-            <p className="text-[11px] font-medium uppercase tracking-[0.25em] text-navy/40">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-navy/40">
               {subtitle}
             </p>
           )}

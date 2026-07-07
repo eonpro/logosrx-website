@@ -21,6 +21,15 @@ import { getCatalogProducts } from "@/lib/catalog/store";
 import PartnerOrgManager from "./PartnerOrgManager";
 import OrgFloorManager from "./OrgFloorManager";
 import EditOrgContact from "./EditOrgContact";
+import {
+  Badge,
+  EmptyState,
+  PageHeader,
+  btnGhost,
+  rowClass,
+  tableWrapClass,
+  theadClass,
+} from "@/components/ui/portal";
 
 export default async function AdminPartnerDetailPage({
   params,
@@ -158,34 +167,40 @@ export default async function AdminPartnerDetailPage({
 
   return (
     <div>
-      <div className="mb-8">
-        <Link
-          href="/admin/partners"
-          className="text-xs font-medium text-navy/55 hover:text-magenta"
-        >
+      <div className="mb-4">
+        <Link href="/admin/partners" className={`${btnGhost} -ml-4`}>
           ← All partners
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-navy">{org.name}</h1>
-        <p className="text-navy/70 text-sm mt-1">
-          {org.contactName} · {org.contactEmail}
-          {org.contactPhone && <> · {org.contactPhone}</>}
-          {org.website && (
-            <>
-              {" "}
-              ·{" "}
-              <a
-                href={org.website.startsWith("http") ? org.website : `https://${org.website}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-magenta hover:underline"
-              >
-                {org.website}
-              </a>
-            </>
-          )}
-        </p>
+      </div>
+
+      <PageHeader
+        eyebrow="Partner"
+        title={org.name}
+        description={
+          <>
+            {org.contactName} · {org.contactEmail}
+            {org.contactPhone && <> · {org.contactPhone}</>}
+            {org.website && (
+              <>
+                {" "}
+                ·{" "}
+                <a
+                  href={org.website.startsWith("http") ? org.website : `https://${org.website}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-magenta hover:underline"
+                >
+                  {org.website}
+                </a>
+              </>
+            )}
+          </>
+        }
+      />
+
+      <div className="-mt-4 mb-8">
         {org.notes && (
-          <p className="mt-2 max-w-2xl rounded-xl bg-white border border-beige px-4 py-3 text-sm text-navy/75">
+          <p className="mt-2 max-w-2xl rounded-2xl border border-beige/70 bg-white px-5 py-3.5 text-sm text-navy/75 shadow-soft">
             {org.notes}
           </p>
         )}
@@ -200,19 +215,19 @@ export default async function AdminPartnerDetailPage({
             website: org.website ?? "",
           }}
         />
-        <p className="mt-3 text-sm">
-          <span className="text-navy/55">Marketing Services Agreement: </span>
+        <p className="mt-3 flex items-center gap-2 text-sm">
+          <span className="text-navy/55">Marketing Services Agreement:</span>
           {org.msaSignedAt ? (
-            <span className="font-medium text-emerald-700">
+            <Badge tone="success">
               Signed{" "}
               {org.msaSignedAt.toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
                 year: "numeric",
               })}
-            </span>
+            </Badge>
           ) : (
-            <span className="font-medium text-amber-700">Not signed yet</span>
+            <Badge tone="warning">Not signed yet</Badge>
           )}
         </p>
       </div>
@@ -254,31 +269,32 @@ export default async function AdminPartnerDetailPage({
       </div>
 
       <div className="mt-8 grid gap-8 xl:grid-cols-2">
-        <section className="overflow-x-auto rounded-2xl border border-beige bg-white">
+        <section className={`${tableWrapClass} overflow-x-auto`}>
           <div className="border-b border-beige px-5 py-4">
             <h2 className="text-sm font-semibold text-navy">
               Reps ({reps.length})
             </h2>
           </div>
           {reps.length === 0 ? (
-            <p className="px-5 py-8 text-center text-sm text-navy/65">
-              No reps yet.
-            </p>
+            <EmptyState
+              title="No reps yet"
+              body="Reps invited by this org will show up here."
+            />
           ) : (
             <table className="w-full min-w-[640px] text-left text-sm">
-              <thead className="bg-cream/60 text-xs uppercase tracking-wide text-navy/55">
+              <thead className={theadClass}>
                 <tr>
-                  <th className="px-5 py-3 font-semibold">Rep</th>
-                  <th className="px-5 py-3 font-semibold">Status</th>
-                  <th className="px-5 py-3 font-semibold">MSA</th>
-                  <th className="px-5 py-3 font-semibold text-right">Rate</th>
-                  <th className="px-5 py-3 font-semibold text-right">Clinics</th>
-                  <th className="px-5 py-3 font-semibold text-right">Unpaid</th>
+                  <th className="px-5 py-3.5 font-semibold">Rep</th>
+                  <th className="px-5 py-3.5 font-semibold">Status</th>
+                  <th className="px-5 py-3.5 font-semibold">MSA</th>
+                  <th className="px-5 py-3.5 font-semibold text-right">Rate</th>
+                  <th className="px-5 py-3.5 font-semibold text-right">Clinics</th>
+                  <th className="px-5 py-3.5 font-semibold text-right">Unpaid</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-beige text-navy">
+              <tbody className="text-navy">
                 {reps.map((rep) => (
-                  <tr key={rep.id}>
+                  <tr key={rep.id} className={rowClass}>
                     <td className="px-5 py-3">
                       <span className="font-medium">{rep.name}</span>
                       <span className="block text-xs text-navy/55">
@@ -292,7 +308,7 @@ export default async function AdminPartnerDetailPage({
                     </td>
                     <td className="px-5 py-3">
                       {rep.msaSignedAt ? (
-                        <span className="text-emerald-700">Signed</span>
+                        <Badge tone="success">Signed</Badge>
                       ) : (
                         <span className="text-navy/40">—</span>
                       )}
@@ -313,32 +329,33 @@ export default async function AdminPartnerDetailPage({
           )}
         </section>
 
-        <section className="overflow-x-auto rounded-2xl border border-beige bg-white">
+        <section className={`${tableWrapClass} overflow-x-auto`}>
           <div className="border-b border-beige px-5 py-4">
             <h2 className="text-sm font-semibold text-navy">
               Referral links ({links.length})
             </h2>
           </div>
           {links.length === 0 ? (
-            <p className="px-5 py-8 text-center text-sm text-navy/65">
-              No referral links yet.
-            </p>
+            <EmptyState
+              title="No referral links yet"
+              body="Links created by this org will show up here."
+            />
           ) : (
             <table className="w-full min-w-[640px] text-left text-sm">
-              <thead className="bg-cream/60 text-xs uppercase tracking-wide text-navy/55">
+              <thead className={theadClass}>
                 <tr>
-                  <th className="px-5 py-3 font-semibold">Code</th>
-                  <th className="px-5 py-3 font-semibold">Label</th>
-                  <th className="px-5 py-3 font-semibold text-right">Clicks</th>
-                  <th className="px-5 py-3 font-semibold text-right">
+                  <th className="px-5 py-3.5 font-semibold">Code</th>
+                  <th className="px-5 py-3.5 font-semibold">Label</th>
+                  <th className="px-5 py-3.5 font-semibold text-right">Clicks</th>
+                  <th className="px-5 py-3.5 font-semibold text-right">
                     Sign-ups
                   </th>
-                  <th className="px-5 py-3 font-semibold">Active</th>
+                  <th className="px-5 py-3.5 font-semibold">Active</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-beige text-navy">
+              <tbody className="text-navy">
                 {links.map((link) => (
-                  <tr key={link.id}>
+                  <tr key={link.id} className={rowClass}>
                     <td className="px-5 py-3 font-mono text-xs">{link.code}</td>
                     <td className="px-5 py-3">{link.label || "—"}</td>
                     <td className="px-5 py-3 text-right tabular-nums">
@@ -356,30 +373,31 @@ export default async function AdminPartnerDetailPage({
         </section>
       </div>
 
-      <section className="mt-8 overflow-x-auto rounded-2xl border border-beige bg-white">
+      <section className={`${tableWrapClass} mt-8 overflow-x-auto`}>
         <div className="border-b border-beige px-5 py-4">
           <h2 className="text-sm font-semibold text-navy">
             Signed agreements ({agreements.length})
           </h2>
         </div>
         {agreements.length === 0 ? (
-          <p className="px-5 py-8 text-center text-sm text-navy/65">
-            No executed agreements yet.
-          </p>
+          <EmptyState
+            title="No executed agreements yet"
+            body="Signed MSAs for this org and its reps will show up here."
+          />
         ) : (
           <table className="w-full min-w-[640px] text-left text-sm">
-            <thead className="bg-cream/60 text-xs uppercase tracking-wide text-navy/55">
+            <thead className={theadClass}>
               <tr>
-                <th className="px-5 py-3 font-semibold">Signer</th>
-                <th className="px-5 py-3 font-semibold">Role</th>
-                <th className="px-5 py-3 font-semibold">Version</th>
-                <th className="px-5 py-3 font-semibold">Signed</th>
-                <th className="px-5 py-3 font-semibold text-right">Copy</th>
+                <th className="px-5 py-3.5 font-semibold">Signer</th>
+                <th className="px-5 py-3.5 font-semibold">Role</th>
+                <th className="px-5 py-3.5 font-semibold">Version</th>
+                <th className="px-5 py-3.5 font-semibold">Signed</th>
+                <th className="px-5 py-3.5 font-semibold text-right">Copy</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-beige text-navy">
+            <tbody className="text-navy">
               {agreements.map((a) => (
-                <tr key={a.id}>
+                <tr key={a.id} className={rowClass}>
                   <td className="px-5 py-3">
                     <span className="font-medium">{a.signerName}</span>
                     {a.signerTitle && (
@@ -418,29 +436,30 @@ export default async function AdminPartnerDetailPage({
         )}
       </section>
 
-      <section className="mt-8 overflow-x-auto rounded-2xl border border-beige bg-white">
+      <section className={`${tableWrapClass} mt-8 overflow-x-auto`}>
         <div className="border-b border-beige px-5 py-4">
           <h2 className="text-sm font-semibold text-navy">
             Linked clinics ({clinicRows.length})
           </h2>
         </div>
         {clinicRows.length === 0 ? (
-          <p className="px-5 py-8 text-center text-sm text-navy/65">
-            No clinics attributed to this org yet.
-          </p>
+          <EmptyState
+            title="No linked clinics yet"
+            body="Clinics attributed to this org will show up here."
+          />
         ) : (
           <table className="w-full min-w-[640px] text-left text-sm">
-            <thead className="bg-cream/60 text-xs uppercase tracking-wide text-navy/55">
+            <thead className={theadClass}>
               <tr>
-                <th className="px-5 py-3 font-semibold">Clinic</th>
-                <th className="px-5 py-3 font-semibold">Referred by</th>
-                <th className="px-5 py-3 font-semibold">Verification</th>
-                <th className="px-5 py-3 font-semibold">Joined</th>
+                <th className="px-5 py-3.5 font-semibold">Clinic</th>
+                <th className="px-5 py-3.5 font-semibold">Referred by</th>
+                <th className="px-5 py-3.5 font-semibold">Verification</th>
+                <th className="px-5 py-3.5 font-semibold">Joined</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-beige text-navy">
+            <tbody className="text-navy">
               {clinicRows.map((clinic) => (
-                <tr key={clinic.id}>
+                <tr key={clinic.id} className={rowClass}>
                   <td className="px-5 py-3">
                     <Link
                       href={`/admin/clinics/${clinic.id}`}
@@ -472,29 +491,30 @@ export default async function AdminPartnerDetailPage({
         )}
       </section>
 
-      <section className="mt-8 overflow-x-auto rounded-2xl border border-beige bg-white">
+      <section className={`${tableWrapClass} mt-8 overflow-x-auto`}>
         <div className="border-b border-beige px-5 py-4">
           <h2 className="text-sm font-semibold text-navy">Payout history</h2>
         </div>
         {payoutRows.length === 0 ? (
-          <p className="px-5 py-8 text-center text-sm text-navy/65">
-            No payouts recorded yet.
-          </p>
+          <EmptyState
+            title="No payouts recorded yet"
+            body="Recorded payouts to this org and its reps will show up here."
+          />
         ) : (
           <table className="w-full min-w-[640px] text-left text-sm">
-            <thead className="bg-cream/60 text-xs uppercase tracking-wide text-navy/55">
+            <thead className={theadClass}>
               <tr>
-                <th className="px-5 py-3 font-semibold">Date</th>
-                <th className="px-5 py-3 font-semibold">Paid to</th>
-                <th className="px-5 py-3 font-semibold">Method</th>
-                <th className="px-5 py-3 font-semibold">Reference</th>
-                <th className="px-5 py-3 font-semibold">Recorded by</th>
-                <th className="px-5 py-3 font-semibold text-right">Amount</th>
+                <th className="px-5 py-3.5 font-semibold">Date</th>
+                <th className="px-5 py-3.5 font-semibold">Paid to</th>
+                <th className="px-5 py-3.5 font-semibold">Method</th>
+                <th className="px-5 py-3.5 font-semibold">Reference</th>
+                <th className="px-5 py-3.5 font-semibold">Recorded by</th>
+                <th className="px-5 py-3.5 font-semibold text-right">Amount</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-beige text-navy">
+            <tbody className="text-navy">
               {payoutRows.map((p) => (
-                <tr key={p.id}>
+                <tr key={p.id} className={rowClass}>
                   <td className="px-5 py-3 whitespace-nowrap">
                     {p.paidAt.toLocaleDateString("en-US", {
                       month: "short",

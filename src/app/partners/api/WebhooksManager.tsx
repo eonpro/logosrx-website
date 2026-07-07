@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Badge, btnPrimary, btnGhost } from "@/components/ui/portal";
 import {
   createWebhook,
   deleteWebhook,
@@ -76,9 +77,11 @@ export default function WebhooksManager({
   }
 
   return (
-    <div className="rounded-2xl border border-beige bg-white p-6">
-      <h2 className="text-sm font-semibold text-navy">Webhooks</h2>
-      <p className="mt-1 text-xs text-navy/60">
+    <div className="rounded-3xl border border-beige/70 bg-white p-6 shadow-soft sm:p-7">
+      <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
+        Webhooks
+      </h2>
+      <p className="mt-2 text-xs text-navy/60">
         We POST signed JSON to your HTTPS endpoint. Verify the{" "}
         <code className="rounded bg-cream px-1 py-0.5">X-Logos-Signature</code>{" "}
         header (HMAC-SHA256 of <code>&quot;{`{t}.{body}`}&quot;</code>) with the
@@ -99,7 +102,7 @@ export default function WebhooksManager({
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://example.com/webhooks/logos"
             maxLength={500}
-            className="h-10 w-full max-w-lg rounded-lg border border-beige bg-cream/50 px-3 text-sm text-navy outline-none focus:border-magenta"
+            className="h-10 w-full max-w-lg rounded-full border border-beige-dark bg-white px-4 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10"
           />
         </label>
         <div className="flex flex-wrap gap-3">
@@ -117,7 +120,7 @@ export default function WebhooksManager({
         <button
           type="submit"
           disabled={pending}
-          className="h-10 w-fit rounded-full bg-magenta px-6 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+          className={`${btnPrimary} w-fit`}
         >
           {pending ? "Working…" : "Add webhook"}
         </button>
@@ -133,7 +136,7 @@ export default function WebhooksManager({
           {webhooks.map((w) => (
             <div
               key={w.id}
-              className={`rounded-xl border border-beige p-4 ${w.active ? "" : "opacity-60"}`}
+              className={`rounded-2xl border border-beige/70 p-4 ${w.active ? "" : "opacity-60"}`}
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
@@ -142,9 +145,7 @@ export default function WebhooksManager({
                       {w.url}
                     </p>
                     {w.failedCount > 0 && (
-                      <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700">
-                        {w.failedCount} failed
-                      </span>
+                      <Badge tone="danger">{w.failedCount} failed</Badge>
                     )}
                   </div>
                   <p className="mt-1 text-xs text-navy/55">
@@ -156,14 +157,14 @@ export default function WebhooksManager({
                       : "No deliveries yet"}
                   </p>
                 </div>
-                <div className="flex items-center gap-3 text-xs font-medium">
+                <div className="flex items-center gap-1 text-xs font-medium">
                   {w.deliveries.length > 0 && (
                     <button
                       type="button"
                       onClick={() =>
                         setExpanded(expanded === w.id ? null : w.id)
                       }
-                      className="text-navy/60 hover:text-magenta"
+                      className={`${btnGhost} !px-3 !py-1.5 !text-xs`}
                     >
                       {expanded === w.id ? "Hide history" : "History"}
                     </button>
@@ -171,7 +172,7 @@ export default function WebhooksManager({
                   <button
                     type="button"
                     onClick={() => setRevealed(revealed === w.id ? null : w.id)}
-                    className="text-navy/60 hover:text-magenta"
+                    className={`${btnGhost} !px-3 !py-1.5 !text-xs`}
                   >
                     {revealed === w.id ? "Hide secret" : "Show secret"}
                   </button>
@@ -179,7 +180,7 @@ export default function WebhooksManager({
                     type="button"
                     disabled={pending}
                     onClick={() => run(() => setWebhookActive(w.id, !w.active))}
-                    className="text-navy/60 hover:text-magenta disabled:opacity-50"
+                    className={`${btnGhost} !px-3 !py-1.5 !text-xs`}
                   >
                     {w.active ? "Disable" : "Enable"}
                   </button>
@@ -187,14 +188,14 @@ export default function WebhooksManager({
                     type="button"
                     disabled={pending}
                     onClick={() => run(() => deleteWebhook(w.id))}
-                    className="text-navy/60 hover:text-red-600 disabled:opacity-50"
+                    className={`${btnGhost} !px-3 !py-1.5 !text-xs hover:!text-red-600`}
                   >
                     Delete
                   </button>
                 </div>
               </div>
               {revealed === w.id && (
-                <code className="mt-2 block overflow-x-auto rounded-lg bg-cream px-3 py-2 font-mono text-xs text-navy">
+                <code className="mt-2 block overflow-x-auto rounded-xl bg-cream px-3 py-2 font-mono text-xs text-navy">
                   {w.secret}
                 </code>
               )}

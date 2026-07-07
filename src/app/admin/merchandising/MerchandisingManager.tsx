@@ -12,6 +12,14 @@ import {
   removeFeatured,
   type PromotionInput,
 } from "./actions";
+import {
+  Badge,
+  Card,
+  PageHeader,
+  btnAccent,
+  btnPrimary,
+  btnSecondary,
+} from "@/components/ui/portal";
 
 export interface PromotionVM extends PromotionInput {
   id: number;
@@ -120,17 +128,17 @@ export default function MerchandisingManager({
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-navy">Merchandising</h1>
-        <p className="mt-1 text-sm text-navy/70">
-          Feature products and publish promotions &amp; news to the clinic
-          storefront.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Admin"
+        title="Merchandising"
+        description="Feature products and publish promotions & news to the clinic storefront."
+      />
 
       {/* ───────── Featured products ───────── */}
-      <section className="mb-10 rounded-2xl border border-beige bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-lg font-bold text-navy">Featured products</h2>
+      <Card className="mb-10">
+        <h2 className="mb-4 text-lg font-bold tracking-tight text-navy">
+          Featured products
+        </h2>
 
         {featured.length === 0 ? (
           <p className="text-sm text-navy/50">No featured products yet.</p>
@@ -154,7 +162,7 @@ export default function MerchandisingManager({
                   type="button"
                   disabled={pending}
                   onClick={() => run(() => removeFeatured(f.id))}
-                  className="shrink-0 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                  className="shrink-0 rounded-full border border-red-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-red-700 transition-all hover:bg-red-50 disabled:opacity-50"
                 >
                   Remove
                 </button>
@@ -163,13 +171,13 @@ export default function MerchandisingManager({
           </ul>
         )}
 
-        <div className="flex flex-col gap-2 rounded-xl bg-cream p-3 sm:flex-row sm:items-end">
-          <label className="flex-1 text-xs font-medium text-navy/60">
+        <div className="flex flex-col gap-2 rounded-2xl bg-cream/80 p-4 ring-1 ring-beige/80 sm:flex-row sm:items-end">
+          <label className="flex-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
             Product
             <select
               value={featProduct}
               onChange={(e) => setFeatProduct(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-beige-dark bg-white px-3 py-2 text-sm text-navy"
+              className="input mt-1 normal-case tracking-normal"
             >
               <option value="">Select a product…</option>
               {productOptions.map((p) => (
@@ -179,23 +187,23 @@ export default function MerchandisingManager({
               ))}
             </select>
           </label>
-          <label className="text-xs font-medium text-navy/60 sm:w-36">
+          <label className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45 sm:w-36">
             Badge label
             <input
               type="text"
               value={featLabel}
               onChange={(e) => setFeatLabel(e.target.value)}
               placeholder="New"
-              className="mt-1 w-full rounded-lg border border-beige-dark bg-white px-3 py-2 text-sm text-navy"
+              className="input mt-1 normal-case tracking-normal"
             />
           </label>
-          <label className="text-xs font-medium text-navy/60 sm:w-24">
+          <label className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45 sm:w-24">
             Order
             <input
               type="number"
               value={featOrder}
               onChange={(e) => setFeatOrder(Number(e.target.value))}
-              className="mt-1 w-full rounded-lg border border-beige-dark bg-white px-3 py-2 text-sm text-navy"
+              className="input mt-1 normal-case tracking-normal"
             />
           </label>
           <button
@@ -209,22 +217,20 @@ export default function MerchandisingManager({
                 setFeatOrder(0);
               })
             }
-            className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-navy-deep disabled:opacity-50"
+            className={btnPrimary}
           >
             Add
           </button>
         </div>
-      </section>
+      </Card>
 
       {/* ───────── Promotions & news ───────── */}
-      <section className="rounded-2xl border border-beige bg-white p-6 shadow-sm">
+      <Card>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-navy">Promotions &amp; news</h2>
-          <button
-            type="button"
-            onClick={startCreate}
-            className="rounded-lg bg-magenta px-4 py-2 text-sm font-semibold text-white hover:bg-magenta-dark"
-          >
+          <h2 className="text-lg font-bold tracking-tight text-navy">
+            Promotions &amp; news
+          </h2>
+          <button type="button" onClick={startCreate} className={btnAccent}>
             + New
           </button>
         </div>
@@ -237,28 +243,14 @@ export default function MerchandisingManager({
               <li key={p.id} className="flex items-start justify-between gap-3 py-3">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                        p.kind === "news"
-                          ? "bg-navy/10 text-navy"
-                          : "bg-magenta/10 text-magenta"
-                      }`}
-                    >
+                    <Badge tone={p.kind === "news" ? "neutral" : "accent"}>
                       {p.kind}
-                    </span>
+                    </Badge>
                     <p className="truncate text-sm font-semibold text-navy">
                       {p.title}
                     </p>
-                    {!p.active && (
-                      <span className="rounded-full bg-navy/5 px-2 py-0.5 text-[10px] font-semibold text-navy/50">
-                        inactive
-                      </span>
-                    )}
-                    {p.pinned && (
-                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                        pinned
-                      </span>
-                    )}
+                    {!p.active && <Badge tone="neutral">inactive</Badge>}
+                    {p.pinned && <Badge tone="warning">pinned</Badge>}
                   </div>
                   <p className="mt-1 text-xs text-navy/50">
                     {p.audienceTier ? `${p.audienceTier} tier` : "all tiers"}
@@ -273,14 +265,14 @@ export default function MerchandisingManager({
                     type="button"
                     disabled={pending}
                     onClick={() => run(() => setPromotionActive(p.id, !p.active))}
-                    className="rounded-lg border border-beige-dark px-2.5 py-1.5 text-xs font-semibold text-navy/70 hover:bg-beige disabled:opacity-50"
+                    className="rounded-full border border-beige-dark bg-white px-3 py-1.5 text-xs font-semibold text-navy/70 transition-all hover:border-navy/40 hover:text-navy disabled:opacity-50"
                   >
                     {p.active ? "Hide" : "Show"}
                   </button>
                   <button
                     type="button"
                     onClick={() => startEdit(p)}
-                    className="rounded-lg border border-beige-dark px-2.5 py-1.5 text-xs font-semibold text-navy/70 hover:bg-beige"
+                    className="rounded-full border border-beige-dark bg-white px-3 py-1.5 text-xs font-semibold text-navy/70 transition-all hover:border-navy/40 hover:text-navy"
                   >
                     Edit
                   </button>
@@ -288,7 +280,7 @@ export default function MerchandisingManager({
                     type="button"
                     disabled={pending}
                     onClick={() => run(() => deletePromotion(p.id))}
-                    className="rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    className="rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 transition-all hover:bg-red-50 disabled:opacity-50"
                   >
                     Delete
                   </button>
@@ -299,8 +291,8 @@ export default function MerchandisingManager({
         )}
 
         {showForm && (
-          <div className="mt-6 rounded-xl border border-beige-dark bg-cream p-5">
-            <h3 className="mb-4 text-sm font-bold text-navy">
+          <div className="mt-6 rounded-2xl bg-cream/80 p-6 ring-1 ring-beige/80">
+            <h3 className="mb-4 text-sm font-bold tracking-tight text-navy">
               {editingId === null ? "New entry" : "Edit entry"}
             </h3>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -437,7 +429,7 @@ export default function MerchandisingManager({
                     type="color"
                     value={form.bgColor || "#26225f"}
                     onChange={(e) => set("bgColor", e.target.value)}
-                    className="h-9 w-12 cursor-pointer rounded border border-beige-dark bg-white"
+                    className="h-9 w-12 cursor-pointer rounded-lg border border-beige-dark bg-white"
                     aria-label="Background color"
                   />
                   <input
@@ -498,7 +490,7 @@ export default function MerchandisingManager({
                 type="button"
                 disabled={pending || !form.title.trim()}
                 onClick={submitForm}
-                className="rounded-lg bg-magenta px-5 py-2 text-sm font-semibold text-white hover:bg-magenta-dark disabled:opacity-50"
+                className={btnPrimary}
               >
                 {pending ? "Saving…" : "Save"}
               </button>
@@ -509,27 +501,35 @@ export default function MerchandisingManager({
                   setEditingId(null);
                   setForm(EMPTY_PROMO);
                 }}
-                className="rounded-lg border border-beige-dark px-5 py-2 text-sm font-semibold text-navy/70 hover:bg-beige"
+                className={btnSecondary}
               >
                 Cancel
               </button>
             </div>
           </div>
         )}
-      </section>
+      </Card>
 
       <style>{`
         .input {
           margin-top: 0.25rem;
           width: 100%;
-          border-radius: 0.5rem;
-          border: 1px solid #e2d9c8;
+          border-radius: 1rem;
+          border: 1px solid var(--color-beige-dark, #e2d9c8);
           background: #fff;
-          padding: 0.5rem 0.75rem;
+          padding: 0.625rem 1rem;
           font-size: 0.875rem;
-          color: #1a1a4b;
+          font-weight: 400;
+          letter-spacing: normal;
+          text-transform: none;
+          color: var(--color-navy, #1a1a4b);
+          transition: border-color 0.15s, box-shadow 0.15s;
         }
-        .input:focus { outline: 2px solid rgba(196,30,108,0.2); border-color: #c41e6c; }
+        .input:focus {
+          outline: none;
+          border-color: var(--color-navy, #1a1a4b);
+          box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-navy, #1a1a4b) 10%, transparent);
+        }
       `}</style>
     </div>
   );
@@ -546,7 +546,7 @@ function Field({
 }) {
   return (
     <label
-      className={`text-xs font-medium text-navy/60 ${full ? "sm:col-span-2" : ""}`}
+      className={`text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45 ${full ? "sm:col-span-2" : ""}`}
     >
       {label}
       {children}

@@ -12,6 +12,16 @@ import {
   type TierInput,
   type TierState,
 } from "./actions";
+import {
+  Badge,
+  Card,
+  EmptyState,
+  PageHeader,
+  btnAccent,
+  cardClass,
+  inputClass,
+  selectClass,
+} from "@/components/ui/portal";
 
 export interface CatalogProductVM extends CatalogProductInput {
   id: string;
@@ -49,8 +59,7 @@ function emptyInput(taxonomy: CatalogTaxonomy): CatalogProductInput {
   };
 }
 
-const inputStyle =
-  "w-full rounded-lg border border-beige bg-white px-3 py-2 text-sm text-navy focus:border-magenta focus:outline-none";
+const inputStyle = inputClass;
 
 /* ─────────────────────────── Tier field ─────────────────────────── */
 
@@ -67,7 +76,7 @@ function TierField({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-[11px] uppercase tracking-wider text-navy/50">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
         {label}
       </span>
       <div className="flex items-center gap-1.5">
@@ -78,7 +87,7 @@ function TierField({
           onChange={(e) =>
             onChange({ ...value, state: e.target.value as TierState })
           }
-          className="rounded-lg border border-beige bg-white px-2 py-2 text-xs text-navy disabled:opacity-60"
+          className="appearance-none rounded-2xl border border-beige-dark bg-white px-2.5 py-2 text-xs text-navy outline-none transition-all focus:border-navy focus:ring-2 focus:ring-navy/10 disabled:opacity-60"
         >
           <option value="price">$</option>
           <option value="na">N/A</option>
@@ -99,7 +108,7 @@ function TierField({
                 ? "Hidden (—)"
                 : "0.00"
           }
-          className="w-28 rounded-lg border border-beige bg-white px-2 py-2 text-sm text-navy disabled:bg-cream/60 disabled:text-navy/40"
+          className="w-28 rounded-2xl border border-beige-dark bg-white px-3 py-2 text-sm text-navy outline-none transition-all focus:border-navy focus:ring-2 focus:ring-navy/10 disabled:bg-cream/60 disabled:text-navy/40"
         />
       </div>
     </div>
@@ -128,7 +137,7 @@ function ChipMulti({
             onClick={() => onToggle(o)}
             className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
               on
-                ? "bg-magenta text-white"
+                ? "bg-navy text-white"
                 : "bg-cream text-navy/70 hover:bg-beige"
             }`}
           >
@@ -172,7 +181,7 @@ function ProductFields({
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       <label className="flex flex-col gap-1 md:col-span-2">
-        <span className="text-[11px] uppercase tracking-wider text-navy/50">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
           Name
         </span>
         <input
@@ -184,7 +193,7 @@ function ProductFields({
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[11px] uppercase tracking-wider text-navy/50">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
           Strength
         </span>
         <input
@@ -197,7 +206,7 @@ function ProductFields({
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[11px] uppercase tracking-wider text-navy/50">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
           Unit
         </span>
         <input
@@ -210,11 +219,11 @@ function ProductFields({
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[11px] uppercase tracking-wider text-navy/50">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
           Dosage form
         </span>
         <select
-          className={inputStyle}
+          className={selectClass}
           value={value.form}
           disabled={disabled}
           onChange={(e) => set("form", e.target.value)}
@@ -228,11 +237,11 @@ function ProductFields({
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[11px] uppercase tracking-wider text-navy/50">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
           Brand
         </span>
         <select
-          className={inputStyle}
+          className={selectClass}
           value={value.brand}
           disabled={disabled}
           onChange={(e) => set("brand", e.target.value)}
@@ -247,7 +256,7 @@ function ProductFields({
       </label>
 
       <div className="flex flex-col gap-1.5 md:col-span-2">
-        <span className="text-[11px] uppercase tracking-wider text-navy/50">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
           Product family
         </span>
         <ChipMulti
@@ -258,7 +267,7 @@ function ProductFields({
       </div>
 
       <div className="flex flex-col gap-1.5 md:col-span-2">
-        <span className="text-[11px] uppercase tracking-wider text-navy/50">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
           Therapeutic areas
         </span>
         <ChipMulti
@@ -269,7 +278,7 @@ function ProductFields({
       </div>
 
       <label className="flex flex-col gap-1 md:col-span-2">
-        <span className="text-[11px] uppercase tracking-wider text-navy/50">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
           Details
         </span>
         <textarea
@@ -281,7 +290,7 @@ function ProductFields({
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[11px] uppercase tracking-wider text-navy/50">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
           Badge
         </span>
         <input
@@ -294,7 +303,7 @@ function ProductFields({
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[11px] uppercase tracking-wider text-navy/50">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
           Sort order
         </span>
         <input
@@ -355,7 +364,7 @@ function ProductRow({
   }
 
   return (
-    <div className="rounded-xl border border-beige bg-white px-4 py-3">
+    <div className={`${cardClass} px-5 py-4`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-semibold text-navy">
@@ -367,15 +376,11 @@ function ProductRow({
           <p className="font-mono text-[11px] text-navy/45">{product.id}</p>
         </div>
         <div className="flex items-center gap-2">
-          {!product.active && (
-            <span className="rounded-full bg-cream px-2 py-0.5 text-[11px] font-semibold text-navy/55">
-              Inactive
-            </span>
-          )}
+          {!product.active && <Badge tone="neutral">Inactive</Badge>}
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="rounded-full border border-beige px-3 py-1 text-xs font-medium text-navy/70 hover:bg-cream"
+            className="rounded-full border border-beige-dark bg-white px-3.5 py-1.5 text-xs font-semibold text-navy/70 transition-all hover:border-navy/40 hover:text-navy"
           >
             {expanded ? "Hide details" : "Edit details"}
           </button>
@@ -412,7 +417,7 @@ function ProductRow({
             type="button"
             onClick={save}
             disabled={!dirty || pending}
-            className="rounded-full bg-magenta px-4 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-magenta/90 disabled:opacity-50"
+            className="rounded-full bg-navy px-4 py-1.5 text-xs font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98] disabled:opacity-50"
           >
             Save changes
           </button>
@@ -421,7 +426,7 @@ function ProductRow({
               type="button"
               onClick={reset}
               disabled={pending}
-              className="rounded-full border border-beige px-4 py-1.5 text-xs font-medium text-navy/70 hover:bg-cream"
+              className="rounded-full border border-beige-dark bg-white px-4 py-1.5 text-xs font-semibold text-navy/70 transition-all hover:border-navy/40 hover:text-navy disabled:opacity-50"
             >
               Reset
             </button>
@@ -432,7 +437,7 @@ function ProductRow({
               run(() => setCatalogProductActive(product.id, !product.active))
             }
             disabled={pending}
-            className="rounded-full border border-beige px-4 py-1.5 text-xs font-medium text-navy/70 hover:bg-cream"
+            className="rounded-full border border-beige-dark bg-white px-4 py-1.5 text-xs font-semibold text-navy/70 transition-all hover:border-navy/40 hover:text-navy disabled:opacity-50"
           >
             {product.active ? "Deactivate" : "Activate"}
           </button>
@@ -448,7 +453,7 @@ function ProductRow({
               }
             }}
             disabled={pending}
-            className="ml-auto rounded-full px-4 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+            className="ml-auto rounded-full border border-red-200 bg-white px-4 py-1.5 text-xs font-semibold text-red-700 transition-all hover:bg-red-50 disabled:opacity-50"
           >
             Delete
           </button>
@@ -532,44 +537,42 @@ export default function CatalogManager({
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-navy">Catalog</h1>
-          <p className="mt-1 text-sm text-navy/60">
-            Edit base/standard pricing, add, rename, or remove products.{" "}
-            {products.length} SKUs.
-          </p>
-        </div>
-        {canEdit && (
-          <button
-            type="button"
-            onClick={() => setShowAdd((v) => !v)}
-            className="rounded-full bg-magenta px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-magenta/90"
-          >
-            {showAdd ? "Cancel" : "Add product"}
-          </button>
-        )}
-      </div>
+      <PageHeader
+        eyebrow="Admin"
+        title="Catalog"
+        description={`Edit base/standard pricing, add, rename, or remove products. ${products.length} SKUs.`}
+        actions={
+          canEdit ? (
+            <button
+              type="button"
+              onClick={() => setShowAdd((v) => !v)}
+              className={btnAccent}
+            >
+              {showAdd ? "Cancel" : "Add product"}
+            </button>
+          ) : undefined
+        }
+      />
 
       {!canEdit && (
-        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3.5 text-sm text-amber-800">
           You have read-only access. Pricing changes require a full admin role.
         </div>
       )}
 
       {error && (
-        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-5 py-3.5 text-sm text-red-700">
           {error}
         </div>
       )}
 
       {showAdd && canEdit && (
-        <div className="mb-6 rounded-2xl border border-beige bg-cream/40 p-5">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-navy/60">
+        <Card className="mb-6">
+          <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
             New product
           </h2>
           <label className="mb-4 flex flex-col gap-1">
-            <span className="text-[11px] uppercase tracking-wider text-navy/50">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
               SKU id (immutable)
             </span>
             <input
@@ -604,12 +607,12 @@ export default function CatalogManager({
               type="button"
               onClick={submitNew}
               disabled={pending || !newId.trim() || !newForm.name.trim()}
-              className="rounded-full bg-magenta px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-magenta/90 disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-navy px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98] disabled:opacity-50"
             >
               Create product
             </button>
           </div>
-        </div>
+        </Card>
       )}
 
       <div className="mb-4">
@@ -622,14 +625,17 @@ export default function CatalogManager({
       </div>
 
       {groups.length === 0 ? (
-        <p className="rounded-xl border border-beige bg-white px-4 py-8 text-center text-sm text-navy/55">
-          No products match your search.
-        </p>
+        <Card pad={false}>
+          <EmptyState
+            title="No products match"
+            body="Try a different name or SKU id."
+          />
+        </Card>
       ) : (
         <div className="flex flex-col gap-6">
           {groups.map(([family, rows]) => (
             <section key={family}>
-              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-navy/45">
+              <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
                 {family} ({rows.length})
               </h2>
               <div className="flex flex-col gap-2">

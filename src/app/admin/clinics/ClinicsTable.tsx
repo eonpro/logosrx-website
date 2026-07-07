@@ -14,6 +14,15 @@ import {
   type Option,
 } from "@/lib/onboarding/steps";
 import { setClinicVerification } from "./actions";
+import {
+  Badge,
+  InitialsAvatar,
+  btnSecondary,
+  rowClass,
+  tableWrapClass,
+  theadClass,
+  type BadgeTone,
+} from "@/components/ui/portal";
 
 /**
  * The projected clinic shape the list renders. Matches the column selection in
@@ -44,10 +53,10 @@ export type ClinicRow = {
   cardLast4: string | null;
 };
 
-const statusStyles: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-700",
-  verified: "bg-green-100 text-green-700",
-  rejected: "bg-red-100 text-red-700",
+const statusTones: Record<string, BadgeTone> = {
+  pending: "warning",
+  verified: "success",
+  rejected: "danger",
 };
 
 const VERIFICATION_OPTIONS = ["verified", "rejected", "pending"] as const;
@@ -63,7 +72,7 @@ function optionLabel(
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <p className="text-navy/65 text-xs uppercase tracking-wider mb-1">
+      <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
         {label}
       </p>
       <p className="text-navy">{value || "—"}</p>
@@ -93,23 +102,20 @@ export function ClinicsTable({ clinics }: { clinics: ClinicRow[] }) {
 
   return (
     <>
-    <div className="rounded-2xl bg-white border border-beige overflow-hidden">
+    <div className={tableWrapClass}>
       <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-beige bg-cream/50">
+        <thead className={theadClass}>
+          <tr>
             {["Clinic", "Contact", "Products", "Submitted", "Status", ""].map(
               (h, i) => (
-                <th
-                  key={i}
-                  className="text-left px-6 py-3.5 font-semibold text-navy/60 text-xs uppercase tracking-wider"
-                >
+                <th key={i} className="px-5 py-4 font-semibold">
                   {h}
                 </th>
               ),
             )}
           </tr>
         </thead>
-        <tbody className="divide-y divide-beige">
+        <tbody>
           {clinics.map((c) => {
             const products = (c.productsOfInterest ?? [])
               .map((p) => optionLabel(PRODUCT_OPTIONS, p))
@@ -117,33 +123,36 @@ export function ClinicsTable({ clinics }: { clinics: ClinicRow[] }) {
             return (
               <Fragment key={c.id}>
                 <tr
-                  className="hover:bg-cream/30 transition-colors cursor-pointer"
+                  className={`${rowClass} cursor-pointer`}
                   onClick={() =>
                     setExpandedId(expandedId === c.id ? null : c.id)
                   }
                 >
-                  <td className="px-6 py-4 font-medium text-navy">
-                    {c.clinicName || c.practiceLegalName || "—"}
+                  <td className="px-5 py-4 font-medium text-navy">
+                    <span className="flex items-center gap-3">
+                      <InitialsAvatar
+                        name={c.clinicName || c.practiceLegalName || "—"}
+                      />
+                      {c.clinicName || c.practiceLegalName || "—"}
+                    </span>
                   </td>
-                  <td className="px-6 py-4 text-navy/60">
+                  <td className="px-5 py-4 text-navy/60">
                     {c.contactName || "—"}
                   </td>
-                  <td className="px-6 py-4 text-navy/60">{products || "—"}</td>
-                  <td className="px-6 py-4 text-navy/65">
+                  <td className="px-5 py-4 text-navy/60">{products || "—"}</td>
+                  <td className="px-5 py-4 text-navy/65">
                     {new Date(c.createdAt).toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
                       year: "numeric",
                     })}
                   </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${statusStyles[c.verificationStatus]}`}
-                    >
+                  <td className="px-5 py-4">
+                    <Badge tone={statusTones[c.verificationStatus] ?? "neutral"}>
                       {c.verificationStatus}
-                    </span>
+                    </Badge>
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-5 py-4 text-right">
                     <svg
                       width="16"
                       height="16"
@@ -162,13 +171,13 @@ export function ClinicsTable({ clinics }: { clinics: ClinicRow[] }) {
                   </td>
                 </tr>
                 {expandedId === c.id && (
-                  <tr key={`${c.id}-detail`}>
-                    <td colSpan={6} className="px-6 py-5 bg-cream/30">
+                  <tr key={`${c.id}-detail`} className="border-b border-beige/60 last:border-0">
+                    <td colSpan={6} className="bg-cream/50 px-5 py-5">
                       <div className="mb-4 flex justify-end">
                         <Link
                           href={`/admin/clinics/${c.id}`}
                           onClick={(e) => e.stopPropagation()}
-                          className="rounded-full bg-navy px-4 py-1.5 text-xs font-semibold text-white hover:bg-navy/90 transition-colors"
+                          className="rounded-full bg-navy px-4 py-1.5 text-xs font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98]"
                         >
                           Open full record →
                         </Link>
@@ -252,14 +261,14 @@ export function ClinicsTable({ clinics }: { clinics: ClinicRow[] }) {
                       </div>
 
                       <div className="mb-5">
-                        <p className="text-navy/65 text-xs uppercase tracking-wider mb-2">
+                        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
                           Providers ({c.providers?.length ?? 0})
                         </p>
                         <div className="flex flex-col gap-2">
                           {(c.providers ?? []).map((p, i) => (
                             <div
                               key={i}
-                              className="rounded-lg bg-white border border-beige px-3 py-2 text-sm text-navy/80"
+                              className="rounded-2xl border border-beige/70 bg-white px-4 py-2.5 text-sm text-navy/80"
                             >
                               <span className="font-medium text-navy">
                                 {p.firstName} {p.lastName}
@@ -278,7 +287,7 @@ export function ClinicsTable({ clinics }: { clinics: ClinicRow[] }) {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className="text-navy/65 text-xs uppercase tracking-wider mr-1">
+                        <span className="mr-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
                           Set status
                         </span>
                         {VERIFICATION_OPTIONS.map((status) => (
@@ -297,10 +306,10 @@ export function ClinicsTable({ clinics }: { clinics: ClinicRow[] }) {
                               c.verificationStatus === status
                                 ? "bg-navy/10 text-navy/65 cursor-not-allowed"
                                 : status === "verified"
-                                  ? "bg-white border border-green-200 text-green-700 hover:bg-green-50"
+                                  ? "border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50"
                                   : status === "rejected"
-                                    ? "bg-white border border-red-200 text-red-700 hover:bg-red-50"
-                                    : "bg-white border border-beige hover:border-magenta hover:text-magenta text-navy/60"
+                                    ? "border border-red-200 bg-white text-red-700 hover:bg-red-50"
+                                    : "border border-beige-dark bg-white text-navy/60 hover:border-navy/40 hover:text-navy"
                             }`}
                           >
                             {status}
@@ -325,10 +334,10 @@ export function ClinicsTable({ clinics }: { clinics: ClinicRow[] }) {
           <div
             role="dialog"
             aria-modal="true"
-            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+            className="w-full max-w-md rounded-3xl bg-white p-7 shadow-soft-lg"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-bold text-navy">Verify clinic</h3>
+            <h3 className="text-lg font-bold tracking-tight text-navy">Verify clinic</h3>
             <p className="mt-2 text-sm text-navy/70">
               Are you sure you want to verify{" "}
               <span className="font-semibold text-navy">{confirmName}</span>?
@@ -338,7 +347,7 @@ export function ClinicsTable({ clinics }: { clinics: ClinicRow[] }) {
               <button
                 onClick={() => setConfirming(null)}
                 disabled={pending}
-                className="rounded-full border border-beige bg-white px-4 py-1.5 text-xs font-semibold text-navy/60 transition-colors hover:border-navy/30 disabled:opacity-60"
+                className={btnSecondary}
               >
                 Cancel
               </button>
@@ -349,7 +358,7 @@ export function ClinicsTable({ clinics }: { clinics: ClinicRow[] }) {
                   applyStatus(id, "verified");
                 }}
                 disabled={pending}
-                className="rounded-full bg-green-600 px-4 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-green-700 disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-50"
               >
                 {pending ? "Verifying…" : "Yes, verify"}
               </button>

@@ -33,13 +33,13 @@ export default function ApproveOrgButton({ orgId }: { orgId: number }) {
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="off"
           placeholder="Optional password"
-          className="h-7 w-36 rounded-md border border-beige bg-cream/50 px-2 text-[11px] text-navy outline-none focus:border-magenta"
+          className="h-8 w-36 rounded-full border border-beige-dark bg-white px-3 text-[11px] text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10"
         />
         <button
           type="button"
           onClick={approve}
           disabled={pending}
-          className="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+          className="rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-60"
         >
           {pending ? "Approving…" : "Approve"}
         </button>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { btnPrimary } from "@/components/ui/portal";
 import {
   addClinicNote,
   setClinicStage,
@@ -57,8 +58,10 @@ export default function ClinicRelationship({
   }
 
   return (
-    <div className="rounded-2xl border border-beige bg-white p-6">
-      <h2 className="text-sm font-semibold text-navy">Relationship</h2>
+    <div className="rounded-3xl border border-beige/70 bg-white p-6 shadow-soft sm:p-7">
+      <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
+        Relationship
+      </h2>
 
       <div className="mt-4 flex flex-col gap-4">
         <label className="flex flex-col gap-1">
@@ -69,7 +72,7 @@ export default function ClinicRelationship({
             onChange={(e) =>
               run(() => setClinicStage(clinicId, e.target.value))
             }
-            className="h-10 w-48 rounded-lg border border-beige bg-cream/50 px-3 text-sm text-navy outline-none focus:border-magenta disabled:opacity-60"
+            className="h-10 w-48 rounded-full border border-beige-dark bg-white px-4 text-sm text-navy outline-none transition-all focus:border-navy focus:ring-2 focus:ring-navy/10 disabled:opacity-60"
           >
             {STAGES.map((s) => (
               <option key={s.id} value={s.id}>
@@ -111,7 +114,7 @@ export default function ClinicRelationship({
                 onChange={(e) => setTagInput(e.target.value)}
                 placeholder="Add tag…"
                 maxLength={40}
-                className="h-7 w-28 rounded-full border border-beige bg-cream/50 px-3 text-xs text-navy outline-none focus:border-magenta"
+                className="h-7 w-28 rounded-full border border-beige-dark bg-white px-3 text-xs text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10"
               />
             </form>
           </div>
@@ -134,12 +137,12 @@ export default function ClinicRelationship({
             onChange={(e) => setNote(e.target.value)}
             placeholder="Log a call, meeting, or context for this account…"
             maxLength={5000}
-            className="h-20 resize-none rounded-lg border border-beige bg-cream/50 p-3 text-sm text-navy outline-none focus:border-magenta"
+            className="h-20 w-full resize-none rounded-2xl border border-beige-dark bg-white p-3 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10"
           />
           <button
             type="submit"
             disabled={pending || !note.trim()}
-            className="self-start rounded-full bg-magenta px-5 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+            className={`${btnPrimary} self-start !px-5 !py-1.5 !text-xs`}
           >
             {pending ? "Saving…" : "Add note"}
           </button>

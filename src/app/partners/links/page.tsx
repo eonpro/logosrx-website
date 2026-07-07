@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { partnerReps, referralLinks } from "@/lib/db/schema";
 import { getPartnerContext } from "@/lib/auth/partner";
 import { SITE_URL } from "@/lib/constants";
+import { PageHeader } from "@/components/ui/portal";
 import PartnerNoAccess from "../PartnerNoAccess";
 import LinksManager from "./LinksManager";
 
@@ -48,13 +49,17 @@ export default async function PartnerLinksPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-navy">Referral Links</h1>
-        <p className="text-navy/70 text-sm mt-1">
-          Share a link with providers — clinics that sign up through it are
-          automatically tied to {ctx.kind === "rep" ? "you" : "your organization"}.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Partner Portal"
+        title="Referral Links"
+        description={
+          <>
+            Share a link with providers — clinics that sign up through it are
+            automatically tied to{" "}
+            {ctx.kind === "rep" ? "you" : "your organization"}.
+          </>
+        }
+      />
 
       <LinksManager
         links={links.map((l) => ({

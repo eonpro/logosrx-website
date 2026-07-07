@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { formatCents } from "@/lib/partners/commission";
+import { EmptyState, InitialsAvatar, tableWrapClass, theadClass, rowClass } from "@/components/ui/portal";
 import { StageBadge, StatusBadge } from "../Kpi";
 
 export interface BookTableRow {
@@ -26,7 +27,7 @@ const STAGE_OPTIONS = [
 ];
 
 const inputClass =
-  "h-9 rounded-lg border border-beige bg-cream/50 px-3 text-sm text-navy outline-none focus:border-magenta";
+  "h-10 rounded-full border border-beige-dark bg-white px-4 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10";
 
 export default function BookTable({
   rows,
@@ -64,9 +65,9 @@ export default function BookTable({
   }, [rows, q, stage, rep, kind]);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-beige bg-white">
+    <div className={tableWrapClass}>
       <div className="flex flex-wrap items-center gap-2 border-b border-beige px-5 py-4">
-        <h2 className="mr-auto text-sm font-semibold text-navy">
+        <h2 className="mr-auto text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
           Companies ({filtered.length})
         </h2>
         <input
@@ -108,56 +109,62 @@ export default function BookTable({
 
       <div className="overflow-x-auto">
         {filtered.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-navy/65">
-            No companies match your filters.
-          </p>
+          <EmptyState
+            title="No companies match your filters"
+            body="Try clearing the search or choosing a different stage."
+          />
         ) : (
           <table className="w-full min-w-[760px] text-left text-sm">
-            <thead className="bg-cream/60 text-xs uppercase tracking-wide text-navy/55">
+            <thead className={theadClass}>
               <tr>
-                <th className="px-5 py-3 font-semibold">Company</th>
+                <th className="px-5 py-4 font-semibold">Company</th>
                 {kind === "org" && (
-                  <th className="px-5 py-3 font-semibold">Rep</th>
+                  <th className="px-5 py-4 font-semibold">Rep</th>
                 )}
-                <th className="px-5 py-3 font-semibold">Stage</th>
-                <th className="px-5 py-3 font-semibold">Status</th>
-                <th className="px-5 py-3 font-semibold text-right">Revenue</th>
-                <th className="px-5 py-3 font-semibold text-right">Commission</th>
-                <th className="px-5 py-3 font-semibold">Last activity</th>
+                <th className="px-5 py-4 font-semibold">Stage</th>
+                <th className="px-5 py-4 font-semibold">Status</th>
+                <th className="px-5 py-4 font-semibold text-right">Revenue</th>
+                <th className="px-5 py-4 font-semibold text-right">Commission</th>
+                <th className="px-5 py-4 font-semibold">Last activity</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-beige text-navy">
+            <tbody className="text-navy">
               {filtered.map((c) => (
-                <tr key={c.id} className="hover:bg-cream/40">
-                  <td className="px-5 py-3">
-                    <Link
-                      href={`/partners/clinics/${c.id}`}
-                      className="font-medium text-navy hover:text-magenta"
-                    >
-                      {c.clinicName ?? `Clinic #${c.id}`}
-                    </Link>
-                    {c.contactName && (
-                      <span className="block text-xs text-navy/55">
-                        {c.contactName}
-                      </span>
-                    )}
+                <tr key={c.id} className={rowClass}>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      <InitialsAvatar name={c.clinicName ?? `Clinic ${c.id}`} />
+                      <div>
+                        <Link
+                          href={`/partners/clinics/${c.id}`}
+                          className="font-medium text-navy hover:text-magenta"
+                        >
+                          {c.clinicName ?? `Clinic #${c.id}`}
+                        </Link>
+                        {c.contactName && (
+                          <span className="block text-xs text-navy/55">
+                            {c.contactName}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </td>
                   {kind === "org" && (
-                    <td className="px-5 py-3">{c.repName ?? "Organization"}</td>
+                    <td className="px-5 py-4">{c.repName ?? "Organization"}</td>
                   )}
-                  <td className="px-5 py-3">
+                  <td className="px-5 py-4">
                     <StageBadge stage={c.stage} />
                   </td>
-                  <td className="px-5 py-3">
+                  <td className="px-5 py-4">
                     <StatusBadge status={c.verificationStatus} />
                   </td>
-                  <td className="px-5 py-3 text-right tabular-nums">
+                  <td className="px-5 py-4 text-right tabular-nums">
                     {formatCents(c.revenueCents)}
                   </td>
-                  <td className="px-5 py-3 text-right tabular-nums font-semibold">
+                  <td className="px-5 py-4 text-right tabular-nums font-semibold">
                     {formatCents(c.commissionCents)}
                   </td>
-                  <td className="px-5 py-3 whitespace-nowrap text-navy/70">
+                  <td className="px-5 py-4 whitespace-nowrap text-navy/70">
                     {c.lastActivityLabel ?? "—"}
                   </td>
                 </tr>

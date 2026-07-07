@@ -3,6 +3,13 @@
 import { useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import {
+  Badge,
+  cardClass,
+  rowClass,
+  tableWrapClass,
+  theadClass,
+} from "@/components/ui/portal";
 import { formatCents, discountPercent } from "@/lib/portal/pricing";
 import { acceptQuote } from "./actions";
 
@@ -63,11 +70,11 @@ export default function QuoteView({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-beige bg-white p-8">
-        <p className="text-xs font-medium uppercase tracking-wider text-magenta">
+      <div className={`${cardClass} p-8`}>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
           Custom pricing quote
         </p>
-        <h1 className="mt-2 text-2xl font-bold text-navy">
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-navy sm:text-3xl">
           {clinicName?.trim() || "Your clinic"}
         </h1>
         {intro?.trim() ? (
@@ -82,32 +89,29 @@ export default function QuoteView({
           </p>
         )}
         {discountPct > 0 && (
-          <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-magenta/10 px-3 py-1 text-xs font-semibold text-magenta ring-1 ring-magenta/25">
-            {discountPct}% off standard pricing across the catalog
+          <p className="mt-3">
+            <Badge tone="accent">
+              {discountPct}% off standard pricing across the catalog
+            </Badge>
           </p>
         )}
       </div>
 
       {items.length > 0 && (
-        <div className="overflow-hidden rounded-2xl border border-beige bg-white">
+        <div className={tableWrapClass}>
           <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-beige bg-cream/60 text-xs uppercase tracking-wider text-navy/50">
-                <th className="px-5 py-3 font-medium">Product</th>
-                <th className="px-5 py-3 text-right font-medium">
-                  Standard
-                </th>
-                <th className="px-5 py-3 text-right font-medium">Your price</th>
+            <thead className={theadClass}>
+              <tr>
+                <th className="px-5 py-3">Product</th>
+                <th className="px-5 py-3 text-right">Standard</th>
+                <th className="px-5 py-3 text-right">Your price</th>
               </tr>
             </thead>
             <tbody>
               {items.map((it) => {
                 const save = discountPercent(it.standardCents, it.priceCents);
                 return (
-                  <tr
-                    key={it.id}
-                    className="border-b border-beige last:border-0"
-                  >
+                  <tr key={it.id} className={rowClass}>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-4">
                         <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-beige bg-cream/60">
@@ -170,15 +174,15 @@ export default function QuoteView({
         </div>
       )}
 
-      <div className="rounded-2xl border border-beige bg-white p-8 text-center text-navy">
-        <h2 className="text-lg font-bold">Accept this pricing</h2>
+      <div className={`${cardClass} p-8 text-center text-navy`}>
+        <h2 className="text-lg font-bold tracking-tight">Accept this pricing</h2>
         <p className="mx-auto mt-2 max-w-md text-sm text-navy/60">
           Accepting creates your Logos RX provider account with this pricing
           applied. You&apos;ll finish a short onboarding, then a team member
           verifies your clinic before your portal goes live.
         </p>
         {error && (
-          <p className="mx-auto mt-4 max-w-md rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p className="mx-auto mt-4 max-w-md rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </p>
         )}
@@ -186,7 +190,7 @@ export default function QuoteView({
           type="button"
           onClick={accept}
           disabled={pending}
-          className="mt-5 inline-flex items-center gap-2 rounded-xl bg-magenta px-8 py-3 text-[15px] font-semibold text-white transition-colors hover:bg-magenta-dark disabled:opacity-60"
+          className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-magenta px-8 py-3 text-[15px] font-semibold text-white transition-all hover:bg-magenta-dark active:scale-[0.98] disabled:opacity-60"
         >
           {pending ? "Setting up…" : "Accept pricing & create account"}
         </button>

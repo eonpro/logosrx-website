@@ -4,11 +4,20 @@ import { Fragment, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { EmploymentApplication } from "@/lib/db/schema";
 import { updateApplicationStatus } from "./actions";
+import {
+  Badge,
+  InitialsAvatar,
+  btnPrimary,
+  rowClass,
+  tableWrapClass,
+  theadClass,
+  type BadgeTone,
+} from "@/components/ui/portal";
 
-const statusStyles: Record<string, string> = {
-  new: "bg-magenta/10 text-magenta",
-  reviewed: "bg-sky/10 text-sky",
-  archived: "bg-beige-dark/50 text-navy/65",
+const statusTones: Record<string, BadgeTone> = {
+  new: "accent",
+  reviewed: "neutral",
+  archived: "neutral",
 };
 
 export function ApplicationsTable({
@@ -20,53 +29,46 @@ export function ApplicationsTable({
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   return (
-    <div className="rounded-2xl bg-white border border-beige overflow-hidden">
+    <div className={tableWrapClass}>
       <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-beige bg-cream/50">
-            <th className="text-left px-6 py-3.5 font-semibold text-navy/60 text-xs uppercase tracking-wider">
-              Name
-            </th>
-            <th className="text-left px-6 py-3.5 font-semibold text-navy/60 text-xs uppercase tracking-wider">
-              Position
-            </th>
-            <th className="text-left px-6 py-3.5 font-semibold text-navy/60 text-xs uppercase tracking-wider">
-              Date
-            </th>
-            <th className="text-left px-6 py-3.5 font-semibold text-navy/60 text-xs uppercase tracking-wider">
-              Status
-            </th>
-            <th className="px-6 py-3.5" />
+        <thead className={theadClass}>
+          <tr>
+            <th className="px-5 py-4 font-semibold">Name</th>
+            <th className="px-5 py-4 font-semibold">Position</th>
+            <th className="px-5 py-4 font-semibold">Date</th>
+            <th className="px-5 py-4 font-semibold">Status</th>
+            <th className="px-5 py-4" />
           </tr>
         </thead>
-        <tbody className="divide-y divide-beige">
+        <tbody>
           {applications.map((app) => (
             <Fragment key={app.id}>
               <tr
-                className="hover:bg-cream/30 transition-colors cursor-pointer"
+                className={`${rowClass} cursor-pointer`}
                 onClick={() =>
                   setExpandedId(expandedId === app.id ? null : app.id)
                 }
               >
-                <td className="px-6 py-4 font-medium text-navy">
-                  {app.firstName} {app.lastName}
+                <td className="px-5 py-4 font-medium text-navy">
+                  <span className="flex items-center gap-3">
+                    <InitialsAvatar name={`${app.firstName} ${app.lastName}`} />
+                    {app.firstName} {app.lastName}
+                  </span>
                 </td>
-                <td className="px-6 py-4 text-navy/60">{app.position}</td>
-                <td className="px-6 py-4 text-navy/65">
+                <td className="px-5 py-4 text-navy/60">{app.position}</td>
+                <td className="px-5 py-4 text-navy/65">
                   {new Date(app.createdAt).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
                     year: "numeric",
                   })}
                 </td>
-                <td className="px-6 py-4">
-                  <span
-                    className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${statusStyles[app.status]}`}
-                  >
+                <td className="px-5 py-4">
+                  <Badge tone={statusTones[app.status] ?? "neutral"}>
                     {app.status}
-                  </span>
+                  </Badge>
                 </td>
-                <td className="px-6 py-4 text-right">
+                <td className="px-5 py-4 text-right">
                   <svg
                     width="16"
                     height="16"
@@ -85,11 +87,11 @@ export function ApplicationsTable({
                 </td>
               </tr>
               {expandedId === app.id && (
-                <tr>
-                  <td colSpan={5} className="px-6 py-5 bg-cream/30">
+                <tr className="border-b border-beige/60 last:border-0">
+                  <td colSpan={5} className="bg-cream/50 px-5 py-5">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
                       <div>
-                        <p className="text-navy/65 text-xs uppercase tracking-wider mb-1">
+                        <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
                           Email
                         </p>
                         <a
@@ -100,7 +102,7 @@ export function ApplicationsTable({
                         </a>
                       </div>
                       <div>
-                        <p className="text-navy/65 text-xs uppercase tracking-wider mb-1">
+                        <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
                           Phone
                         </p>
                         <a
@@ -111,7 +113,7 @@ export function ApplicationsTable({
                         </a>
                       </div>
                       <div>
-                        <p className="text-navy/65 text-xs uppercase tracking-wider mb-1">
+                        <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
                           Referral Source
                         </p>
                         <p className="text-navy">
@@ -119,7 +121,7 @@ export function ApplicationsTable({
                         </p>
                       </div>
                       <div>
-                        <p className="text-navy/65 text-xs uppercase tracking-wider mb-1">
+                        <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
                           Willing to Relocate
                         </p>
                         <p className="text-navy capitalize">
@@ -137,7 +139,7 @@ export function ApplicationsTable({
                         }
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 rounded-full bg-navy px-4 py-2 text-xs font-semibold text-white hover:bg-navy-light transition-colors mb-4"
+                        className={`${btnPrimary} mb-4`}
                       >
                         <svg
                           width="14"
@@ -173,7 +175,7 @@ export function ApplicationsTable({
                             className={`rounded-full px-3.5 py-1.5 text-xs font-semibold capitalize transition-colors ${
                               app.status === status
                                 ? "bg-navy/10 text-navy/65 cursor-not-allowed"
-                                : "bg-white border border-beige hover:border-magenta hover:text-magenta text-navy/60"
+                                : "border border-beige-dark bg-white text-navy/60 hover:border-navy/40 hover:text-navy"
                             }`}
                           >
                             {status}

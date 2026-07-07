@@ -4,12 +4,20 @@ import { Fragment, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ClinicSignup } from "@/lib/db/schema";
 import { updateClinicStatus } from "./actions";
+import {
+  Badge,
+  InitialsAvatar,
+  rowClass,
+  tableWrapClass,
+  theadClass,
+  type BadgeTone,
+} from "@/components/ui/portal";
 
-const statusStyles: Record<string, string> = {
-  new: "bg-magenta/10 text-magenta",
-  contacted: "bg-sky/10 text-sky",
-  onboarded: "bg-green-100 text-green-700",
-  archived: "bg-beige-dark/50 text-navy/65",
+const statusTones: Record<string, BadgeTone> = {
+  new: "accent",
+  contacted: "neutral",
+  onboarded: "success",
+  archived: "neutral",
 };
 
 export function ClinicSignupsTable({
@@ -21,57 +29,48 @@ export function ClinicSignupsTable({
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   return (
-    <div className="rounded-2xl bg-white border border-beige overflow-hidden">
+    <div className={tableWrapClass}>
       <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-beige bg-cream/50">
-            <th className="text-left px-6 py-3.5 font-semibold text-navy/60 text-xs uppercase tracking-wider">
-              Clinic
-            </th>
-            <th className="text-left px-6 py-3.5 font-semibold text-navy/60 text-xs uppercase tracking-wider">
-              Contact
-            </th>
-            <th className="text-left px-6 py-3.5 font-semibold text-navy/60 text-xs uppercase tracking-wider">
-              State
-            </th>
-            <th className="text-left px-6 py-3.5 font-semibold text-navy/60 text-xs uppercase tracking-wider">
-              Date
-            </th>
-            <th className="text-left px-6 py-3.5 font-semibold text-navy/60 text-xs uppercase tracking-wider">
-              Status
-            </th>
-            <th className="px-6 py-3.5" />
+        <thead className={theadClass}>
+          <tr>
+            <th className="px-5 py-4 font-semibold">Clinic</th>
+            <th className="px-5 py-4 font-semibold">Contact</th>
+            <th className="px-5 py-4 font-semibold">State</th>
+            <th className="px-5 py-4 font-semibold">Date</th>
+            <th className="px-5 py-4 font-semibold">Status</th>
+            <th className="px-5 py-4" />
           </tr>
         </thead>
-        <tbody className="divide-y divide-beige">
+        <tbody>
           {signups.map((signup) => (
             <Fragment key={signup.id}>
               <tr
-                className="hover:bg-cream/30 transition-colors cursor-pointer"
+                className={`${rowClass} cursor-pointer`}
                 onClick={() =>
                   setExpandedId(expandedId === signup.id ? null : signup.id)
                 }
               >
-                <td className="px-6 py-4 font-medium text-navy">
-                  {signup.clinicName}
+                <td className="px-5 py-4 font-medium text-navy">
+                  <span className="flex items-center gap-3">
+                    <InitialsAvatar name={signup.clinicName} />
+                    {signup.clinicName}
+                  </span>
                 </td>
-                <td className="px-6 py-4 text-navy/60">{signup.contactName}</td>
-                <td className="px-6 py-4 text-navy/60">{signup.state || "—"}</td>
-                <td className="px-6 py-4 text-navy/65">
+                <td className="px-5 py-4 text-navy/60">{signup.contactName}</td>
+                <td className="px-5 py-4 text-navy/60">{signup.state || "—"}</td>
+                <td className="px-5 py-4 text-navy/65">
                   {new Date(signup.createdAt).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
                     year: "numeric",
                   })}
                 </td>
-                <td className="px-6 py-4">
-                  <span
-                    className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${statusStyles[signup.status]}`}
-                  >
+                <td className="px-5 py-4">
+                  <Badge tone={statusTones[signup.status] ?? "neutral"}>
                     {signup.status}
-                  </span>
+                  </Badge>
                 </td>
-                <td className="px-6 py-4 text-right">
+                <td className="px-5 py-4 text-right">
                   <svg
                     width="16"
                     height="16"
@@ -90,11 +89,11 @@ export function ClinicSignupsTable({
                 </td>
               </tr>
               {expandedId === signup.id && (
-                <tr>
-                  <td colSpan={6} className="px-6 py-5 bg-cream/30">
+                <tr className="border-b border-beige/60 last:border-0">
+                  <td colSpan={6} className="bg-cream/50 px-5 py-5">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
                       <div>
-                        <p className="text-navy/65 text-xs uppercase tracking-wider mb-1">
+                        <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
                           Email
                         </p>
                         <a
@@ -105,7 +104,7 @@ export function ClinicSignupsTable({
                         </a>
                       </div>
                       <div>
-                        <p className="text-navy/65 text-xs uppercase tracking-wider mb-1">
+                        <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
                           Phone
                         </p>
                         <a
@@ -116,13 +115,13 @@ export function ClinicSignupsTable({
                         </a>
                       </div>
                       <div>
-                        <p className="text-navy/65 text-xs uppercase tracking-wider mb-1">
+                        <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
                           NPI Number
                         </p>
                         <p className="text-navy">{signup.npiNumber || "—"}</p>
                       </div>
                       <div>
-                        <p className="text-navy/65 text-xs uppercase tracking-wider mb-1">
+                        <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
                           Specialty
                         </p>
                         <p className="text-navy">{signup.specialty || "—"}</p>
@@ -131,10 +130,10 @@ export function ClinicSignupsTable({
 
                     {signup.message && (
                       <div className="mb-4">
-                        <p className="text-navy/65 text-xs uppercase tracking-wider mb-1">
+                        <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
                           Message
                         </p>
-                        <p className="text-navy text-sm leading-relaxed bg-white rounded-lg p-3 border border-beige">
+                        <p className="rounded-2xl border border-beige/70 bg-white p-4 text-sm leading-relaxed text-navy">
                           {signup.message}
                         </p>
                       </div>
@@ -157,7 +156,7 @@ export function ClinicSignupsTable({
                           className={`rounded-full px-3.5 py-1.5 text-xs font-semibold capitalize transition-colors ${
                             signup.status === status
                               ? "bg-navy/10 text-navy/65 cursor-not-allowed"
-                              : "bg-white border border-beige hover:border-magenta hover:text-magenta text-navy/60"
+                              : "border border-beige-dark bg-white text-navy/60 hover:border-navy/40 hover:text-navy"
                           }`}
                         >
                           {status}

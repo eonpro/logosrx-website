@@ -6,7 +6,7 @@ import AuthShell from "@/components/auth/AuthShell";
 import { submitPartnerApplication } from "./actions";
 
 const inputClass =
-  "h-12 rounded-xl border border-beige-dark bg-white px-4 text-navy outline-none transition-colors placeholder:text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta/30";
+  "h-12 rounded-2xl border border-beige-dark bg-white px-4 text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10";
 
 export default function ApplyForm() {
   const [orgName, setOrgName] = useState("");
@@ -47,7 +47,7 @@ export default function ApplyForm() {
     return (
       <AuthShell subtitle="Partner Program">
         <div className="flex flex-col gap-4 text-center">
-          <h1 className="text-xl font-semibold text-navy">
+          <h1 className="text-xl font-semibold tracking-tight text-navy">
             Application received
           </h1>
           <p className="text-sm text-navy/60">
@@ -57,7 +57,7 @@ export default function ApplyForm() {
           </p>
           <Link
             href="/"
-            className="mx-auto mt-2 inline-block rounded-xl bg-magenta px-6 py-3 text-[15px] font-semibold text-white transition-colors hover:bg-magenta-dark"
+            className="mx-auto mt-2 inline-block rounded-full bg-magenta px-8 py-3 text-[15px] font-semibold text-white transition-all hover:bg-magenta-dark active:scale-[0.98]"
           >
             Back to logosrx.com
           </Link>
@@ -77,7 +77,7 @@ export default function ApplyForm() {
     >
       <div className="flex flex-col gap-5">
         <div className="text-center">
-          <h1 className="text-xl font-semibold text-navy">
+          <h1 className="text-xl font-semibold tracking-tight text-navy">
             Become a Logos RX marketing partner
           </h1>
           <p className="mt-1 text-sm text-navy/60">
@@ -156,7 +156,7 @@ export default function ApplyForm() {
           {error && (
             <p
               role="alert"
-              className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700"
+              className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
             >
               {error}
             </p>
@@ -165,7 +165,7 @@ export default function ApplyForm() {
           <button
             type="submit"
             disabled={busy}
-            className="h-12 rounded-xl bg-magenta text-[15px] font-semibold text-white transition-colors hover:bg-magenta-dark disabled:opacity-60"
+            className="h-12 rounded-full bg-magenta text-[15px] font-semibold text-white transition-all hover:bg-magenta-dark active:scale-[0.99] disabled:opacity-60"
           >
             {busy ? "Submitting…" : "Submit application"}
           </button>
@@ -186,7 +186,7 @@ function Field({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-xs font-medium uppercase tracking-wider text-navy/55">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
         {label}
         {required && <span className="text-magenta"> *</span>}
       </span>

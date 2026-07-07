@@ -23,8 +23,10 @@ export default async function NewQuotePage({ searchParams }: PageProps) {
   const ctx = await requireAdmin();
   if (ctx.role !== ADMIN_ROLE) {
     return (
-      <div className="mx-auto max-w-3xl px-6 py-12 text-center">
-        <h1 className="text-xl font-bold text-navy">Read-only access</h1>
+      <div className="mx-auto max-w-3xl py-12 text-center">
+        <h1 className="text-2xl font-bold tracking-tight text-navy">
+          Read-only access
+        </h1>
         <p className="mt-2 text-sm text-navy/60">
           Your admin account is read-only — creating pricing quotes requires
           full admin access.

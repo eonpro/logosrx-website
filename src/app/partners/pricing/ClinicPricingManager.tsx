@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { formatCents } from "@/lib/partners/commission";
+import { btnGhost } from "@/components/ui/portal";
 import {
   resetClinicProductPrice,
   setClinicProductPrice,
@@ -67,11 +68,11 @@ export default function ClinicPricingManager({
   }
 
   return (
-    <div className="rounded-2xl border border-beige bg-white p-6">
-      <h2 className="text-sm font-semibold text-navy">
+    <div className="rounded-3xl border border-beige/70 bg-white p-6 shadow-soft sm:p-7">
+      <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
         Pricing for {clinicName}
       </h2>
-      <p className="mt-1 text-xs text-navy/60">
+      <p className="mt-2 text-xs text-navy/60">
         Spread (price − floor) is your margin on each sale.
       </p>
 
@@ -88,7 +89,7 @@ export default function ClinicPricingManager({
 
       <div className="mt-4 overflow-x-auto">
         <table className="w-full min-w-[640px] text-left text-sm">
-          <thead className="text-xs uppercase tracking-wide text-navy/55">
+          <thead className="text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-navy/45">
             <tr>
               <th className="py-2 pr-4 font-semibold">Product</th>
               <th className="py-2 pr-4 font-semibold text-right">Floor</th>
@@ -129,7 +130,7 @@ export default function ClinicPricingManager({
                       }
                       onBlur={(e) => save(row, e.target.value)}
                       placeholder="0.00"
-                      className="h-9 w-28 rounded-lg border border-beige bg-cream/50 px-2 text-right text-sm tabular-nums text-navy outline-none focus:border-magenta"
+                      className="h-9 w-28 rounded-full border border-beige-dark bg-white px-3 text-right text-sm tabular-nums text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10"
                     />
                   </td>
                   <td className="py-2 pr-4 text-right tabular-nums">
@@ -149,7 +150,7 @@ export default function ClinicPricingManager({
                         type="button"
                         disabled={pending}
                         onClick={() => reset(row.productId)}
-                        className="text-xs font-medium text-navy/60 hover:text-magenta disabled:opacity-50"
+                        className={`${btnGhost} !px-3 !py-1.5 !text-xs`}
                       >
                         Clear
                       </button>

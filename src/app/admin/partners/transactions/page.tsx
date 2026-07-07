@@ -13,6 +13,14 @@ import { requireAdmin } from "@/lib/auth/admin";
 import { formatCents } from "@/lib/partners/commission";
 import TransactionEntry from "./TransactionEntry";
 import RefundButton from "./RefundButton";
+import {
+  EmptyState,
+  PageHeader,
+  btnGhost,
+  rowClass,
+  tableWrapClass,
+  theadClass,
+} from "@/components/ui/portal";
 
 export default async function AdminPartnerTransactionsPage() {
   await requireAdmin();
@@ -66,22 +74,17 @@ export default async function AdminPartnerTransactionsPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <Link
-          href="/admin/partners"
-          className="text-xs font-medium text-navy/55 hover:text-magenta"
-        >
+      <div className="mb-4">
+        <Link href="/admin/partners" className={`${btnGhost} -ml-4`}>
           ← All partners
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-navy">
-          Partner Transactions
-        </h1>
-        <p className="text-navy/70 text-sm mt-1">
-          Record revenue for attributed clinics — commission ledger entries
-          are generated automatically at the org&rsquo;s and rep&rsquo;s
-          current rates.
-        </p>
       </div>
+
+      <PageHeader
+        eyebrow="Admin"
+        title="Partner Transactions"
+        description="Record revenue for attributed clinics — commission ledger entries are generated automatically at the org’s and rep’s current rates."
+      />
 
       <TransactionEntry
         clinics={attributedClinics.map((c) => ({
@@ -90,35 +93,36 @@ export default async function AdminPartnerTransactionsPage() {
         }))}
       />
 
-      <div className="mt-8 overflow-x-auto rounded-2xl border border-beige bg-white">
+      <div className={`${tableWrapClass} mt-8 overflow-x-auto`}>
         <div className="border-b border-beige px-5 py-4">
           <h2 className="text-sm font-semibold text-navy">
             Recent transactions ({transactions.length})
           </h2>
         </div>
         {transactions.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-navy/65">
-            No transactions recorded yet.
-          </p>
+          <EmptyState
+            title="No transactions recorded yet"
+            body="Add one manually or import a CSV above."
+          />
         ) : (
           <table className="w-full min-w-[760px] text-left text-sm">
-            <thead className="bg-cream/60 text-xs uppercase tracking-wide text-navy/55">
+            <thead className={theadClass}>
               <tr>
-                <th className="px-5 py-3 font-semibold">Date</th>
-                <th className="px-5 py-3 font-semibold">Clinic</th>
-                <th className="px-5 py-3 font-semibold">Partner org</th>
-                <th className="px-5 py-3 font-semibold">Reference</th>
-                <th className="px-5 py-3 font-semibold">Source</th>
-                <th className="px-5 py-3 font-semibold text-right">Revenue</th>
-                <th className="px-5 py-3 font-semibold text-right">
+                <th className="px-5 py-3.5 font-semibold">Date</th>
+                <th className="px-5 py-3.5 font-semibold">Clinic</th>
+                <th className="px-5 py-3.5 font-semibold">Partner org</th>
+                <th className="px-5 py-3.5 font-semibold">Reference</th>
+                <th className="px-5 py-3.5 font-semibold">Source</th>
+                <th className="px-5 py-3.5 font-semibold text-right">Revenue</th>
+                <th className="px-5 py-3.5 font-semibold text-right">
                   Commission
                 </th>
-                <th className="px-5 py-3 font-semibold text-right">Actions</th>
+                <th className="px-5 py-3.5 font-semibold text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-beige text-navy">
+            <tbody className="text-navy">
               {transactions.map((tx) => (
-                <tr key={tx.id}>
+                <tr key={tx.id} className={rowClass}>
                   <td className="px-5 py-3 whitespace-nowrap">
                     {tx.transactionDate.toLocaleDateString("en-US", {
                       month: "short",

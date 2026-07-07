@@ -4,17 +4,24 @@ import Link from "next/link";
 import { ADMIN_ROLE, requireAdmin } from "@/lib/auth/admin";
 import { listQuotes, isQuoteExpired } from "@/lib/quotes/data";
 import type { PricingQuote } from "@/lib/db/schema";
+import {
+  Badge,
+  Card,
+  EmptyState,
+  PageHeader,
+  btnAccent,
+  rowClass,
+  tableWrapClass,
+  theadClass,
+  type BadgeTone,
+} from "@/components/ui/portal";
 
-function statusLabel(q: PricingQuote): { text: string; className: string } {
-  if (q.status === "claimed")
-    return { text: "Claimed", className: "bg-green-100 text-green-700" };
-  if (q.status === "revoked")
-    return { text: "Revoked", className: "bg-gray-200 text-gray-600" };
-  if (isQuoteExpired(q))
-    return { text: "Expired", className: "bg-amber-100 text-amber-700" };
-  if (q.status === "accepted")
-    return { text: "Accepted", className: "bg-navy/10 text-navy" };
-  return { text: "Active", className: "bg-magenta/10 text-magenta" };
+function statusLabel(q: PricingQuote): { text: string; tone: BadgeTone } {
+  if (q.status === "claimed") return { text: "Claimed", tone: "success" };
+  if (q.status === "revoked") return { text: "Revoked", tone: "neutral" };
+  if (isQuoteExpired(q)) return { text: "Expired", tone: "warning" };
+  if (q.status === "accepted") return { text: "Accepted", tone: "neutral" };
+  return { text: "Active", tone: "accent" };
 }
 
 function fmtDate(d: Date | null): string {
@@ -29,50 +36,44 @@ export default async function QuotesPage() {
   const quotes = await listQuotes();
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-8">
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-navy">Pricing Quotes</h1>
-          <p className="mt-1 text-sm text-navy/60">
-            Password-gated custom pricing links for prospective clinics.
-          </p>
-        </div>
-        {canEdit && (
-          <Link
-            href="/admin/quotes/new"
-            className="inline-flex items-center gap-2 rounded-full bg-magenta px-5 py-2.5 text-sm font-semibold text-white hover:bg-magenta/90"
-          >
-            + New quote
-          </Link>
-        )}
-      </div>
+    <div className="mx-auto max-w-5xl">
+      <PageHeader
+        eyebrow="Admin"
+        title="Pricing Quotes"
+        description="Password-gated custom pricing links for prospective clinics."
+        actions={
+          canEdit ? (
+            <Link href="/admin/quotes/new" className={btnAccent}>
+              + New quote
+            </Link>
+          ) : undefined
+        }
+      />
 
       {quotes.length === 0 ? (
-        <div className="rounded-2xl border border-beige-dark bg-white p-12 text-center">
-          <p className="text-sm text-navy/60">
-            No quotes yet. Create one to send a clinic their custom pricing.
-          </p>
-        </div>
+        <Card pad={false}>
+          <EmptyState
+            title="No quotes yet"
+            body="Create one to send a clinic their custom pricing."
+          />
+        </Card>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-beige-dark bg-white">
+        <div className={tableWrapClass}>
           <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-beige-dark bg-beige/40 text-xs uppercase tracking-wider text-navy/55">
-                <th className="px-5 py-3 font-medium">Recipient</th>
-                <th className="px-5 py-3 font-medium">Items</th>
-                <th className="px-5 py-3 font-medium">Pricing</th>
-                <th className="px-5 py-3 font-medium">Status</th>
-                <th className="px-5 py-3 font-medium">Created</th>
+            <thead className={theadClass}>
+              <tr>
+                <th className="px-5 py-4 font-semibold">Recipient</th>
+                <th className="px-5 py-4 font-semibold">Items</th>
+                <th className="px-5 py-4 font-semibold">Pricing</th>
+                <th className="px-5 py-4 font-semibold">Status</th>
+                <th className="px-5 py-4 font-semibold">Created</th>
               </tr>
             </thead>
             <tbody>
               {quotes.map((q) => {
                 const badge = statusLabel(q);
                 return (
-                  <tr
-                    key={q.id}
-                    className="border-b border-beige-dark/60 last:border-0 hover:bg-beige/30"
-                  >
+                  <tr key={q.id} className={rowClass}>
                     <td className="px-5 py-4">
                       <Link href={`/admin/quotes/${q.id}`} className="block">
                         <div className="font-medium text-navy">
@@ -89,11 +90,7 @@ export default async function QuotesPage() {
                       )}
                     </td>
                     <td className="px-5 py-4">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${badge.className}`}
-                      >
-                        {badge.text}
-                      </span>
+                      <Badge tone={badge.tone}>{badge.text}</Badge>
                     </td>
                     <td className="px-5 py-4 text-navy/60">{fmtDate(q.createdAt)}</td>
                   </tr>

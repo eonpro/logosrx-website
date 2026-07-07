@@ -13,6 +13,7 @@ import {
   setPartnerOrgRate,
   setPartnerOrgStatus,
 } from "../actions";
+import { cardClass } from "@/components/ui/portal";
 
 interface OrgProps {
   id: number;
@@ -35,7 +36,10 @@ interface RepOption {
 }
 
 const inputClass =
-  "h-10 rounded-lg border border-beige bg-cream/50 px-3 text-sm text-navy outline-none focus:border-magenta";
+  "h-10 rounded-2xl border border-beige-dark bg-white px-3.5 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10";
+
+const labelClass =
+  "text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45";
 
 export default function PartnerOrgManager({
   org,
@@ -73,12 +77,12 @@ export default function PartnerOrgManager({
       : (reps.find((r) => r.id === Number(payee))?.unpaidCents ?? 0);
 
   return (
-    <div className="rounded-2xl border border-beige bg-white p-6">
+    <div className={`${cardClass} p-6`}>
       <div className="flex flex-wrap items-center gap-3">
         {org.status === "pending" && (
           <div className="flex flex-wrap items-end gap-2">
             <label className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-navy/60">
+              <span className={labelClass}>
                 Initial password (optional)
               </span>
               <input
@@ -101,7 +105,7 @@ export default function PartnerOrgManager({
                     : "Org approved — activation email sent.",
                 )
               }
-              className="h-10 rounded-full bg-emerald-600 px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+              className="h-10 rounded-full bg-emerald-600 px-5 text-sm font-semibold text-white transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-60"
             >
               Approve application
             </button>
@@ -117,7 +121,7 @@ export default function PartnerOrgManager({
                 "Org suspended.",
               )
             }
-            className="rounded-full border border-red-200 bg-red-50 px-5 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-red-200 bg-white px-5 py-2.5 text-sm font-semibold text-red-700 transition-all hover:bg-red-50 active:scale-[0.98] disabled:opacity-50"
           >
             Suspend
           </button>
@@ -132,7 +136,7 @@ export default function PartnerOrgManager({
                 "Org reactivated.",
               )
             }
-            className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+            className="rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-60"
           >
             Reactivate
           </button>
@@ -147,7 +151,7 @@ export default function PartnerOrgManager({
                 "Activation email re-sent.",
               )
             }
-            className="rounded-full border border-beige px-5 py-2 text-sm font-semibold text-navy/70 transition-colors hover:border-navy/30 disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-beige-dark bg-white px-5 py-2.5 text-sm font-semibold text-navy transition-all hover:border-navy/40 active:scale-[0.98] disabled:opacity-50"
           >
             Resend activation email
           </button>
@@ -155,7 +159,7 @@ export default function PartnerOrgManager({
 
         <div className="ml-auto flex items-end gap-2">
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-navy/60">
+            <span className={labelClass}>
               Org commission %
             </span>
             <input
@@ -177,7 +181,7 @@ export default function PartnerOrgManager({
                 "Commission rate updated (applies to future transactions).",
               )
             }
-            className="h-10 rounded-full bg-navy px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+            className="h-10 rounded-full bg-navy px-5 text-sm font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98] disabled:opacity-60"
           >
             Save rate
           </button>
@@ -197,10 +201,10 @@ export default function PartnerOrgManager({
       )}
 
       <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-beige pt-4">
-        <span className="text-xs font-medium text-navy/60">
+        <span className={labelClass}>
           Compensation model
         </span>
-        <div className="inline-flex rounded-full border border-beige p-0.5">
+        <div className="inline-flex rounded-full border border-beige-dark bg-white p-0.5">
           {(["commission", "margin"] as const).map((m) => (
             <button
               key={m}
@@ -233,7 +237,7 @@ export default function PartnerOrgManager({
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-beige pt-4">
-        <span className="text-xs font-medium text-navy/60">
+        <span className={labelClass}>
           Commission approval
         </span>
         <span className="text-xs text-navy/55">
@@ -251,7 +255,7 @@ export default function PartnerOrgManager({
                 "Pending commission approved — now payable.",
               )
             }
-            className="rounded-full bg-navy px-4 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+            className="rounded-full bg-navy px-4 py-1.5 text-xs font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98] disabled:opacity-60"
           >
             Approve all pending
           </button>
@@ -282,7 +286,7 @@ export default function PartnerOrgManager({
           }}
         >
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-navy/60">Pay to</span>
+            <span className={labelClass}>Pay to</span>
             <select
               value={payee}
               onChange={(e) => setPayee(e.target.value)}
@@ -299,7 +303,7 @@ export default function PartnerOrgManager({
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-navy/60">Method</span>
+            <span className={labelClass}>Method</span>
             <select
               value={method}
               onChange={(e) => setMethod(e.target.value)}
@@ -312,7 +316,7 @@ export default function PartnerOrgManager({
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-navy/60">
+            <span className={labelClass}>
               Reference (optional)
             </span>
             <input
@@ -324,7 +328,7 @@ export default function PartnerOrgManager({
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-navy/60">
+            <span className={labelClass}>
               Notes (optional)
             </span>
             <input
@@ -337,7 +341,7 @@ export default function PartnerOrgManager({
           <button
             type="submit"
             disabled={pending || selectedUnpaidCents <= 0}
-            className="h-10 rounded-full bg-magenta px-6 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+            className="h-10 rounded-full bg-magenta px-6 text-sm font-semibold text-white transition-all hover:bg-magenta-dark active:scale-[0.98] disabled:opacity-60"
           >
             {pending
               ? "Working…"

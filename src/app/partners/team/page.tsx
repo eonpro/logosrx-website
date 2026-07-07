@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { partnerOrgMembers } from "@/lib/db/schema";
 import { getPartnerContext } from "@/lib/auth/partner";
 import { roleAtLeast } from "@/lib/auth/partner-roles";
+import { PageHeader } from "@/components/ui/portal";
 import PartnerNoAccess from "../PartnerNoAccess";
 import TeamManager from "./TeamManager";
 
@@ -30,14 +31,17 @@ export default async function PartnerTeamPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-navy">Team</h1>
-        <p className="text-navy/70 text-sm mt-1">
-          Add teammates to {ctx.org.name}. <strong>Admins</strong> can manage
-          everything (reps, links, pricing, goals); <strong>viewers</strong>{" "}
-          have read-only access.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Partner Portal"
+        title="Team"
+        description={
+          <>
+            Add teammates to {ctx.org.name}. <strong>Admins</strong> can manage
+            everything (reps, links, pricing, goals); <strong>viewers</strong>{" "}
+            have read-only access.
+          </>
+        }
+      />
 
       <TeamManager
         owner={{

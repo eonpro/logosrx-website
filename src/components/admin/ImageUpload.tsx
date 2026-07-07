@@ -44,10 +44,10 @@ export default function ImageUpload({
   }
 
   return (
-    <div className="text-xs font-medium text-navy/60">
+    <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
       {label}
-      <div className="mt-1 flex items-center gap-3">
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-beige-dark bg-white">
+      <div className="mt-1.5 flex items-center gap-3 normal-case tracking-normal">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-beige-dark bg-white">
           {value ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -76,7 +76,7 @@ export default function ImageUpload({
               type="button"
               disabled={uploading}
               onClick={() => inputRef.current?.click()}
-              className="rounded-lg border border-beige-dark px-3 py-1.5 text-xs font-semibold text-navy/70 hover:bg-beige disabled:opacity-50"
+              className="rounded-full border border-beige-dark bg-white px-3.5 py-1.5 text-xs font-semibold text-navy/70 transition-all hover:border-navy/40 hover:text-navy disabled:opacity-50"
             >
               {uploading ? "Uploading…" : value ? "Replace" : "Upload"}
             </button>
@@ -84,7 +84,7 @@ export default function ImageUpload({
               <button
                 type="button"
                 onClick={() => onChange("")}
-                className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
+                className="rounded-full border border-red-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-red-700 transition-all hover:bg-red-50"
               >
                 Remove
               </button>

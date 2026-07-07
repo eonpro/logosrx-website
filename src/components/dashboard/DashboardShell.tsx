@@ -19,8 +19,9 @@ function isActive(pathname: string, href: string): boolean {
 /**
  * Chrome for the authenticated clinic portal: brand, primary tab nav
  * (Storefront / Account), a persistent "Prescribe" hand-off to LifeFile, and
- * the Clerk user button. Rendered once in the dashboard layout so every portal
- * page shares it.
+ * the Clerk user button. Hims-style: warm workspace, segmented pill nav in a
+ * soft white container, single magenta hero action. Rendered once in the
+ * dashboard layout so every portal page shares it.
  */
 export default function DashboardShell({
   children,
@@ -31,9 +32,9 @@ export default function DashboardShell({
 
   return (
     <div className="theme-ink min-h-screen bg-cream">
-      <header className="sticky top-0 z-20 border-b border-beige bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-6">
+      <header className="sticky top-0 z-20 border-b border-beige/80 bg-cream/85 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
+          <div className="flex items-center gap-8">
             <Link href="/dashboard" aria-label="Logos RX portal home">
               <Image
                 src="/images/logo.svg"
@@ -43,7 +44,7 @@ export default function DashboardShell({
                 className="h-7 w-auto sm:h-8"
               />
             </Link>
-            <nav className="hidden items-center gap-1 sm:flex">
+            <nav className="hidden items-center gap-1 rounded-full border border-beige/80 bg-white p-1 shadow-soft sm:flex">
               {TABS.map((t) => {
                 const active = isActive(pathname, t.href);
                 return (
@@ -51,10 +52,10 @@ export default function DashboardShell({
                     key={t.href}
                     href={t.href}
                     aria-current={active ? "page" : undefined}
-                    className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+                    className={`rounded-full px-5 py-1.5 text-sm font-semibold transition-all ${
                       active
-                        ? "bg-navy text-white"
-                        : "text-navy/60 hover:bg-beige hover:text-navy"
+                        ? "bg-navy text-white shadow-soft"
+                        : "text-navy/55 hover:text-navy"
                     }`}
                   >
                     {t.label}
@@ -69,7 +70,7 @@ export default function DashboardShell({
               href={SITE.lifefilePortal}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden items-center gap-1.5 rounded-full bg-magenta px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-magenta-dark sm:inline-flex"
+              className="hidden items-center gap-1.5 rounded-full bg-magenta px-5 py-2 text-xs font-semibold text-white transition-all hover:bg-magenta-dark active:scale-[0.98] sm:inline-flex"
             >
               Prescribe in LifeFile
               <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
@@ -81,7 +82,7 @@ export default function DashboardShell({
         </div>
 
         {/* Mobile tab bar */}
-        <nav className="flex items-center gap-1 px-4 pb-2 sm:hidden">
+        <nav className="mx-4 mb-3 flex items-center gap-1 rounded-full border border-beige/80 bg-white p-1 shadow-soft sm:hidden">
           {TABS.map((t) => {
             const active = isActive(pathname, t.href);
             return (
@@ -89,10 +90,8 @@ export default function DashboardShell({
                 key={t.href}
                 href={t.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex-1 rounded-full px-4 py-1.5 text-center text-sm font-semibold transition-colors ${
-                  active
-                    ? "bg-navy text-white"
-                    : "text-navy/60 hover:bg-beige hover:text-navy"
+                className={`flex-1 rounded-full px-4 py-1.5 text-center text-sm font-semibold transition-all ${
+                  active ? "bg-navy text-white" : "text-navy/55"
                 }`}
               >
                 {t.label}

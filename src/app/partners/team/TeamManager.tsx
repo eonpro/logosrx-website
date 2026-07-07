@@ -3,6 +3,14 @@
 import { Fragment, useState, useTransition } from "react";
 import SetPasswordControl from "@/components/auth/SetPasswordControl";
 import {
+  Badge,
+  btnAccent,
+  btnGhost,
+  tableWrapClass,
+  theadClass,
+  rowClass,
+} from "@/components/ui/portal";
+import {
   inviteMember,
   removeMember,
   resendMemberInvite,
@@ -20,7 +28,7 @@ interface MemberRow {
 }
 
 const inputClass =
-  "h-10 rounded-lg border border-beige bg-cream/50 px-3 text-sm text-navy outline-none focus:border-magenta";
+  "h-10 rounded-full border border-beige-dark bg-white px-4 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10";
 
 export default function TeamManager({
   owner,
@@ -57,8 +65,10 @@ export default function TeamManager({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-beige bg-white p-6">
-        <h2 className="text-sm font-semibold text-navy">Invite a teammate</h2>
+      <div className="rounded-3xl border border-beige/70 bg-white p-6 shadow-soft sm:p-7">
+        <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
+          Invite a teammate
+        </h2>
         <form
           className="mt-4 flex flex-wrap items-end gap-3"
           onSubmit={(e) => {
@@ -129,11 +139,7 @@ export default function TeamManager({
               maxLength={100}
             />
           </label>
-          <button
-            type="submit"
-            disabled={pending}
-            className="h-10 rounded-full bg-magenta px-6 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-          >
+          <button type="submit" disabled={pending} className={btnAccent}>
             {pending ? "Working…" : "Send invite"}
           </button>
         </form>
@@ -149,64 +155,56 @@ export default function TeamManager({
         )}
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-beige bg-white">
+      <div className={`overflow-x-auto ${tableWrapClass}`}>
         <table className="w-full min-w-[640px] text-left text-sm">
-          <thead className="bg-cream/60 text-xs uppercase tracking-wide text-navy/55">
+          <thead className={theadClass}>
             <tr>
-              <th className="px-5 py-3 font-semibold">Member</th>
-              <th className="px-5 py-3 font-semibold">Role</th>
-              <th className="px-5 py-3 font-semibold">Status</th>
-              <th className="px-5 py-3 font-semibold text-right">Actions</th>
+              <th className="px-5 py-4 font-semibold">Member</th>
+              <th className="px-5 py-4 font-semibold">Role</th>
+              <th className="px-5 py-4 font-semibold">Status</th>
+              <th className="px-5 py-4 font-semibold text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-beige text-navy">
-            <tr className="bg-cream/30">
-              <td className="px-5 py-3">
+          <tbody className="text-navy">
+            <tr className={`${rowClass} bg-cream/30`}>
+              <td className="px-5 py-4">
                 <span className="font-medium">{owner.name}</span>
                 <span className="block text-xs text-navy/55">
                   {owner.email ?? "—"}
                 </span>
               </td>
-              <td className="px-5 py-3">
-                <span className="inline-flex rounded-full bg-navy px-2.5 py-0.5 text-xs font-semibold text-white">
-                  Owner
-                </span>
+              <td className="px-5 py-4">
+                <Badge tone="ink">Owner</Badge>
               </td>
-              <td className="px-5 py-3 capitalize">active</td>
-              <td className="px-5 py-3 text-right text-xs text-navy/40">—</td>
+              <td className="px-5 py-4 capitalize">active</td>
+              <td className="px-5 py-4 text-right text-xs text-navy/40">—</td>
             </tr>
             {members.map((m) => (
               <Fragment key={m.id}>
-              <tr className={m.status === "suspended" ? "opacity-50" : ""}>
-                <td className="px-5 py-3">
+              <tr className={`${rowClass} ${m.status === "suspended" ? "opacity-50" : ""}`}>
+                <td className="px-5 py-4">
                   <span className="font-medium">{m.name}</span>
                   <span className="block text-xs text-navy/55">{m.email}</span>
                 </td>
-                <td className="px-5 py-3">
+                <td className="px-5 py-4">
                   <select
                     value={m.role}
                     disabled={pending}
                     onChange={(e) =>
                       run(() => setMemberRole(m.id, e.target.value))
                     }
-                    className="h-8 rounded-lg border border-beige bg-cream/50 px-2 text-xs text-navy outline-none focus:border-magenta disabled:opacity-50"
+                    className="h-8 rounded-full border border-beige-dark bg-white px-3 text-xs text-navy outline-none transition-all focus:border-navy focus:ring-2 focus:ring-navy/10 disabled:opacity-50"
                   >
                     <option value="viewer">Viewer</option>
                     <option value="admin">Admin</option>
                   </select>
                 </td>
-                <td className="px-5 py-3">
-                  <span
-                    className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                      m.activated
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "bg-amber-100 text-amber-700"
-                    }`}
-                  >
+                <td className="px-5 py-4">
+                  <Badge tone={m.activated ? "success" : "warning"}>
                     {m.activated ? "Active" : "Invited"}
-                  </span>
+                  </Badge>
                 </td>
-                <td className="px-5 py-3 text-right text-xs font-medium">
+                <td className="px-5 py-4 text-right text-xs font-medium whitespace-nowrap">
                   {!m.activated && (
                     <button
                       type="button"
@@ -214,7 +212,7 @@ export default function TeamManager({
                       onClick={() =>
                         run(() => resendMemberInvite(m.id), "Invite re-sent.")
                       }
-                      className="mr-3 text-navy/60 hover:text-magenta disabled:opacity-50"
+                      className={btnGhost}
                     >
                       Resend
                     </button>
@@ -225,7 +223,7 @@ export default function TeamManager({
                     onClick={() =>
                       setPwForId((cur) => (cur === m.id ? null : m.id))
                     }
-                    className="mr-3 text-navy/60 hover:text-magenta disabled:opacity-50"
+                    className={btnGhost}
                   >
                     {pwForId === m.id ? "Cancel" : "Set password"}
                   </button>
@@ -233,7 +231,7 @@ export default function TeamManager({
                     type="button"
                     disabled={pending}
                     onClick={() => run(() => removeMember(m.id))}
-                    className="text-navy/60 hover:text-red-600 disabled:opacity-50"
+                    className={`${btnGhost} hover:!text-red-600`}
                   >
                     Remove
                   </button>

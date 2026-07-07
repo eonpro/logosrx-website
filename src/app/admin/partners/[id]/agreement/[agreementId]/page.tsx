@@ -8,6 +8,7 @@ import { partnerAgreements, partnerOrgs } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/auth/admin";
 import ExecutedAgreement from "@/components/partners/ExecutedAgreement";
 import PrintButton from "@/app/partners/agreement/PrintButton";
+import { btnGhost } from "@/components/ui/portal";
 
 export default async function AdminPartnerAgreementPage({
   params,
@@ -49,13 +50,10 @@ export default async function AdminPartnerAgreementPage({
     <div>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4 print:hidden">
         <div>
-          <Link
-            href={`/admin/partners/${orgId}`}
-            className="text-xs font-medium text-navy/55 hover:text-magenta"
-          >
+          <Link href={`/admin/partners/${orgId}`} className={`${btnGhost} -ml-4`}>
             ← {org?.name ?? "Partner"}
           </Link>
-          <h1 className="mt-2 text-2xl font-bold text-navy">
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-navy sm:text-4xl">
             Executed agreement
           </h1>
         </div>

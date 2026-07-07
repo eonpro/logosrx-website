@@ -32,8 +32,10 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-beige-dark bg-white p-6">
-      <h2 className="mb-4 text-base font-bold text-navy">{title}</h2>
+    <section className="rounded-3xl border border-beige/70 bg-white p-6 shadow-soft sm:p-7">
+      <h2 className="mb-4 text-base font-bold tracking-tight text-navy">
+        {title}
+      </h2>
       <div className="flex flex-col gap-3">{children}</div>
     </section>
   );
@@ -86,8 +88,10 @@ export default function DashboardEditor({
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
-        <h1 className="mb-1 text-2xl font-bold text-navy">Your clinic profile</h1>
-        <p className="mb-6 text-sm text-navy/60">
+        <h1 className="mb-1 text-3xl font-bold tracking-tight text-navy sm:text-4xl">
+          Your clinic profile
+        </h1>
+        <p className="mb-6 text-[15px] leading-relaxed text-navy/55">
           Keep your practice and provider information up to date.
         </p>
 
@@ -95,7 +99,7 @@ export default function DashboardEditor({
 
         <div className="flex flex-col gap-5">
           <Section title="Products &amp; Volume">
-            <p className="text-xs font-medium text-navy/60">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
               Products of interest
             </p>
             <OptionList
@@ -215,7 +219,7 @@ export default function DashboardEditor({
             {state.providers.map((p, i) => (
               <div
                 key={i}
-                className="rounded-xl border border-beige-dark p-4"
+                className="rounded-2xl border border-beige bg-white p-5"
               >
                 <div className="mb-3 flex items-center justify-between">
                   <h3 className="text-sm font-bold text-navy">
@@ -305,20 +309,22 @@ export default function DashboardEditor({
               onClick={() =>
                 set("providers", [...state.providers, emptyProvider()])
               }
-              className="rounded-xl border border-dashed border-navy/25 py-3 text-sm font-medium text-navy/60 hover:border-magenta hover:text-magenta"
+              className="rounded-full border border-dashed border-navy/25 py-3 text-sm font-semibold text-navy/60 transition-colors hover:border-navy/50 hover:text-navy"
             >
               + Add another provider
             </button>
           </Section>
 
           <Section title="Shipping Preferences">
-            <p className="text-xs font-medium text-navy/60">Shipping method</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
+              Shipping method
+            </p>
             <OptionList
               options={SHIPPING_METHOD_OPTIONS}
               selected={state.shippingMethod ? [state.shippingMethod] : []}
               onToggle={(v) => set("shippingMethod", v)}
             />
-            <p className="mt-2 text-xs font-medium text-navy/60">
+            <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
               Signature on delivery
             </p>
             <OptionList
@@ -416,7 +422,7 @@ export default function DashboardEditor({
           {status === "error" && (
             <p
               role="alert"
-              className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700"
+              className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
             >
               {message}
             </p>
@@ -427,7 +433,7 @@ export default function DashboardEditor({
               type="button"
               onClick={save}
               disabled={status === "saving"}
-              className="flex-1 rounded-xl bg-magenta py-3.5 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-magenta-dark disabled:opacity-60"
+              className="flex-1 rounded-full bg-magenta py-3.5 text-sm font-semibold text-white shadow-soft-lg transition-all hover:bg-magenta-dark active:scale-[0.99] disabled:opacity-60"
             >
               {status === "saving"
                 ? "Saving..."

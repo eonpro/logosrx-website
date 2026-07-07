@@ -22,9 +22,9 @@ export default function MonthlyTrend({ data }: { data: MonthPoint[] }) {
   const totalComm = data.reduce((s, d) => s + d.commissionCents, 0);
 
   return (
-    <div className="rounded-2xl border border-beige bg-white p-6">
+    <div className="rounded-3xl border border-beige/70 bg-white p-6 shadow-soft sm:p-7">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-sm font-semibold text-navy">
+        <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
           Revenue — last 12 months
         </h2>
         <p className="text-xs text-navy/60">

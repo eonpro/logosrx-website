@@ -114,7 +114,7 @@ export default function ActivateClient({
         }}
       >
         <div className="flex flex-col gap-4 text-center">
-          <h1 className="text-xl font-semibold text-navy">
+          <h1 className="text-xl font-semibold tracking-tight text-navy">
             This activation link has expired
           </h1>
           <p className="text-sm text-navy/60">
@@ -124,7 +124,7 @@ export default function ActivateClient({
           </p>
           <Link
             href="/sign-in"
-            className="mx-auto mt-2 inline-block rounded-xl bg-magenta px-6 py-3 text-[15px] font-semibold text-white transition-colors hover:bg-magenta-dark"
+            className="mx-auto mt-2 inline-block rounded-full bg-magenta px-8 py-3 text-[15px] font-semibold text-white transition-all hover:bg-magenta-dark active:scale-[0.98]"
           >
             Go to sign in
           </Link>
@@ -137,7 +137,7 @@ export default function ActivateClient({
     <AuthShell subtitle="Provider Portal">
       <div className="flex flex-col gap-5">
         <div className="text-center">
-          <h1 className="text-xl font-semibold text-navy">
+          <h1 className="text-xl font-semibold tracking-tight text-navy">
             Set your password
           </h1>
           <p className="mt-1 text-sm text-navy/60">
@@ -169,7 +169,7 @@ export default function ActivateClient({
           {error && (
             <p
               role="alert"
-              className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700"
+              className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
             >
               {error}
             </p>
@@ -178,7 +178,7 @@ export default function ActivateClient({
           <button
             type="submit"
             disabled={busy}
-            className="h-12 rounded-xl bg-magenta text-[15px] font-semibold text-white transition-colors hover:bg-magenta-dark disabled:opacity-60"
+            className="h-12 rounded-full bg-magenta text-[15px] font-semibold text-white transition-all hover:bg-magenta-dark active:scale-[0.99] disabled:opacity-60"
           >
             {busy ? "Activating…" : "Activate account"}
           </button>
@@ -201,7 +201,7 @@ function Field({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-xs font-medium uppercase tracking-wider text-navy/55">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
         {label}
       </span>
       <input
@@ -210,7 +210,7 @@ function Field({
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="h-12 rounded-xl border border-beige-dark bg-white px-4 text-navy outline-none transition-colors placeholder:text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta/30"
+        className="h-12 rounded-2xl border border-beige-dark bg-white px-4 text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10"
       />
     </label>
   );

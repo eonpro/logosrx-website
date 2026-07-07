@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { formatCents } from "@/lib/partners/commission";
 import type { GoalProgress } from "@/lib/partners/goal-math";
+import { EmptyState, btnAccent, btnDanger } from "@/components/ui/portal";
 import { deleteGoal, setGoal } from "./actions";
 
 const PERIOD_LABEL: Record<string, string> = {
@@ -16,7 +17,7 @@ const METRIC_LABEL: Record<string, string> = {
 };
 
 const inputClass =
-  "h-10 rounded-lg border border-beige bg-cream/50 px-3 text-sm text-navy outline-none focus:border-magenta";
+  "h-10 rounded-full border border-beige-dark bg-white px-4 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10";
 
 export default function GoalsManager({
   goals,
@@ -68,8 +69,10 @@ export default function GoalsManager({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-beige bg-white p-6">
-        <h2 className="text-sm font-semibold text-navy">Set a goal</h2>
+      <div className="rounded-3xl border border-beige/70 bg-white p-6 shadow-soft sm:p-7">
+        <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
+          Set a goal
+        </h2>
         <form
           className="mt-4 flex flex-wrap items-end gap-3"
           onSubmit={(e) => {
@@ -127,11 +130,7 @@ export default function GoalsManager({
               className={`${inputClass} w-36`}
             />
           </label>
-          <button
-            type="submit"
-            disabled={pending}
-            className="h-10 rounded-full bg-magenta px-6 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-          >
+          <button type="submit" disabled={pending} className={btnAccent}>
             {pending ? "Saving…" : "Save goal"}
           </button>
         </form>
@@ -148,15 +147,15 @@ export default function GoalsManager({
       </div>
 
       {goals.length === 0 ? (
-        <div className="rounded-2xl border border-beige bg-white p-12 text-center">
-          <p className="text-sm text-navy/65">
-            No goals yet. Set a revenue or commission target above to track
-            progress for your org or a rep.
-          </p>
+        <div className="rounded-3xl border border-beige/70 bg-white shadow-soft">
+          <EmptyState
+            title="No goals yet"
+            body="Set a revenue or commission target above to track progress for your org or a rep."
+          />
         </div>
       ) : (
-        <div className="rounded-2xl border border-beige bg-white p-6">
-          <h2 className="mb-4 text-sm font-semibold text-navy">
+        <div className="rounded-3xl border border-beige/70 bg-white p-6 shadow-soft sm:p-7">
+          <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
             Active goals ({goals.length})
           </h2>
           <div className="space-y-5">
@@ -179,7 +178,7 @@ export default function GoalsManager({
                         type="button"
                         disabled={pending}
                         onClick={() => remove(g.id)}
-                        className="text-xs font-medium text-navy/50 hover:text-magenta disabled:opacity-50"
+                        className={`${btnDanger} !px-4 !py-1 !text-xs`}
                       >
                         Remove
                       </button>

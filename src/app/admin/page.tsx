@@ -12,6 +12,7 @@ import {
 } from "@/lib/db/schema";
 import { count, sql } from "drizzle-orm";
 import { requireAdmin } from "@/lib/auth/admin";
+import { PageHeader, StatCard, Badge, type BadgeTone } from "@/components/ui/portal";
 
 /**
  * One aggregate query per table (5 total), all issued in parallel. This
@@ -86,116 +87,96 @@ async function getStats() {
 }
 
 const cards = [
-  {
-    label: "Clinics",
-    href: "/admin/clinics",
-    color: "bg-green-500",
-  },
-  {
-    label: "Employment Applications",
-    href: "/admin/applications",
-    color: "bg-magenta",
-  },
-  {
-    label: "Clinic Sign-ups",
-    href: "/admin/clinic-signups",
-    color: "bg-purple",
-  },
-  {
-    label: "Email Subscribers",
-    href: "/admin/email-signups",
-    color: "bg-sky",
-  },
-  {
-    label: "Merchandising",
-    href: "/admin/merchandising",
-    color: "bg-amber-500",
-  },
-  {
-    label: "Pricing Quotes",
-    href: "/admin/quotes",
-    color: "bg-rose-500",
-  },
+  { label: "Clinics", href: "/admin/clinics" },
+  { label: "Employment Applications", href: "/admin/applications" },
+  { label: "Clinic Sign-ups", href: "/admin/clinic-signups" },
+  { label: "Email Subscribers", href: "/admin/email-signups" },
+  { label: "Merchandising", href: "/admin/merchandising" },
+  { label: "Pricing Quotes", href: "/admin/quotes" },
 ];
 
 export default async function AdminOverview() {
   await requireAdmin();
   const stats = await getStats();
 
-  const data = [
+  const data: {
+    label: string;
+    href: string;
+    total: number;
+    badge: number;
+    badgeLabel: string;
+    badgeTone: BadgeTone;
+    accent?: boolean;
+  }[] = [
     {
       ...cards[0],
       total: stats.accounts.total,
       badge: stats.accounts.pending,
       badgeLabel: "pending",
-      badgeClass: "bg-amber-100 text-amber-700",
+      badgeTone: "warning",
+      accent: true,
     },
     {
       ...cards[1],
       total: stats.applications.total,
       badge: stats.applications.new,
       badgeLabel: "new",
-      badgeClass: "bg-magenta/10 text-magenta",
+      badgeTone: "accent",
     },
     {
       ...cards[2],
       total: stats.clinics.total,
       badge: stats.clinics.new,
       badgeLabel: "new",
-      badgeClass: "bg-magenta/10 text-magenta",
+      badgeTone: "accent",
     },
     {
       ...cards[3],
       total: stats.emails.total,
       badge: 0,
       badgeLabel: "new",
-      badgeClass: "bg-magenta/10 text-magenta",
+      badgeTone: "accent",
     },
     {
       ...cards[4],
       total: stats.merchandising.total,
       badge: stats.merchandising.featured,
       badgeLabel: "featured",
-      badgeClass: "bg-amber-100 text-amber-700",
+      badgeTone: "warning",
     },
     {
       ...cards[5],
       total: stats.quotes.total,
       badge: stats.quotes.active,
       badgeLabel: "active",
-      badgeClass: "bg-rose-100 text-rose-700",
+      badgeTone: "danger",
     },
   ];
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-navy">Dashboard</h1>
-        <p className="text-navy/70 text-sm mt-1">
-          Overview of all submissions and sign-ups.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Admin"
+        title="Dashboard"
+        description="Overview of all submissions and sign-ups."
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
         {data.map((card) => (
-          <a
+          <StatCard
             key={card.href}
             href={card.href}
-            className="group relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm border border-beige hover:shadow-md hover:-translate-y-0.5 transition-all"
-          >
-            <div className={`absolute top-0 left-0 w-1 h-full ${card.color}`} />
-            <p className="text-sm font-medium text-navy/70 mb-1">
-              {card.label}
-            </p>
-            <p className="text-3xl font-bold text-navy">{card.total}</p>
-            {card.badge > 0 && (
-              <span
-                className={`mt-3 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${card.badgeClass}`}
-              >
-                {card.badge} {card.badgeLabel}
-              </span>
-            )}
-          </a>
+            accent={card.accent}
+            label={card.label}
+            value={card.total}
+            sub={
+              card.badge > 0 ? (
+                <Badge tone={card.badgeTone}>
+                  {card.badge} {card.badgeLabel}
+                </Badge>
+              ) : undefined
+            }
+          />
         ))}
       </div>
     </div>

@@ -3,6 +3,14 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { createQuote, type CreateQuoteResult } from "./actions";
+import {
+  btnAccent,
+  btnGhost,
+  btnSecondary,
+  cardClass,
+  inputClass as portalInputClass,
+  selectClass,
+} from "@/components/ui/portal";
 
 export interface ProductOption {
   id: string;
@@ -40,8 +48,10 @@ export interface QuotePrefill {
   }[];
 }
 
-const inputClass =
-  "w-full rounded-lg border border-beige-dark bg-white px-3 py-2 text-sm text-navy outline-none focus:border-magenta focus:ring-1 focus:ring-magenta";
+const inputClass = portalInputClass;
+
+const labelClass =
+  "mb-1 block text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45";
 
 let counter = 0;
 function nextKey() {
@@ -188,8 +198,8 @@ export default function QuoteBuilder({
   if (created) {
     return (
       <div className="mx-auto max-w-2xl px-6 py-8">
-        <div className="rounded-2xl border border-green-200 bg-green-50 p-8">
-          <h1 className="text-xl font-bold text-navy">Quote created</h1>
+        <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-8 shadow-soft-lg">
+          <h1 className="text-2xl font-bold tracking-tight text-navy">Quote created</h1>
           <p className="mt-2 text-sm text-navy/70">
             Share the link and password with the clinic separately (the password
             gates the link). The password is shown <strong>only once</strong>.
@@ -197,7 +207,7 @@ export default function QuoteBuilder({
 
           <div className="mt-6 space-y-4">
             <div>
-              <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-navy/55">
+              <label className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
                 Quote link
               </label>
               <div className="flex items-center gap-2">
@@ -205,7 +215,7 @@ export default function QuoteBuilder({
                 <button
                   type="button"
                   onClick={() => copy(created.url, "link")}
-                  className="shrink-0 rounded-lg bg-navy px-3 py-2 text-xs font-semibold text-white hover:bg-navy/90"
+                  className="shrink-0 rounded-full bg-navy px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98]"
                 >
                   {copied === "link" ? "Copied" : "Copy"}
                 </button>
@@ -213,7 +223,7 @@ export default function QuoteBuilder({
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-navy/55">
+              <label className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
                 Password
               </label>
               <div className="flex items-center gap-2">
@@ -225,7 +235,7 @@ export default function QuoteBuilder({
                 <button
                   type="button"
                   onClick={() => copy(created.password, "pw")}
-                  className="shrink-0 rounded-lg bg-navy px-3 py-2 text-xs font-semibold text-white hover:bg-navy/90"
+                  className="shrink-0 rounded-full bg-navy px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98]"
                 >
                   {copied === "pw" ? "Copied" : "Copy"}
                 </button>
@@ -236,13 +246,13 @@ export default function QuoteBuilder({
           <div className="mt-8 flex gap-3">
             <Link
               href={`/admin/quotes/${created.id}`}
-              className="rounded-full bg-magenta px-5 py-2.5 text-sm font-semibold text-white hover:bg-magenta/90"
+              className={btnAccent}
             >
               View quote
             </Link>
             <Link
               href="/admin/quotes"
-              className="rounded-full border border-beige-dark px-5 py-2.5 text-sm font-semibold text-navy hover:bg-beige/50"
+              className={btnSecondary}
             >
               Back to quotes
             </Link>
@@ -255,10 +265,10 @@ export default function QuoteBuilder({
   return (
     <form onSubmit={submit} className="mx-auto max-w-2xl px-6 py-8">
       <div className="mb-6">
-        <Link href="/admin/quotes" className="text-sm text-navy/60 hover:text-navy">
+        <Link href="/admin/quotes" className={`${btnGhost} -ml-4`}>
           ← Quotes
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-navy">
+        <h1 className="mt-2 text-3xl font-bold tracking-tight text-navy sm:text-4xl">
           {prefill ? "Duplicate quote" : "New pricing quote"}
         </h1>
         {prefill && (
@@ -270,13 +280,13 @@ export default function QuoteBuilder({
         )}
       </div>
 
-      <section className="rounded-2xl border border-beige-dark bg-white p-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-navy/55">
+      <section className={`${cardClass} p-6 sm:p-7`}>
+        <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
           Recipient
         </h2>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-xs text-navy/60">Clinic name</label>
+            <label className={labelClass}>Clinic name</label>
             <input
               value={clinicName}
               onChange={(e) => setClinicName(e.target.value)}
@@ -285,7 +295,7 @@ export default function QuoteBuilder({
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-navy/60">Contact name</label>
+            <label className={labelClass}>Contact name</label>
             <input
               value={contactName}
               onChange={(e) => setContactName(e.target.value)}
@@ -294,7 +304,7 @@ export default function QuoteBuilder({
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs text-navy/60">
+            <label className={labelClass}>
               Recipient email <span className="text-magenta">*</span>
             </label>
             <input
@@ -307,31 +317,31 @@ export default function QuoteBuilder({
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs text-navy/60">
+            <label className={labelClass}>
               Intro message (optional)
             </label>
             <textarea
               value={intro}
               onChange={(e) => setIntro(e.target.value)}
               rows={3}
-              className={inputClass}
+              className={`${inputClass} resize-none`}
               placeholder="Thanks for meeting with us — here's the pricing we discussed."
             />
           </div>
         </div>
       </section>
 
-      <section className="mt-5 rounded-2xl border border-beige-dark bg-white p-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-navy/55">
+      <section className={`${cardClass} mt-5 p-6 sm:p-7`}>
+        <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
           Pricing basis
         </h2>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div>
-            <label className="mb-1 block text-xs text-navy/60">Tier</label>
+            <label className={labelClass}>Tier</label>
             <select
               value={tier}
               onChange={(e) => setTier(e.target.value as typeof tier)}
-              className={inputClass}
+              className={selectClass}
             >
               <option value="standard">Standard</option>
               <option value="preferred">Preferred</option>
@@ -339,7 +349,7 @@ export default function QuoteBuilder({
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-navy/60">
+            <label className={labelClass}>
               Catalog-wide discount %
             </label>
             <input
@@ -352,7 +362,7 @@ export default function QuoteBuilder({
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-navy/60">Expires in (days)</label>
+            <label className={labelClass}>Expires in (days)</label>
             <input
               type="number"
               min={0}
@@ -371,17 +381,17 @@ export default function QuoteBuilder({
       </section>
 
       {referrerOrgs.length > 0 && (
-        <section className="mt-5 rounded-2xl border border-beige-dark bg-white p-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-navy/55">
+        <section className={`${cardClass} mt-5 p-6 sm:p-7`}>
+          <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
             Referrer (optional)
           </h2>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs text-navy/60">Partner org</label>
+              <label className={labelClass}>Partner org</label>
               <select
                 value={partnerOrgId}
                 onChange={(e) => changeReferrerOrg(e.target.value)}
-                className={inputClass}
+                className={selectClass}
               >
                 <option value="">No referrer</option>
                 {referrerOrgs.map((o) => (
@@ -392,11 +402,11 @@ export default function QuoteBuilder({
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-navy/60">Sales rep</label>
+              <label className={labelClass}>Sales rep</label>
               <select
                 value={partnerRepId}
                 onChange={(e) => setPartnerRepId(e.target.value)}
-                className={inputClass}
+                className={selectClass}
                 disabled={!selectedOrg || selectedOrg.reps.length === 0}
               >
                 <option value="">
@@ -420,15 +430,15 @@ export default function QuoteBuilder({
         </section>
       )}
 
-      <section className="mt-5 rounded-2xl border border-beige-dark bg-white p-6">
+      <section className={`${cardClass} mt-5 p-6 sm:p-7`}>
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-navy/55">
+          <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
             Quoted products
           </h2>
           <button
             type="button"
             onClick={addCustomItem}
-            className="text-xs font-semibold text-magenta hover:text-magenta/80"
+            className={`${btnGhost} !px-3 !py-1.5 text-xs`}
           >
             + Custom line
           </button>
@@ -438,7 +448,7 @@ export default function QuoteBuilder({
           <select
             value={picker}
             onChange={(e) => addCatalogItem(e.target.value)}
-            className={inputClass}
+            className={selectClass}
           >
             <option value="">+ Add a catalog product…</option>
             {productOptions.map((o) => (
@@ -455,10 +465,10 @@ export default function QuoteBuilder({
             {items.map((it) => (
               <div
                 key={it.key}
-                className="grid grid-cols-12 items-end gap-2 rounded-xl border border-beige-dark/70 bg-beige/20 p-3"
+                className="grid grid-cols-12 items-end gap-2 rounded-2xl border border-beige/70 bg-cream/50 p-4"
               >
                 <div className="col-span-12 sm:col-span-5">
-                  <label className="mb-1 block text-[10px] uppercase tracking-wider text-navy/45">
+                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.14em] text-navy/45">
                     Product
                   </label>
                   <input
@@ -470,7 +480,7 @@ export default function QuoteBuilder({
                   />
                 </div>
                 <div className="col-span-5 sm:col-span-3">
-                  <label className="mb-1 block text-[10px] uppercase tracking-wider text-navy/45">
+                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.14em] text-navy/45">
                     Price ($){it.standardDollars !== null ? ` · std $${it.standardDollars.toFixed(2)}` : ""}
                   </label>
                   <input
@@ -483,7 +493,7 @@ export default function QuoteBuilder({
                   />
                 </div>
                 <div className="col-span-5 sm:col-span-3">
-                  <label className="mb-1 block text-[10px] uppercase tracking-wider text-navy/45">
+                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.14em] text-navy/45">
                     Unit
                   </label>
                   <input
@@ -497,7 +507,7 @@ export default function QuoteBuilder({
                   <button
                     type="button"
                     onClick={() => removeItem(it.key)}
-                    className="rounded-lg px-2 py-2 text-navy/40 hover:bg-red-50 hover:text-red-600"
+                    className="rounded-full px-2 py-2 text-navy/40 transition-colors hover:bg-red-50 hover:text-red-600"
                     aria-label="Remove item"
                   >
                     ✕
@@ -510,7 +520,7 @@ export default function QuoteBuilder({
       </section>
 
       {error && (
-        <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </p>
       )}
@@ -518,14 +528,14 @@ export default function QuoteBuilder({
       <div className="mt-6 flex justify-end gap-3">
         <Link
           href="/admin/quotes"
-          className="rounded-full border border-beige-dark px-5 py-2.5 text-sm font-semibold text-navy hover:bg-beige/50"
+          className={btnSecondary}
         >
           Cancel
         </Link>
         <button
           type="submit"
           disabled={pending}
-          className="rounded-full bg-magenta px-6 py-2.5 text-sm font-semibold text-white hover:bg-magenta/90 disabled:opacity-50"
+          className={btnAccent}
         >
           {pending ? "Creating…" : "Create quote & generate password"}
         </button>

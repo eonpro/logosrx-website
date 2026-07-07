@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { btnPrimary, btnSecondary, btnDanger } from "@/components/ui/portal";
 import {
   deletePartnerQuote,
   reactivatePartnerQuote,
@@ -74,11 +75,7 @@ export default function PartnerQuoteActions({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={copyLink}
-          className="rounded-full bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-navy/90"
-        >
+        <button type="button" onClick={copyLink} className={btnPrimary}>
           {copied ? "Link copied" : "Copy link"}
         </button>
         {!claimed && (
@@ -86,7 +83,7 @@ export default function PartnerQuoteActions({
             type="button"
             onClick={regenerate}
             disabled={pending}
-            className="rounded-full border border-beige px-4 py-2 text-sm font-semibold text-navy hover:bg-cream disabled:opacity-50"
+            className={btnSecondary}
           >
             Regenerate password
           </button>
@@ -96,7 +93,7 @@ export default function PartnerQuoteActions({
             type="button"
             onClick={toggleRevoke}
             disabled={pending}
-            className="rounded-full border border-beige px-4 py-2 text-sm font-semibold text-navy hover:bg-cream disabled:opacity-50"
+            className={revoked ? btnSecondary : btnDanger}
           >
             {revoked ? "Reactivate" : "Revoke"}
           </button>
@@ -105,14 +102,14 @@ export default function PartnerQuoteActions({
           type="button"
           onClick={remove}
           disabled={pending}
-          className="rounded-full border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+          className={btnDanger}
         >
           Delete
         </button>
       </div>
 
       {password && (
-        <div className="rounded-xl border border-green-200 bg-green-50 p-4">
+        <div className="rounded-2xl border border-green-200 bg-green-50 p-4">
           <p className="text-xs font-medium uppercase tracking-wider text-navy/55">
             New password (shown once)
           </p>

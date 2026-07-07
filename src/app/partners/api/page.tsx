@@ -7,6 +7,7 @@ import { getPartnerContext } from "@/lib/auth/partner";
 import { roleAtLeast } from "@/lib/auth/partner-roles";
 import { listWebhookDeliveries } from "@/lib/partners/webhooks";
 import { SITE_URL } from "@/lib/constants";
+import { PageHeader } from "@/components/ui/portal";
 import PartnerNoAccess from "../PartnerNoAccess";
 import ApiKeysManager from "./ApiKeysManager";
 import WebhooksManager from "./WebhooksManager";
@@ -91,24 +92,24 @@ export default async function PartnerApiPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-navy">API &amp; Webhooks</h1>
-        <p className="text-navy/70 text-sm mt-1">
-          Pull your partner data programmatically and receive real-time event
-          notifications.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Partner Portal"
+        title="API & Webhooks"
+        description="Pull your partner data programmatically and receive real-time event notifications."
+      />
 
-      <div className="mb-8 rounded-2xl border border-beige bg-white p-6">
-        <h2 className="text-sm font-semibold text-navy">Read-only API</h2>
-        <p className="mt-1 text-xs text-navy/60">
+      <div className="mb-8 rounded-3xl border border-beige/70 bg-white p-6 shadow-soft sm:p-7">
+        <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
+          Read-only API
+        </h2>
+        <p className="mt-2 text-xs text-navy/60">
           Authenticate with{" "}
           <code className="rounded bg-cream px-1 py-0.5">
             Authorization: Bearer &lt;key&gt;
           </code>
           . Base URL:
         </p>
-        <pre className="mt-2 overflow-x-auto rounded-lg bg-navy px-4 py-3 text-xs text-white">
+        <pre className="mt-3 overflow-x-auto rounded-2xl bg-navy px-4 py-3 text-xs text-white">
 {`${apiBase}/summary?range=month
 ${apiBase}/clinics
 ${apiBase}/transactions?range=year

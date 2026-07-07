@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Badge, btnAccent, btnDanger } from "@/components/ui/portal";
 import { createApiKey, revokeApiKey } from "./actions";
 
 interface KeyRow {
@@ -52,11 +53,13 @@ export default function ApiKeysManager({ keys }: { keys: KeyRow[] }) {
   }
 
   return (
-    <div className="rounded-2xl border border-beige bg-white p-6">
-      <h2 className="text-sm font-semibold text-navy">API keys</h2>
+    <div className="rounded-3xl border border-beige/70 bg-white p-6 shadow-soft sm:p-7">
+      <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
+        API keys
+      </h2>
 
       {newKey && (
-        <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
           <p className="text-xs font-semibold text-emerald-800">
             Copy your new key now — it won&rsquo;t be shown again.
           </p>
@@ -67,7 +70,7 @@ export default function ApiKeysManager({ keys }: { keys: KeyRow[] }) {
             <button
               type="button"
               onClick={() => void copyKey()}
-              className="rounded-lg border border-beige px-3 py-2 text-xs font-medium text-navy/70 hover:border-magenta hover:text-magenta"
+              className="rounded-full border border-beige-dark bg-white px-4 py-2 text-xs font-semibold text-navy/70 transition-all hover:border-navy/40 hover:text-navy active:scale-[0.98]"
             >
               {copied ? "Copied!" : "Copy"}
             </button>
@@ -89,14 +92,10 @@ export default function ApiKeysManager({ keys }: { keys: KeyRow[] }) {
             onChange={(e) => setName(e.target.value)}
             placeholder="Production integration"
             maxLength={120}
-            className="h-10 w-64 rounded-lg border border-beige bg-cream/50 px-3 text-sm text-navy outline-none focus:border-magenta"
+            className="h-10 w-64 rounded-full border border-beige-dark bg-white px-4 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10"
           />
         </label>
-        <button
-          type="submit"
-          disabled={pending}
-          className="h-10 rounded-full bg-magenta px-6 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-        >
+        <button type="submit" disabled={pending} className={btnAccent}>
           {pending ? "Working…" : "Create key"}
         </button>
       </form>
@@ -109,7 +108,7 @@ export default function ApiKeysManager({ keys }: { keys: KeyRow[] }) {
       {keys.length > 0 && (
         <div className="mt-5 overflow-x-auto">
           <table className="w-full min-w-[560px] text-left text-sm">
-            <thead className="text-xs uppercase tracking-wide text-navy/55">
+            <thead className="text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-navy/45">
               <tr>
                 <th className="py-2 pr-4 font-semibold">Name</th>
                 <th className="py-2 pr-4 font-semibold">Key</th>
@@ -118,26 +117,26 @@ export default function ApiKeysManager({ keys }: { keys: KeyRow[] }) {
                 <th className="py-2 font-semibold" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-beige text-navy">
+            <tbody className="divide-y divide-beige/60 text-navy">
               {keys.map((k) => (
                 <tr key={k.id} className={k.revoked ? "opacity-50" : ""}>
-                  <td className="py-2 pr-4">{k.name}</td>
-                  <td className="py-2 pr-4 font-mono text-xs">{k.keyPrefix}…</td>
-                  <td className="py-2 pr-4">{k.lastUsed ?? "Never"}</td>
-                  <td className="py-2 pr-4">
+                  <td className="py-3 pr-4">{k.name}</td>
+                  <td className="py-3 pr-4 font-mono text-xs">{k.keyPrefix}…</td>
+                  <td className="py-3 pr-4">{k.lastUsed ?? "Never"}</td>
+                  <td className="py-3 pr-4">
                     {k.revoked ? (
-                      <span className="text-navy/50">Revoked</span>
+                      <Badge tone="neutral">Revoked</Badge>
                     ) : (
-                      <span className="text-emerald-700">Active</span>
+                      <Badge tone="success">Active</Badge>
                     )}
                   </td>
-                  <td className="py-2 text-right">
+                  <td className="py-3 text-right">
                     {!k.revoked && (
                       <button
                         type="button"
                         disabled={pending}
                         onClick={() => revoke(k.id)}
-                        className="text-xs font-medium text-navy/60 hover:text-red-600 disabled:opacity-50"
+                        className={`${btnDanger} !px-4 !py-1.5 !text-xs`}
                       >
                         Revoke
                       </button>

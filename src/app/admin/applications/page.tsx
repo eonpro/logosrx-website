@@ -6,6 +6,7 @@ import { count, desc } from "drizzle-orm";
 import { ApplicationsTable } from "./ApplicationsTable";
 import { requireAdmin } from "@/lib/auth/admin";
 import { ADMIN_LIST_LIMIT } from "@/lib/constants";
+import { Card, EmptyState, PageHeader } from "@/components/ui/portal";
 
 export default async function ApplicationsPage() {
   await requireAdmin();
@@ -22,22 +23,28 @@ export default async function ApplicationsPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-navy">Employment Applications</h1>
-        <p className="text-navy/70 text-sm mt-1">
-          {total} total application{total !== 1 ? "s" : ""}
-        </p>
-        {overflow && (
-          <p className="mt-1 text-xs text-navy/55">
-            Showing the {applications.length} most recent of {total}.
-          </p>
-        )}
-      </div>
+      <PageHeader
+        eyebrow="Admin"
+        title="Employment Applications"
+        description={
+          <>
+            {total} total application{total !== 1 ? "s" : ""}
+            {overflow && (
+              <span className="block text-xs text-navy/45">
+                Showing the {applications.length} most recent of {total}.
+              </span>
+            )}
+          </>
+        }
+      />
 
       {applications.length === 0 ? (
-        <div className="rounded-2xl bg-white border border-beige p-12 text-center">
-          <p className="text-navy/65 text-sm">No applications yet.</p>
-        </div>
+        <Card pad={false}>
+          <EmptyState
+            title="No applications yet"
+            body="Employment applications submitted on the careers page will show up here."
+          />
+        </Card>
       ) : (
         <ApplicationsTable applications={applications} />
       )}

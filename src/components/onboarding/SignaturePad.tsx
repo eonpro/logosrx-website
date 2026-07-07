@@ -109,7 +109,7 @@ export default function SignaturePad({
           onPointerMove={move}
           onPointerUp={end}
           onPointerLeave={end}
-          className="h-32 w-full touch-none rounded-xl border border-beige-dark bg-white"
+          className="h-32 w-full touch-none rounded-2xl border border-beige-dark bg-white"
         />
         {!hasInk && (
           <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm italic text-navy/30">
@@ -121,7 +121,7 @@ export default function SignaturePad({
         <button
           type="button"
           onClick={clear}
-          className="mt-2 text-xs font-medium text-navy/50 hover:text-magenta"
+          className="mt-2 text-xs font-semibold text-navy/50 transition-colors hover:text-navy"
         >
           Clear signature
         </button>

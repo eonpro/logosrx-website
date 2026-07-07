@@ -1,3 +1,5 @@
+import { Badge, type BadgeTone } from "@/components/ui/portal";
+
 /** Small KPI stat card shared across the CRM detail pages. */
 export function KpiCard({
   label,
@@ -12,53 +14,55 @@ export function KpiCard({
 }) {
   return (
     <div
-      className={`rounded-2xl border p-5 ${
-        accent ? "border-magenta/20 bg-magenta/5" : "border-beige bg-white"
+      className={`rounded-3xl p-6 ${
+        accent
+          ? "bg-navy text-white shadow-soft-lg"
+          : "border border-beige/70 bg-white shadow-soft"
       }`}
     >
-      <p className="text-xs font-medium uppercase tracking-wide text-navy/55">
+      <p
+        className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${
+          accent ? "text-white/55" : "text-navy/45"
+        }`}
+      >
         {label}
       </p>
-      <p className="mt-2 text-2xl font-bold tabular-nums text-navy">{value}</p>
-      {sub != null && <p className="mt-1 text-xs text-navy/60">{sub}</p>}
+      <p
+        className={`mt-3 text-3xl font-bold tracking-tight tabular-nums ${
+          accent ? "text-white" : "text-navy"
+        }`}
+      >
+        {value}
+      </p>
+      {sub != null && (
+        <p className={`mt-1.5 text-[13px] ${accent ? "text-white/55" : "text-navy/50"}`}>
+          {sub}
+        </p>
+      )}
     </div>
   );
 }
 
-const STATUS_BADGE: Record<string, string> = {
-  verified: "bg-emerald-100 text-emerald-700",
-  active: "bg-emerald-100 text-emerald-700",
-  pending: "bg-amber-100 text-amber-700",
-  rejected: "bg-red-100 text-red-700",
-  suspended: "bg-gray-100 text-gray-500",
+const STATUS_TONE: Record<string, BadgeTone> = {
+  verified: "success",
+  active: "success",
+  pending: "warning",
+  rejected: "danger",
+  suspended: "neutral",
 };
 
 export function StatusBadge({ status }: { status: string }) {
-  return (
-    <span
-      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${
-        STATUS_BADGE[status] ?? "bg-gray-100 text-gray-500"
-      }`}
-    >
-      {status}
-    </span>
-  );
+  return <Badge tone={STATUS_TONE[status] ?? "neutral"}>{status}</Badge>;
 }
 
-const STAGE_STYLE: Record<string, { label: string; cls: string }> = {
-  lead: { label: "Lead", cls: "bg-navy/10 text-navy" },
-  active: { label: "Active", cls: "bg-emerald-100 text-emerald-700" },
-  at_risk: { label: "At risk", cls: "bg-amber-100 text-amber-700" },
-  dormant: { label: "Dormant", cls: "bg-gray-100 text-gray-500" },
+const STAGE_STYLE: Record<string, { label: string; tone: BadgeTone }> = {
+  lead: { label: "Lead", tone: "neutral" },
+  active: { label: "Active", tone: "success" },
+  at_risk: { label: "At risk", tone: "warning" },
+  dormant: { label: "Dormant", tone: "neutral" },
 };
 
 export function StageBadge({ stage }: { stage: string }) {
-  const s = STAGE_STYLE[stage] ?? { label: stage, cls: "bg-gray-100 text-gray-500" };
-  return (
-    <span
-      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${s.cls}`}
-    >
-      {s.label}
-    </span>
-  );
+  const s = STAGE_STYLE[stage] ?? { label: stage, tone: "neutral" as BadgeTone };
+  return <Badge tone={s.tone}>{s.label}</Badge>;
 }

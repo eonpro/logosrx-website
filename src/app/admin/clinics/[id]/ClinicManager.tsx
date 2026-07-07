@@ -16,6 +16,11 @@ import {
   setProductPrice,
   type RevealCardResult,
 } from "../actions";
+import {
+  cardClass,
+  inputClass,
+  selectClass,
+} from "@/components/ui/portal";
 
 type Status = "pending" | "verified" | "rejected";
 type Tier = "standard" | "preferred" | "vip";
@@ -59,8 +64,8 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-beige bg-white p-6">
-      <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-navy/70">
+    <div className={`${cardClass} p-6`}>
+      <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
         {title}
       </h2>
       {children}
@@ -170,10 +175,10 @@ function VerificationCard({
               status === s
                 ? "bg-navy/10 text-navy/65 cursor-not-allowed"
                 : s === "verified"
-                  ? "bg-white border border-green-200 text-green-700 hover:bg-green-50"
+                  ? "border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50"
                   : s === "rejected"
-                    ? "bg-white border border-red-200 text-red-700 hover:bg-red-50"
-                    : "bg-white border border-beige hover:border-magenta hover:text-magenta text-navy/60"
+                    ? "border border-red-200 bg-white text-red-700 hover:bg-red-50"
+                    : "border border-beige-dark bg-white text-navy/60 hover:border-navy/40 hover:text-navy"
             }`}
           >
             {s}
@@ -221,7 +226,7 @@ function ResendActivation({
         <button
           disabled={busy || !canActivate}
           onClick={send}
-          className="rounded-full border border-navy/20 bg-white px-4 py-1.5 text-xs font-semibold text-navy transition-colors hover:border-magenta hover:text-magenta disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full border border-beige-dark bg-white px-4 py-1.5 text-xs font-semibold text-navy transition-all hover:border-navy/40 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {busy ? "Sending…" : "Resend activation link"}
         </button>
@@ -302,7 +307,7 @@ function CardReveal({
         <p className="text-sm text-navy/55">No card on file for this clinic.</p>
       ) : card ? (
         <div className="flex flex-col gap-3">
-          <div className="grid grid-cols-2 gap-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm md:grid-cols-3">
+          <div className="grid grid-cols-2 gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm md:grid-cols-3">
             <Detail label="Cardholder" value={card.cardholderName} />
             <Detail label="Card number" value={card.cardNumber} mono />
             <Detail label="CVV" value={card.cvv} mono />
@@ -314,7 +319,7 @@ function CardReveal({
           <div>
             <button
               onClick={hide}
-              className="rounded-full bg-navy px-4 py-1.5 text-xs font-semibold text-white hover:bg-navy/90"
+              className="rounded-full bg-navy px-4 py-1.5 text-xs font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98]"
             >
               Hide card
             </button>
@@ -329,13 +334,13 @@ function CardReveal({
             <div>
               <button
                 onClick={() => setOpen(true)}
-                className="rounded-full border border-navy/20 bg-white px-4 py-1.5 text-xs font-semibold text-navy hover:border-magenta hover:text-magenta"
+                className="rounded-full border border-beige-dark bg-white px-4 py-1.5 text-xs font-semibold text-navy transition-all hover:border-navy/40"
               >
                 Reveal full card
               </button>
             </div>
           ) : (
-            <div className="flex flex-col gap-2 rounded-xl border border-beige bg-cream/40 p-4">
+            <div className="flex flex-col gap-2 rounded-2xl border border-beige/70 bg-cream/50 p-4">
               <p className="text-xs text-navy/65">
                 Re-enter your admin password to view the full card. This access
                 is logged.
@@ -347,20 +352,20 @@ function CardReveal({
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && submit()}
                 placeholder="Your admin password"
-                className="rounded-lg border border-beige-dark bg-white px-3 py-2 text-sm text-navy outline-none focus:border-magenta"
+                className={inputClass}
               />
               {error && <p className="text-xs text-red-600">{error}</p>}
               <div className="flex gap-2">
                 <button
                   onClick={submit}
                   disabled={busy}
-                  className="rounded-full bg-magenta px-4 py-1.5 text-xs font-semibold text-white hover:bg-magenta/90 disabled:opacity-60"
+                  className="rounded-full bg-navy px-4 py-1.5 text-xs font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98] disabled:opacity-60"
                 >
                   {busy ? "Verifying…" : "Reveal"}
                 </button>
                 <button
                   onClick={hide}
-                  className="rounded-full border border-beige bg-white px-4 py-1.5 text-xs font-semibold text-navy/60"
+                  className="rounded-full border border-beige-dark bg-white px-4 py-1.5 text-xs font-semibold text-navy/60 transition-all hover:border-navy/40 hover:text-navy"
                 >
                   Cancel
                 </button>
@@ -384,7 +389,7 @@ function Detail({
 }) {
   return (
     <div>
-      <p className="mb-0.5 text-xs uppercase tracking-wider text-navy/55">
+      <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
         {label}
       </p>
       <p className={`text-navy ${mono ? "font-mono" : ""}`}>{value || "—"}</p>
@@ -434,13 +439,13 @@ function PricingCard({
       <div className="flex flex-col gap-4">
         <div className="grid gap-4 md:grid-cols-2">
           <label className="flex flex-col gap-1">
-            <span className="text-xs uppercase tracking-wider text-navy/55">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
               Pricing tier
             </span>
             <select
               value={tier}
               onChange={(e) => setTier(e.target.value as Tier)}
-              className="rounded-lg border border-beige-dark bg-white px-3 py-2 text-sm text-navy outline-none focus:border-magenta"
+              className={selectClass}
             >
               {TIER_OPTIONS.map((t) => (
                 <option key={t.value} value={t.value}>
@@ -450,7 +455,7 @@ function PricingCard({
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs uppercase tracking-wider text-navy/55">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
               Flat discount (%)
             </span>
             <input
@@ -459,12 +464,12 @@ function PricingCard({
               max={100}
               value={discount}
               onChange={(e) => setDiscount(e.target.value)}
-              className="rounded-lg border border-beige-dark bg-white px-3 py-2 text-sm text-navy outline-none focus:border-magenta"
+              className={inputClass}
             />
           </label>
         </div>
         <label className="flex flex-col gap-1">
-          <span className="text-xs uppercase tracking-wider text-navy/55">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
             Pricing notes
           </span>
           <textarea
@@ -472,7 +477,7 @@ function PricingCard({
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
             placeholder="e.g. Net-30 terms, negotiated bundle, etc."
-            className="rounded-lg border border-beige-dark bg-white px-3 py-2 text-sm text-navy outline-none focus:border-magenta"
+            className={`${inputClass} resize-none`}
           />
         </label>
         <div className="flex items-center gap-3">
@@ -491,10 +496,10 @@ function PricingCard({
                 refresh();
               })
             }
-            className={`rounded-full px-4 py-1.5 text-xs font-semibold text-white transition-colors disabled:opacity-60 ${
+            className={`rounded-full px-5 py-2 text-xs font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-60 ${
               saved
-                ? "bg-green-600 hover:bg-green-700"
-                : "bg-magenta hover:bg-magenta/90"
+                ? "bg-emerald-600 hover:bg-emerald-700"
+                : "bg-magenta hover:bg-magenta-dark"
             }`}
           >
             {saved ? "Saved ✓" : "Save pricing"}
@@ -504,7 +509,7 @@ function PricingCard({
         {/* Catalog pricing sheet — every SKU at its standard price, override per clinic. */}
         <div className="border-t border-beige pt-4">
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wider text-navy/55">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
               Catalog pricing
             </p>
             <p className="text-xs text-navy/45">
@@ -512,10 +517,10 @@ function PricingCard({
               {catalog.length} products
             </p>
           </div>
-          <div className="max-h-[28rem] overflow-y-auto rounded-xl border border-beige">
+          <div className="max-h-[28rem] overflow-y-auto rounded-2xl border border-beige/70">
             <table className="w-full text-sm">
               <thead className="sticky top-0 z-10 bg-cream/90 backdrop-blur">
-                <tr className="text-left text-[11px] uppercase tracking-wider text-navy/50">
+                <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-navy/45">
                   <th className="px-3 py-2 font-semibold">Product</th>
                   <th className="px-3 py-2 font-semibold">Standard</th>
                   <th className="px-3 py-2 font-semibold">Clinic price</th>
@@ -556,7 +561,7 @@ function PricingCard({
 
         {/* Ad-hoc line items not in the catalog. */}
         <div className="border-t border-beige pt-4">
-          <p className="mb-3 text-xs uppercase tracking-wider text-navy/55">
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
             Other line items
           </p>
           {customItems.length > 0 && (
@@ -564,7 +569,7 @@ function PricingCard({
               {customItems.map((it) => (
                 <div
                   key={it.id}
-                  className="flex items-center justify-between rounded-lg border border-beige bg-cream/30 px-3 py-2 text-sm"
+                  className="flex items-center justify-between rounded-2xl border border-beige/70 bg-cream/50 px-4 py-2.5 text-sm"
                 >
                   <span className="text-navy">
                     <span className="font-medium">{it.productName}</span>{" "}
@@ -594,20 +599,20 @@ function PricingCard({
               value={product}
               onChange={(e) => setProduct(e.target.value)}
               placeholder="Product / service"
-              className="rounded-lg border border-beige-dark bg-white px-3 py-2 text-sm text-navy outline-none focus:border-magenta"
+              className={inputClass}
             />
             <input
               value={price}
               onChange={(e) => setPrice(e.target.value)}
               inputMode="decimal"
               placeholder="Price ($)"
-              className="rounded-lg border border-beige-dark bg-white px-3 py-2 text-sm text-navy outline-none focus:border-magenta"
+              className={inputClass}
             />
             <input
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
               placeholder="Unit (opt.)"
-              className="rounded-lg border border-beige-dark bg-white px-3 py-2 text-sm text-navy outline-none focus:border-magenta"
+              className={inputClass}
             />
             <button
               disabled={pending || !product.trim() || !price.trim()}
@@ -625,7 +630,7 @@ function PricingCard({
                   refresh();
                 })
               }
-              className="rounded-full bg-navy px-4 py-2 text-xs font-semibold text-white hover:bg-navy/90 disabled:opacity-60"
+              className="rounded-full bg-navy px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98] disabled:opacity-60"
             >
               Add
             </button>
@@ -682,7 +687,7 @@ function CatalogPriceRow({
             onChange={(e) => setValue(e.target.value)}
             inputMode="decimal"
             placeholder={placeholder}
-            className={`w-20 rounded-lg border bg-white px-2 py-1 text-sm text-navy outline-none focus:border-magenta ${
+            className={`w-20 rounded-2xl border bg-white px-2.5 py-1 text-sm text-navy outline-none transition-all focus:border-navy focus:ring-2 focus:ring-navy/10 ${
               hasOverride ? "border-magenta/50" : "border-beige-dark"
             }`}
           />
@@ -705,10 +710,10 @@ function CatalogPriceRow({
               refresh();
             })
           }
-          className={`rounded-full px-3 py-1 text-xs font-semibold text-white transition-colors disabled:opacity-40 ${
+          className={`rounded-full px-3 py-1 text-xs font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-40 ${
             saved
-              ? "bg-green-600 hover:bg-green-700"
-              : "bg-navy hover:bg-navy/90"
+              ? "bg-emerald-600 hover:bg-emerald-700"
+              : "bg-navy hover:bg-navy-light"
           }`}
         >
           {saved ? "Saved ✓" : "Save"}
@@ -755,7 +760,7 @@ function NotesCard({
           onChange={(e) => setBody(e.target.value)}
           rows={3}
           placeholder="Add a note about this clinic…"
-          className="rounded-lg border border-beige-dark bg-white px-3 py-2 text-sm text-navy outline-none focus:border-magenta"
+          className={`${inputClass} resize-none`}
         />
         <div>
           <button
@@ -767,7 +772,7 @@ function NotesCard({
                 refresh();
               })
             }
-            className="rounded-full bg-magenta px-4 py-1.5 text-xs font-semibold text-white hover:bg-magenta/90 disabled:opacity-60"
+            className="rounded-full bg-navy px-4 py-1.5 text-xs font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98] disabled:opacity-60"
           >
             Add note
           </button>
@@ -780,7 +785,7 @@ function NotesCard({
             {notes.map((n) => (
               <li
                 key={n.id}
-                className="rounded-xl border border-beige bg-cream/30 p-3"
+                className="rounded-2xl border border-beige/70 bg-cream/50 p-4"
               >
                 <p className="whitespace-pre-wrap text-sm text-navy">{n.body}</p>
                 <p className="mt-2 text-xs text-navy/50">

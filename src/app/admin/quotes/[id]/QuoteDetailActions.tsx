@@ -9,6 +9,7 @@ import {
   regenerateQuotePassword,
   revokeQuote,
 } from "../actions";
+import { btnDanger, btnPrimary, btnSecondary } from "@/components/ui/portal";
 
 export default function QuoteDetailActions({
   id,
@@ -67,7 +68,7 @@ export default function QuoteDetailActions({
         <button
           type="button"
           onClick={copyLink}
-          className="rounded-full bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-navy/90"
+          className={btnPrimary}
         >
           {copied ? "Link copied" : "Copy link"}
         </button>
@@ -76,14 +77,14 @@ export default function QuoteDetailActions({
             type="button"
             onClick={regenerate}
             disabled={pending}
-            className="rounded-full border border-beige-dark px-4 py-2 text-sm font-semibold text-navy hover:bg-beige/50 disabled:opacity-50"
+            className={btnSecondary}
           >
             Regenerate password
           </button>
         )}
         <Link
           href={`/admin/quotes/new?from=${id}`}
-          className="rounded-full border border-beige-dark px-4 py-2 text-sm font-semibold text-navy hover:bg-beige/50"
+          className={btnSecondary}
         >
           Duplicate
         </Link>
@@ -92,7 +93,7 @@ export default function QuoteDetailActions({
             type="button"
             onClick={toggleRevoke}
             disabled={pending}
-            className="rounded-full border border-beige-dark px-4 py-2 text-sm font-semibold text-navy hover:bg-beige/50 disabled:opacity-50"
+            className={revoked ? btnSecondary : btnDanger}
           >
             {revoked ? "Reactivate" : "Revoke"}
           </button>
@@ -101,15 +102,15 @@ export default function QuoteDetailActions({
           type="button"
           onClick={remove}
           disabled={pending}
-          className="rounded-full border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+          className={btnDanger}
         >
           Delete
         </button>
       </div>
 
       {password && (
-        <div className="rounded-xl border border-green-200 bg-green-50 p-4">
-          <p className="text-xs font-medium uppercase tracking-wider text-navy/55">
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
             New password (shown once)
           </p>
           <p className="mt-1 font-mono text-lg tracking-widest text-navy">
@@ -123,7 +124,7 @@ export default function QuoteDetailActions({
       )}
 
       {error && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+        <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
       )}
     </div>
   );

@@ -53,8 +53,10 @@ export default function SetPasswordControl({
   return (
     <div className={className}>
       <div className="flex flex-wrap items-end gap-2">
-        <label htmlFor={inputId} className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-navy/60">Set sign-in password</span>
+        <label htmlFor={inputId} className="flex flex-col gap-1.5">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
+            Set sign-in password
+          </span>
           <input
             id={inputId}
             type={show ? "text" : "password"}
@@ -62,13 +64,13 @@ export default function SetPasswordControl({
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="new-password"
             placeholder="At least 8 characters"
-            className="h-10 w-56 rounded-lg border border-beige bg-cream/50 px-3 text-sm text-navy outline-none focus:border-magenta"
+            className="h-10 w-56 rounded-2xl border border-beige-dark bg-white px-3.5 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10"
           />
         </label>
         <button
           type="button"
           onClick={() => setShow((s) => !s)}
-          className="h-10 rounded-lg border border-beige px-3 text-xs font-medium text-navy/60 transition-colors hover:border-navy/30"
+          className="h-10 rounded-full border border-beige-dark bg-white px-4 text-xs font-semibold text-navy/60 transition-all hover:border-navy/40 hover:text-navy"
         >
           {show ? "Hide" : "Show"}
         </button>
@@ -76,7 +78,7 @@ export default function SetPasswordControl({
           type="button"
           onClick={submit}
           disabled={pending || password.length === 0}
-          className="h-10 rounded-full bg-navy px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+          className="h-10 rounded-full bg-navy px-5 text-sm font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98] disabled:opacity-60"
         >
           {pending ? "Setting…" : label}
         </button>

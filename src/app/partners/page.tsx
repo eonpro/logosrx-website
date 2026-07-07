@@ -15,6 +15,7 @@ import {
   listPartnerTransactions,
 } from "@/lib/partners/queries";
 import { getViewerGoalProgress } from "@/lib/partners/goals";
+import { PageHeader, StatCard, EmptyState, tableWrapClass, theadClass, rowClass, btnGhost } from "@/components/ui/portal";
 import PartnerLanding from "./PartnerLanding";
 import PartnerNoAccess from "./PartnerNoAccess";
 import RangeFilter from "./RangeFilter";
@@ -79,21 +80,20 @@ export default async function PartnerDashboardPage({
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-navy">
-            Welcome, {ctx.kind === "rep" ? ctx.rep!.name : ctx.org.name}
-          </h1>
-          <p className="text-navy/70 text-sm mt-1">
+      <PageHeader
+        eyebrow="Partner Portal"
+        title={`Welcome, ${ctx.kind === "rep" ? ctx.rep!.name : ctx.org.name}`}
+        description={
+          <>
             Your commission rate is{" "}
             <span className="font-semibold text-navy">
               {formatBps(rateBps)}
             </span>{" "}
             of attributed revenue. Showing {resolved.label.toLowerCase()}.
-          </p>
-        </div>
-        <RangeFilter current={resolved.id} basePath="/partners" />
-      </div>
+          </>
+        }
+        actions={<RangeFilter current={resolved.id} basePath="/partners" />}
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
@@ -132,14 +132,13 @@ export default async function PartnerDashboardPage({
       </div>
 
       {goals.length > 0 && (
-        <div className="mt-6 rounded-2xl border border-beige bg-white p-6">
+        <div className="mt-6 rounded-3xl border border-beige/70 bg-white p-6 shadow-soft sm:p-7">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-navy">Goal progress</h2>
+            <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
+              Goal progress
+            </h2>
             {ctx.kind === "org" && (
-              <Link
-                href="/partners/goals"
-                className="text-xs font-medium text-magenta hover:underline"
-              >
+              <Link href="/partners/goals" className={btnGhost}>
                 Manage goals →
               </Link>
             )}
@@ -148,50 +147,49 @@ export default async function PartnerDashboardPage({
         </div>
       )}
 
-      <div className="mt-8 rounded-2xl border border-beige bg-white">
+      <div className={`mt-8 ${tableWrapClass}`}>
         <div className="flex items-center justify-between border-b border-beige px-6 py-4">
-          <h2 className="text-sm font-semibold text-navy">
+          <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
             Recent transactions
           </h2>
-          <Link
-            href="/partners/transactions"
-            className="text-xs font-medium text-magenta hover:underline"
-          >
+          <Link href="/partners/transactions" className={btnGhost}>
             View all →
           </Link>
         </div>
         {recent.length === 0 ? (
-          <p className="px-6 py-10 text-center text-sm text-navy/65">
-            No transactions in this period yet. Share your{" "}
-            <Link href="/partners/links" className="text-magenta hover:underline">
-              referral links
-            </Link>{" "}
-            to start earning.
-          </p>
+          <EmptyState
+            title="No transactions in this period yet"
+            body="Share your referral links to start earning."
+            action={
+              <Link href="/partners/links" className={btnGhost}>
+                Go to referral links →
+              </Link>
+            }
+          />
         ) : (
           <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] text-left text-sm">
-            <thead className="text-xs uppercase tracking-wide text-navy/55">
+            <thead className={theadClass}>
               <tr>
-                <th className="px-6 py-3 font-semibold">Date</th>
-                <th className="px-6 py-3 font-semibold">Clinic</th>
-                <th className="px-6 py-3 font-semibold text-right">Revenue</th>
-                <th className="px-6 py-3 font-semibold text-right">
+                <th className="px-5 py-4 font-semibold">Date</th>
+                <th className="px-5 py-4 font-semibold">Clinic</th>
+                <th className="px-5 py-4 font-semibold text-right">Revenue</th>
+                <th className="px-5 py-4 font-semibold text-right">
                   Your commission
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-beige text-navy">
+            <tbody className="text-navy">
               {recent.map((tx) => (
-                <tr key={tx.id}>
-                  <td className="px-6 py-3 whitespace-nowrap">
+                <tr key={tx.id} className={rowClass}>
+                  <td className="px-5 py-4 whitespace-nowrap">
                     {formatTransactionDate(tx.transactionDate)}
                   </td>
-                  <td className="px-6 py-3">{tx.clinicName ?? "—"}</td>
-                  <td className="px-6 py-3 text-right tabular-nums">
+                  <td className="px-5 py-4">{tx.clinicName ?? "—"}</td>
+                  <td className="px-5 py-4 text-right tabular-nums">
                     {formatCents(tx.revenueCents)}
                   </td>
-                  <td className="px-6 py-3 text-right tabular-nums font-semibold">
+                  <td className="px-5 py-4 text-right tabular-nums font-semibold">
                     {formatCents(tx.ownCommissionCents)}
                   </td>
                 </tr>
@@ -201,34 +199,6 @@ export default async function PartnerDashboardPage({
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  sub,
-  accent,
-}: {
-  label: string;
-  value: string;
-  sub?: React.ReactNode;
-  accent?: boolean;
-}) {
-  return (
-    <div
-      className={`rounded-2xl border p-6 ${
-        accent
-          ? "border-magenta/20 bg-magenta/5"
-          : "border-beige bg-white"
-      }`}
-    >
-      <p className="text-xs font-medium uppercase tracking-wide text-navy/55">
-        {label}
-      </p>
-      <p className="mt-2 text-2xl font-bold tabular-nums text-navy">{value}</p>
-      {sub && <p className="mt-1 text-xs text-navy/60">{sub}</p>}
     </div>
   );
 }

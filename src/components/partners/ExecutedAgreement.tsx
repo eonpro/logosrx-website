@@ -39,7 +39,7 @@ export default function ExecutedAgreement({
 }) {
   return (
     <article
-      className={`rounded-2xl bg-white p-6 text-navy shadow-sm sm:p-10 ${className}`}
+      className={`rounded-3xl border border-beige/70 bg-white p-6 text-navy shadow-soft sm:p-10 ${className}`}
     >
       <header className="mb-6 border-b border-beige pb-4 text-center">
         <h2 className="text-lg font-bold tracking-tight text-navy sm:text-xl">

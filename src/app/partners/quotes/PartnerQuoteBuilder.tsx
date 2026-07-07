@@ -2,6 +2,13 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import {
+  inputClass as dsInputClass,
+  btnAccent,
+  btnPrimary,
+  btnSecondary,
+  btnGhost,
+} from "@/components/ui/portal";
 import { createPartnerQuote, type CreatePartnerQuoteResult } from "./actions";
 
 export interface FloorOption {
@@ -20,8 +27,7 @@ interface LineItem {
   priceDollars: string;
 }
 
-const inputClass =
-  "w-full rounded-lg border border-beige bg-white px-3 py-2 text-sm text-navy outline-none focus:border-magenta focus:ring-1 focus:ring-magenta";
+const inputClass = dsInputClass;
 
 let counter = 0;
 function nextKey() {
@@ -121,8 +127,8 @@ export default function PartnerQuoteBuilder({
   if (created) {
     return (
       <div className="max-w-2xl">
-        <div className="rounded-2xl border border-green-200 bg-green-50 p-8">
-          <h1 className="text-xl font-bold text-navy">Quote created</h1>
+        <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-8 shadow-soft">
+          <h1 className="text-2xl font-bold tracking-tight text-navy">Quote created</h1>
           <p className="mt-2 text-sm text-navy/70">
             Share the link and password with the clinic separately. The password
             gates the link and is shown <strong>only once</strong>.
@@ -138,7 +144,7 @@ export default function PartnerQuoteBuilder({
                 <button
                   type="button"
                   onClick={() => copy(created.url, "link")}
-                  className="shrink-0 rounded-lg bg-navy px-3 py-2 text-xs font-semibold text-white hover:bg-navy/90"
+                  className={`${btnPrimary} shrink-0 !px-4 !py-2 !text-xs`}
                 >
                   {copied === "link" ? "Copied" : "Copy"}
                 </button>
@@ -157,7 +163,7 @@ export default function PartnerQuoteBuilder({
                 <button
                   type="button"
                   onClick={() => copy(created.password, "pw")}
-                  className="shrink-0 rounded-lg bg-navy px-3 py-2 text-xs font-semibold text-white hover:bg-navy/90"
+                  className={`${btnPrimary} shrink-0 !px-4 !py-2 !text-xs`}
                 >
                   {copied === "pw" ? "Copied" : "Copy"}
                 </button>
@@ -166,16 +172,10 @@ export default function PartnerQuoteBuilder({
           </div>
 
           <div className="mt-8 flex gap-3">
-            <Link
-              href={`/partners/quotes/${created.id}`}
-              className="rounded-full bg-magenta px-5 py-2.5 text-sm font-semibold text-white hover:bg-magenta/90"
-            >
+            <Link href={`/partners/quotes/${created.id}`} className={btnAccent}>
               View quote
             </Link>
-            <Link
-              href="/partners/quotes"
-              className="rounded-full border border-beige px-5 py-2.5 text-sm font-semibold text-navy hover:bg-cream"
-            >
+            <Link href="/partners/quotes" className={btnSecondary}>
               Back to quotes
             </Link>
           </div>
@@ -186,15 +186,17 @@ export default function PartnerQuoteBuilder({
 
   return (
     <form onSubmit={submit} className="max-w-2xl">
-      <div className="mb-6">
-        <Link href="/partners/quotes" className="text-sm text-navy/60 hover:text-navy">
+      <div className="mb-8">
+        <Link href="/partners/quotes" className={`${btnGhost} -ml-4`}>
           ← Quotes
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-navy">New pricing quote</h1>
+        <h1 className="mt-3 text-3xl font-bold tracking-tight text-navy sm:text-4xl">
+          New pricing quote
+        </h1>
       </div>
 
-      <section className="rounded-2xl border border-beige bg-white p-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-navy/55">
+      <section className="rounded-3xl border border-beige/70 bg-white p-6 shadow-soft sm:p-7">
+        <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
           Recipient
         </h2>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -255,8 +257,8 @@ export default function PartnerQuoteBuilder({
         </div>
       </section>
 
-      <section className="mt-5 rounded-2xl border border-beige bg-white p-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-navy/55">
+      <section className="mt-5 rounded-3xl border border-beige/70 bg-white p-6 shadow-soft sm:p-7">
+        <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
           Products
         </h2>
         <p className="mt-1 text-xs text-navy/50">
@@ -288,7 +290,7 @@ export default function PartnerQuoteBuilder({
               return (
                 <div
                   key={it.key}
-                  className="grid grid-cols-12 items-end gap-2 rounded-xl border border-beige bg-cream/40 p-3"
+                  className="grid grid-cols-12 items-end gap-2 rounded-2xl border border-beige/70 bg-cream/40 p-3"
                 >
                   <div className="col-span-12 sm:col-span-7">
                     <div className="text-sm font-medium text-navy">{it.name}</div>
@@ -314,7 +316,7 @@ export default function PartnerQuoteBuilder({
                     <button
                       type="button"
                       onClick={() => removeItem(it.key)}
-                      className="rounded-lg px-2 py-2 text-navy/40 hover:bg-red-50 hover:text-red-600"
+                      className="rounded-full px-2 py-2 text-navy/40 transition-colors hover:bg-red-50 hover:text-red-600"
                       aria-label="Remove item"
                     >
                       ✕
@@ -328,23 +330,16 @@ export default function PartnerQuoteBuilder({
       </section>
 
       {error && (
-        <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="mt-4 rounded-2xl bg-red-50 px-4 py-2 text-sm text-red-700">
           {error}
         </p>
       )}
 
       <div className="mt-6 flex justify-end gap-3">
-        <Link
-          href="/partners/quotes"
-          className="rounded-full border border-beige px-5 py-2.5 text-sm font-semibold text-navy hover:bg-cream"
-        >
+        <Link href="/partners/quotes" className={btnSecondary}>
           Cancel
         </Link>
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-full bg-magenta px-6 py-2.5 text-sm font-semibold text-white hover:bg-magenta/90 disabled:opacity-50"
-        >
+        <button type="submit" disabled={pending} className={btnAccent}>
           {pending ? "Creating…" : "Create quote & generate password"}
         </button>
       </div>

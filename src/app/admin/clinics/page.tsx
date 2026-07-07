@@ -6,6 +6,7 @@ import { count, desc, eq, sql } from "drizzle-orm";
 import { ClinicsTable } from "./ClinicsTable";
 import { requireAdmin } from "@/lib/auth/admin";
 import { ADMIN_LIST_LIMIT } from "@/lib/constants";
+import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/portal";
 
 export default async function ClinicsPage() {
   await requireAdmin();
@@ -67,27 +68,33 @@ export default async function ClinicsPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-navy">Clinics</h1>
-        <p className="text-navy/70 text-sm mt-1">
-          {total} onboarded clinic{total !== 1 ? "s" : ""}
-          {pending > 0 && (
-            <span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
-              {pending} pending verification
-            </span>
-          )}
-        </p>
-        {overflow && (
-          <p className="mt-1 text-xs text-navy/55">
-            Showing the {list.length} most recent of {total}.
-          </p>
-        )}
-      </div>
+      <PageHeader
+        eyebrow="Admin"
+        title="Clinics"
+        description={
+          <>
+            {total} onboarded clinic{total !== 1 ? "s" : ""}
+            {pending > 0 && (
+              <span className="ml-2 inline-flex align-middle">
+                <Badge tone="warning">{pending} pending verification</Badge>
+              </span>
+            )}
+            {overflow && (
+              <span className="block text-xs text-navy/45">
+                Showing the {list.length} most recent of {total}.
+              </span>
+            )}
+          </>
+        }
+      />
 
       {list.length === 0 ? (
-        <div className="rounded-2xl bg-white border border-beige p-12 text-center">
-          <p className="text-navy/65 text-sm">No onboarded clinics yet.</p>
-        </div>
+        <Card pad={false}>
+          <EmptyState
+            title="No onboarded clinics yet"
+            body="Clinics that finish onboarding will land here for verification."
+          />
+        </Card>
       ) : (
         <ClinicsTable clinics={list} />
       )}
