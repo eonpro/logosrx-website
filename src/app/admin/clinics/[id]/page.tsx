@@ -26,19 +26,44 @@ import {
 import { standardCatalogPrice } from "@/data/catalog";
 import { getCatalogProducts } from "@/lib/catalog/store";
 import ClinicManager from "./ClinicManager";
-import {
-  Badge,
-  Card,
-  PageHeader,
-  btnGhost,
-  type BadgeTone,
-} from "@/components/ui/portal";
+import { Card, PageHeader, btnGhost } from "@/components/ui/portal";
 
-const statusTones: Record<string, BadgeTone> = {
-  pending: "warning",
-  verified: "success",
-  rejected: "danger",
-};
+/**
+ * Filled, semantically-colored status pill for the page header. Verification
+ * is the single most important fact about a clinic, so it gets a loud badge
+ * (green check when verified) rather than a subtle tinted chip.
+ */
+function StatusPill({ status }: { status: string }) {
+  if (status === "verified") {
+    return (
+      <span className="inline-flex items-center gap-2 rounded-full bg-emerald-600 py-2 pl-3 pr-4 text-sm font-semibold text-white shadow-soft">
+        <svg width="15" height="15" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2.2">
+          <path d="M3.5 9.5L7 13l7.5-8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        Verified
+      </span>
+    );
+  }
+  if (status === "rejected") {
+    return (
+      <span className="inline-flex items-center gap-2 rounded-full bg-red-600 py-2 pl-3 pr-4 text-sm font-semibold text-white shadow-soft">
+        <svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2.2">
+          <path d="M5 5l8 8M13 5l-8 8" strokeLinecap="round" />
+        </svg>
+        Rejected
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-2 rounded-full bg-amber-100 py-2 pl-3 pr-4 text-sm font-semibold text-amber-800 ring-1 ring-inset ring-amber-600/25">
+      <svg width="15" height="15" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <circle cx="9" cy="9" r="6.5" />
+        <path d="M9 5.5V9l2.5 1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      Pending review
+    </span>
+  );
+}
 
 function optionLabel(options: Option[], value: string | null | undefined) {
   if (!value) return "—";
@@ -170,11 +195,7 @@ export default async function ClinicDetailPage({
             {clinic.contactEmail ? ` · ${clinic.contactEmail}` : ""}
           </>
         }
-        actions={
-          <Badge tone={statusTones[clinic.verificationStatus] ?? "neutral"}>
-            {clinic.verificationStatus}
-          </Badge>
-        }
+        actions={<StatusPill status={clinic.verificationStatus} />}
       />
 
       <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">

@@ -143,6 +143,58 @@ export default function ClinicManager({
   );
 }
 
+/**
+ * The current status renders as a filled, semantically-colored state panel
+ * (green when verified — the happy end-state deserves celebration, not a
+ * grayed-out button). The remaining statuses render below as outline actions.
+ */
+const STATUS_PANEL: Record<
+  Status,
+  { title: string; body: string; panel: string; iconBg: string }
+> = {
+  verified: {
+    title: "This clinic is verified",
+    body: "Their provider portal is live and they can order at their assigned pricing.",
+    panel: "bg-emerald-600 text-white",
+    iconBg: "bg-white/20 text-white",
+  },
+  rejected: {
+    title: "This clinic was rejected",
+    body: "They cannot access the provider portal. You can re-verify at any time.",
+    panel: "bg-red-600 text-white",
+    iconBg: "bg-white/20 text-white",
+  },
+  pending: {
+    title: "Awaiting verification",
+    body: "Review the intake details, then verify or reject this clinic.",
+    panel: "bg-amber-50 text-amber-900 ring-1 ring-inset ring-amber-600/25",
+    iconBg: "bg-amber-500/15 text-amber-700",
+  },
+};
+
+function StatusIcon({ status }: { status: Status }) {
+  if (status === "verified") {
+    return (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M3.5 9.5L7 13l7.5-8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  if (status === "rejected") {
+    return (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M5 5l8 8M13 5l-8 8" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <circle cx="9" cy="9" r="6.5" />
+      <path d="M9 5.5V9l2.5 1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function VerificationCard({
   clinicId,
   status,
@@ -158,30 +210,52 @@ function VerificationCard({
   run: (fn: () => void) => void;
   refresh: () => void;
 }) {
+  const meta = STATUS_PANEL[status];
   return (
     <Section title="Verification">
-      <div className="flex flex-wrap items-center gap-2">
-        {STATUS_OPTIONS.map((s) => (
+      <div className={`flex items-start gap-3.5 rounded-2xl p-5 ${meta.panel}`}>
+        <span
+          className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${meta.iconBg}`}
+        >
+          <StatusIcon status={status} />
+        </span>
+        <div>
+          <p className="font-display text-lg font-medium leading-snug">
+            {meta.title}
+          </p>
+          <p
+            className={`mt-1 text-[13px] leading-relaxed ${
+              status === "pending" ? "text-amber-900/70" : "text-white/75"
+            }`}
+          >
+            {meta.body}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
+          Change status
+        </span>
+        {STATUS_OPTIONS.filter((s) => s !== status).map((s) => (
           <button
             key={s}
-            disabled={pending || status === s}
+            disabled={pending}
             onClick={() =>
               run(async () => {
                 await setClinicVerification(clinicId, s);
                 refresh();
               })
             }
-            className={`rounded-full px-4 py-1.5 text-xs font-semibold capitalize transition-colors ${
-              status === s
-                ? "bg-navy/10 text-navy/65 cursor-not-allowed"
-                : s === "verified"
-                  ? "border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50"
-                  : s === "rejected"
-                    ? "border border-red-200 bg-white text-red-700 hover:bg-red-50"
-                    : "border border-beige-dark bg-white text-navy/60 hover:border-navy/40 hover:text-navy"
+            className={`rounded-full px-4 py-1.5 text-xs font-semibold capitalize transition-colors disabled:opacity-50 ${
+              s === "verified"
+                ? "border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50"
+                : s === "rejected"
+                  ? "border border-red-200 bg-white text-red-700 hover:bg-red-50"
+                  : "border border-beige-dark bg-white text-navy/60 hover:border-navy/40 hover:text-navy"
             }`}
           >
-            {s}
+            {s === "verified" ? "Verify" : s === "rejected" ? "Reject" : "Mark pending"}
           </button>
         ))}
       </div>
