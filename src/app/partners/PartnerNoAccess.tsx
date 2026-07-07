@@ -6,7 +6,7 @@ import Link from "next/link";
  */
 export default function PartnerNoAccess() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-cream p-8">
+    <div className="theme-ink flex min-h-screen items-center justify-center bg-cream p-8">
       <div className="max-w-md rounded-2xl border border-beige bg-white p-10 text-center">
         <h1 className="text-xl font-bold text-navy">No partner access</h1>
         <p className="mt-3 text-sm text-navy/70">

@@ -210,10 +210,10 @@ export default function PartnersShell({
           <div className="flex items-center gap-3">
             <UserButton appearance={{ elements: { avatarBox: "w-8 h-8" } }} />
             <div className="min-w-0">
-              <p className="truncate text-xs font-medium text-white/90">
+              <p className="truncate text-xs font-medium text-navy">
                 {kind === "rep" ? repName : orgName}
               </p>
-              <p className="text-[11px] text-white/60">
+              <p className="text-[11px] text-navy/50">
                 {kind === "rep" ? `Rep · ${orgName}` : "Organization"}
               </p>
             </div>

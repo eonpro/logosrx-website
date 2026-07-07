@@ -60,11 +60,11 @@ function Closed({ title, body }: { title: string; body: string }) {
   return (
     <AuthShell subtitle="Pricing Quote">
       <div className="text-center">
-        <h1 className="text-xl font-semibold text-white">{title}</h1>
-        <p className="mt-3 text-sm text-white/55">{body}</p>
+        <h1 className="text-xl font-semibold text-navy">{title}</h1>
+        <p className="mt-3 text-sm text-navy/60">{body}</p>
         <Link
           href="/"
-          className="mx-auto mt-6 inline-block rounded-xl bg-gradient-to-r from-magenta to-magenta-dark px-6 py-3 text-[15px] font-semibold text-white shadow-[0_0_24px_rgba(198,46,136,0.3)] transition-all hover:shadow-[0_0_32px_rgba(198,46,136,0.5)]"
+          className="mx-auto mt-6 inline-block rounded-xl bg-magenta px-6 py-3 text-[15px] font-semibold text-white transition-colors hover:bg-magenta-dark"
         >
           Go to {SITE.name}
         </Link>

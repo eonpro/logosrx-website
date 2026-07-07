@@ -131,7 +131,7 @@ export default function AdminShell({
         <Show when="signed-in">
           <div className="flex items-center gap-3">
             <UserButton appearance={{ elements: { avatarBox: "w-8 h-8" } }} />
-            <span className="text-xs text-white/80">Admin</span>
+            <span className="text-xs text-navy/60">Admin</span>
           </div>
         </Show>
       }

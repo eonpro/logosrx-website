@@ -1,12 +1,12 @@
 "use client";
 
 import { SignIn } from "@clerk/nextjs";
-import AuthShell from "@/components/auth/AuthShell";
+import AuthShellDark from "@/components/auth/AuthShellDark";
 import { clerkDarkAppearance } from "@/components/auth/clerk-dark-appearance";
 
 export default function SignInPage() {
   return (
-    <AuthShell
+    <AuthShellDark
       subtitle="Provider Portal"
       footerLink={{
         text: "Don\u2019t have an account?",
@@ -26,6 +26,6 @@ export default function SignInPage() {
         fallbackRedirectUrl="/dashboard"
         appearance={clerkDarkAppearance}
       />
-    </AuthShell>
+    </AuthShellDark>
   );
 }

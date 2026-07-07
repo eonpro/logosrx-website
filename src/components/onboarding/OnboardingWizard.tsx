@@ -1057,7 +1057,7 @@ function SavingScreen() {
       </p>
       <div className="h-2 w-full overflow-hidden rounded-full bg-beige">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-sky via-purple to-magenta transition-[width] duration-100"
+          className="h-full rounded-full bg-navy transition-[width] duration-100"
           style={{ width: `${pct}%` }}
         />
       </div>

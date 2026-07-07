@@ -1,12 +1,12 @@
 "use client";
 
 import { SignIn } from "@clerk/nextjs";
-import AuthShell from "@/components/auth/AuthShell";
+import AuthShellDark from "@/components/auth/AuthShellDark";
 import { clerkDarkAppearance } from "@/components/auth/clerk-dark-appearance";
 
 export default function PartnerSignInPage() {
   return (
-    <AuthShell
+    <AuthShellDark
       subtitle="Partner Portal"
       footerLink={{
         text: "Want to become a partner?",
@@ -26,6 +26,6 @@ export default function PartnerSignInPage() {
         fallbackRedirectUrl="/partners"
         appearance={clerkDarkAppearance}
       />
-    </AuthShell>
+    </AuthShellDark>
   );
 }

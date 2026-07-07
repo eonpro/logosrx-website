@@ -96,8 +96,8 @@ export default function ActivateClient({
     return (
       <AuthShell subtitle="Provider Portal">
         <div className="flex flex-col items-center gap-4 py-6 text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-magenta" />
-          <p className="text-sm text-white/60">Activating your account…</p>
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-navy/15 border-t-magenta" />
+          <p className="text-sm text-navy/60">Activating your account…</p>
         </div>
       </AuthShell>
     );
@@ -114,17 +114,17 @@ export default function ActivateClient({
         }}
       >
         <div className="flex flex-col gap-4 text-center">
-          <h1 className="text-xl font-semibold text-white">
+          <h1 className="text-xl font-semibold text-navy">
             This activation link has expired
           </h1>
-          <p className="text-sm text-white/60">
+          <p className="text-sm text-navy/60">
             For your security, activation links are single-use and expire after
             7 days. You can set a password using “Forgot password” on the
             sign-in page.
           </p>
           <Link
             href="/sign-in"
-            className="mx-auto mt-2 inline-block rounded-xl bg-gradient-to-r from-magenta to-magenta-dark px-6 py-3 text-[15px] font-semibold text-white shadow-[0_0_24px_rgba(198,46,136,0.3)] transition-all hover:shadow-[0_0_32px_rgba(198,46,136,0.5)]"
+            className="mx-auto mt-2 inline-block rounded-xl bg-magenta px-6 py-3 text-[15px] font-semibold text-white transition-colors hover:bg-magenta-dark"
           >
             Go to sign in
           </Link>
@@ -137,10 +137,10 @@ export default function ActivateClient({
     <AuthShell subtitle="Provider Portal">
       <div className="flex flex-col gap-5">
         <div className="text-center">
-          <h1 className="text-xl font-semibold text-white">
+          <h1 className="text-xl font-semibold text-navy">
             Set your password
           </h1>
-          <p className="mt-1 text-sm text-white/55">
+          <p className="mt-1 text-sm text-navy/60">
             Your account is approved. Choose a password to finish activating
             your Logos RX provider portal.
           </p>
@@ -169,7 +169,7 @@ export default function ActivateClient({
           {error && (
             <p
               role="alert"
-              className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm text-red-300"
+              className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700"
             >
               {error}
             </p>
@@ -178,7 +178,7 @@ export default function ActivateClient({
           <button
             type="submit"
             disabled={busy}
-            className="h-12 rounded-xl bg-gradient-to-r from-magenta to-magenta-dark text-[15px] font-semibold text-white shadow-[0_0_24px_rgba(198,46,136,0.3)] transition-all hover:shadow-[0_0_32px_rgba(198,46,136,0.5)] disabled:opacity-60"
+            className="h-12 rounded-xl bg-magenta text-[15px] font-semibold text-white transition-colors hover:bg-magenta-dark disabled:opacity-60"
           >
             {busy ? "Activating…" : "Activate account"}
           </button>
@@ -201,7 +201,7 @@ function Field({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-xs font-medium uppercase tracking-wider text-white/40">
+      <span className="text-xs font-medium uppercase tracking-wider text-navy/55">
         {label}
       </span>
       <input
@@ -210,7 +210,7 @@ function Field({
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="h-12 rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none transition-colors placeholder:text-white/20 focus:border-magenta focus:ring-1 focus:ring-magenta/30"
+        className="h-12 rounded-xl border border-beige-dark bg-white px-4 text-navy outline-none transition-colors placeholder:text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta/30"
       />
     </label>
   );

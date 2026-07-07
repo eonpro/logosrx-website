@@ -46,7 +46,7 @@ export function StatusBadge({ status }: { status: string }) {
 }
 
 const STAGE_STYLE: Record<string, { label: string; cls: string }> = {
-  lead: { label: "Lead", cls: "bg-sky-100 text-sky-700" },
+  lead: { label: "Lead", cls: "bg-navy/10 text-navy" },
   active: { label: "Active", cls: "bg-emerald-100 text-emerald-700" },
   at_risk: { label: "At risk", cls: "bg-amber-100 text-amber-700" },
   dormant: { label: "Dormant", cls: "bg-gray-100 text-gray-500" },

@@ -11,7 +11,7 @@ function actorBadgeClass(actorType: string): string {
     case "admin":
       return "bg-magenta/10 text-magenta";
     case "partner":
-      return "bg-blue-100 text-blue-700";
+      return "bg-navy/10 text-navy";
     default:
       return "bg-beige-dark/50 text-navy/65";
   }

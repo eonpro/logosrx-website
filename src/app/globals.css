@@ -1,6 +1,12 @@
 @import "tailwindcss";
 
-@theme inline {
+/*
+ * Plain `@theme` (not `inline`) so utilities compile to `var(--color-*)`
+ * references instead of literal hex values. That lets `.theme-ink` below
+ * re-map the palette for backend surfaces at runtime while the marketing
+ * site keeps these root values untouched.
+ */
+@theme {
   --color-navy: #262262;
   --color-navy-deep: #1a1750;
   --color-navy-light: #35307a;
@@ -14,6 +20,27 @@
   --color-beige: #E8E6E1;
   --color-beige-dark: #D9D6CF;
   --color-cream: #F5F4F1;
+}
+
+/*
+ * Backend "ink" theme — applied at the root of every internal surface
+ * (admin, partner portal, clinic dashboard, onboarding, auth). Re-maps the
+ * brand palette to a modern monochrome: near-black text, neutral surfaces,
+ * magenta kept as the single accent. Blue (navy/sky/purple) is neutralized
+ * per design direction. Marketing pages never carry this class.
+ */
+.theme-ink {
+  color: var(--color-navy);
+  --color-navy: #111113;
+  --color-navy-deep: #09090b;
+  --color-navy-light: #2b2b30;
+  --color-sky: #111113;
+  --color-sky-light: #2b2b30;
+  --color-purple: #111113;
+  --color-purple-deep: #2b2b30;
+  --color-beige: #e7e7e5;
+  --color-beige-dark: #d4d4d2;
+  --color-cream: #fafafa;
 }
 
 html {

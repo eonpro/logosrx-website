@@ -14,7 +14,7 @@ function statusLabel(q: PricingQuote): { text: string; className: string } {
   if (isQuoteExpired(q))
     return { text: "Expired", className: "bg-amber-100 text-amber-700" };
   if (q.status === "accepted")
-    return { text: "Accepted", className: "bg-blue-100 text-blue-700" };
+    return { text: "Accepted", className: "bg-navy/10 text-navy" };
   return { text: "Active", className: "bg-magenta/10 text-magenta" };
 }
 

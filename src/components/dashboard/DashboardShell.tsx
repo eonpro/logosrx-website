@@ -30,7 +30,7 @@ export default function DashboardShell({
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="theme-ink min-h-screen bg-cream">
       <header className="sticky top-0 z-20 border-b border-beige bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-6">

@@ -16,10 +16,10 @@ export default function OnboardingShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div className="theme-ink flex min-h-screen flex-col bg-white">
       <div className="fixed inset-x-0 top-0 z-20 h-1 bg-beige/60">
         <div
-          className="h-full bg-gradient-to-r from-sky via-purple to-magenta transition-[width] duration-500 ease-out"
+          className="h-full bg-navy transition-[width] duration-500 ease-out"
           style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
           role="progressbar"
           aria-valuenow={Math.round(progress)}

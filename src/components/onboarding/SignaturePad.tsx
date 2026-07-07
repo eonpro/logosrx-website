@@ -40,7 +40,7 @@ export default function SignaturePad({
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.lineWidth = 2;
-    ctx.strokeStyle = "#262262";
+    ctx.strokeStyle = "#111113";
 
     if (value) {
       const img = new Image();

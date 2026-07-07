@@ -78,28 +78,24 @@ export default function PartnerMsaGate({
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#0c0a1d] text-white">
-      <div className="pointer-events-none absolute inset-0" aria-hidden>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,#1a1750_0%,#0c0a1d_70%)]" />
-      </div>
-
+    <div className="theme-ink relative min-h-screen bg-cream text-navy">
       <div className="relative z-10 mx-auto flex max-w-3xl flex-col px-6 py-10 sm:py-14">
         <div className="flex flex-col items-center text-center">
           <Image
-            src="/images/logo-white.svg"
+            src="/images/logo.svg"
             alt="Logos RX"
             width={150}
             height={48}
             className="h-9 w-auto"
             priority
           />
-          <p className="mt-4 text-[11px] font-medium uppercase tracking-[0.25em] text-magenta-light">
+          <p className="mt-4 text-[11px] font-medium uppercase tracking-[0.25em] text-magenta">
             Partner Program
           </p>
           <h1 className="mt-3 text-2xl font-bold sm:text-3xl">
             Sign your {MSA_TITLE}
           </h1>
-          <p className="mt-2 max-w-xl text-sm text-white/55">
+          <p className="mt-2 max-w-xl text-sm text-navy/60">
             {isOrg
               ? "Before you can access the partner portal, please review and execute the Marketing Services Agreement below. A signed copy is kept on file for you and the pharmacy."
               : `Before you can access the partner portal, please review and acknowledge ${orgName}'s Marketing Services Agreement with Logos RX. A signed copy is kept on file for you and the pharmacy.`}
@@ -107,7 +103,7 @@ export default function PartnerMsaGate({
         </div>
 
         {/* The live document */}
-        <div className="mt-8 max-h-[55vh] overflow-y-auto rounded-2xl border border-white/10 bg-white/5 p-2 sm:p-3">
+        <div className="mt-8 max-h-[55vh] overflow-y-auto rounded-2xl border border-beige bg-white p-2 sm:p-3">
           <AgreementDocument
             values={{
               effectiveDate: today,
@@ -119,7 +115,7 @@ export default function PartnerMsaGate({
         </div>
 
         {/* Signing panel */}
-        <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+        <div className="mt-6 rounded-2xl border border-beige bg-white p-6">
           <div className="grid gap-4 sm:grid-cols-2">
             {isOrg && (
               <>
@@ -173,8 +169,8 @@ export default function PartnerMsaGate({
           </div>
 
           <div className="mt-4">
-            <span className="text-xs font-medium uppercase tracking-wider text-white/40">
-              Signature <span className="text-magenta-light">*</span>
+            <span className="text-xs font-medium uppercase tracking-wider text-navy/55">
+              Signature <span className="text-magenta">*</span>
             </span>
             <div className="mt-1.5">
               <SignaturePad
@@ -185,12 +181,12 @@ export default function PartnerMsaGate({
             </div>
           </div>
 
-          <label className="mt-4 flex items-start gap-3 text-sm text-white/70">
+          <label className="mt-4 flex items-start gap-3 text-sm text-navy/70">
             <input
               type="checkbox"
               checked={agreed}
               onChange={(e) => setAgreed(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-white/20 bg-white/5 accent-magenta"
+              className="mt-0.5 h-4 w-4 rounded border-beige-dark accent-magenta"
             />
             <span>
               I have read, understand, and agree to be bound by the {MSA_TITLE},
@@ -201,7 +197,7 @@ export default function PartnerMsaGate({
           {error && (
             <p
               role="alert"
-              className="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm text-red-300"
+              className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700"
             >
               {error}
             </p>
@@ -211,11 +207,11 @@ export default function PartnerMsaGate({
             type="button"
             disabled={busy}
             onClick={() => void submit()}
-            className="mt-5 h-12 w-full rounded-xl bg-linear-to-r from-magenta to-magenta-dark text-[15px] font-semibold text-white shadow-[0_0_24px_rgba(198,46,136,0.3)] transition-all hover:shadow-[0_0_32px_rgba(198,46,136,0.5)] disabled:opacity-60"
+            className="mt-5 h-12 w-full rounded-xl bg-magenta text-[15px] font-semibold text-white transition-colors hover:bg-magenta-dark disabled:opacity-60"
           >
             {busy ? "Recording signature…" : "Sign & continue"}
           </button>
-          <p className="mt-3 text-center text-[11px] text-white/30">
+          <p className="mt-3 text-center text-[11px] text-navy/45">
             By signing, you consent to the use of an electronic signature. Your
             name, title, signature, date, and IP address are recorded.
           </p>
@@ -226,7 +222,7 @@ export default function PartnerMsaGate({
 }
 
 const inputClass =
-  "h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none transition-colors placeholder:text-white/20 focus:border-magenta focus:ring-1 focus:ring-magenta/30";
+  "h-12 w-full rounded-xl border border-beige-dark bg-white px-4 text-navy outline-none transition-colors placeholder:text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta/30";
 
 function Field({
   label,
@@ -241,9 +237,9 @@ function Field({
 }) {
   return (
     <label className={`flex flex-col gap-1.5 ${className}`}>
-      <span className="text-xs font-medium uppercase tracking-wider text-white/40">
+      <span className="text-xs font-medium uppercase tracking-wider text-navy/55">
         {label}
-        {required && <span className="text-magenta-light"> *</span>}
+        {required && <span className="text-magenta"> *</span>}
       </span>
       {children}
     </label>

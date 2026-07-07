@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
 /**
  * Public landing page for the Logos RX marketing partner program, shown at
@@ -21,41 +20,9 @@ import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
  * referral commissions or a percentage of sales. Keep the disclaimer below in
  * sync with the executed MSA, and route copy changes past legal.
  *
- * Styling intentionally mirrors `AuthShell` (deep-navy gradient, animated
- * magenta orbs) so the funnel — landing → apply/sign-in — feels continuous.
+ * Styling intentionally mirrors `AuthShell` (minimal light "ink" theme) so
+ * the funnel — landing → apply/sign-in — feels continuous.
  */
-
-function GradientOrb({
-  className,
-  delay = 0,
-}: {
-  className: string;
-  delay?: number;
-}) {
-  const prefersReducedMotion = usePrefersReducedMotion();
-
-  return (
-    <motion.div
-      aria-hidden
-      className={`pointer-events-none absolute transform-gpu rounded-full opacity-30 blur-[120px] will-change-transform ${className}`}
-      animate={
-        prefersReducedMotion
-          ? undefined
-          : {
-              scale: [1, 1.2, 1],
-              x: [0, 30, -20, 0],
-              y: [0, -25, 15, 0],
-            }
-      }
-      transition={{
-        duration: 20,
-        repeat: Infinity,
-        ease: "easeInOut",
-        delay,
-      }}
-    />
-  );
-}
 
 const VALUE_PROPS = [
   {
@@ -118,39 +85,13 @@ const STEPS = [
 
 export default function PartnerLanding() {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#0c0a1d] text-white">
-      {/* Ambient background — matches the auth pages */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,#1a1750_0%,#0c0a1d_70%)]" />
-        <GradientOrb
-          className="h-[600px] w-[600px] bg-magenta/60 -top-48 -right-48"
-          delay={0}
-        />
-        <GradientOrb
-          className="h-[500px] w-[500px] bg-purple-deep/60 top-1/3 -left-40"
-          delay={4}
-        />
-        <GradientOrb
-          className="h-[400px] w-[400px] bg-sky/40 bottom-0 right-1/4"
-          delay={8}
-        />
-      </div>
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.03]"
-        aria-hidden
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)",
-          backgroundSize: "64px 64px",
-        }}
-      />
-
+    <div className="theme-ink relative min-h-screen bg-cream text-navy">
       <div className="relative z-10 mx-auto flex max-w-6xl flex-col px-6 py-10 sm:py-14">
         {/* Top bar */}
         <header className="flex items-center justify-between">
           <Link href="/" aria-label="Logos RX home">
             <Image
-              src="/images/logo-white.svg"
+              src="/images/logo.svg"
               alt="Logos RX"
               width={150}
               height={48}
@@ -160,7 +101,7 @@ export default function PartnerLanding() {
           </Link>
           <Link
             href="/partners/sign-in"
-            className="text-sm font-medium text-white/70 transition-colors hover:text-white"
+            className="text-sm font-medium text-navy/60 transition-colors hover:text-navy"
           >
             Sign in
           </Link>
@@ -172,7 +113,7 @@ export default function PartnerLanding() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-[11px] font-medium uppercase tracking-[0.25em] text-magenta-light"
+            className="text-[11px] font-medium uppercase tracking-[0.25em] text-magenta"
           >
             Marketing Partner Program
           </motion.p>
@@ -183,15 +124,13 @@ export default function PartnerLanding() {
             className="mt-5 max-w-3xl text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl"
           >
             Work with{" "}
-            <span className="bg-linear-to-r from-magenta-light to-magenta bg-clip-text text-transparent">
-              Logos RX
-            </span>
+            <span className="text-magenta">Logos RX</span>
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.12 }}
-            className="mt-6 max-w-xl text-lg text-white/60"
+            className="mt-6 max-w-xl text-lg text-navy/60"
           >
             Partner with a multi-state licensed 503A compounding pharmacy to
             provide marketing and brand-support services.
@@ -204,7 +143,7 @@ export default function PartnerLanding() {
           >
             <Link
               href="/partners/apply"
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-magenta to-magenta-dark px-8 text-[15px] font-semibold text-white shadow-[0_0_24px_rgba(198,46,136,0.3)] transition-all hover:shadow-[0_0_32px_rgba(198,46,136,0.5)]"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-magenta px-8 text-[15px] font-semibold text-white transition-colors hover:bg-magenta-dark"
             >
               Apply to become a partner
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -219,7 +158,7 @@ export default function PartnerLanding() {
             </Link>
             <Link
               href="/partners/sign-in"
-              className="inline-flex h-12 items-center justify-center rounded-xl border border-white/15 bg-white/5 px-8 text-[15px] font-semibold text-white transition-colors hover:border-white/30 hover:bg-white/10"
+              className="inline-flex h-12 items-center justify-center rounded-xl border border-beige-dark bg-white px-8 text-[15px] font-semibold text-navy transition-colors hover:border-navy/30 hover:bg-cream"
             >
               Partner sign in
             </Link>
@@ -230,18 +169,18 @@ export default function PartnerLanding() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-white/35"
+            className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-navy/50"
           >
             <span className="text-sm">
-              <span className="font-semibold text-white/70">5,000+</span>{" "}
+              <span className="font-semibold text-navy">5,000+</span>{" "}
               providers
             </span>
-            <span className="h-1 w-1 rounded-full bg-white/20" />
+            <span className="h-1 w-1 rounded-full bg-navy/20" />
             <span className="text-sm">
-              <span className="font-semibold text-white/70">Multi-state</span>{" "}
+              <span className="font-semibold text-navy">Multi-state</span>{" "}
               licensed
             </span>
-            <span className="h-1 w-1 rounded-full bg-white/20" />
+            <span className="h-1 w-1 rounded-full bg-navy/20" />
             <span className="text-sm">LegitScript &amp; NABP accredited</span>
           </motion.div>
         </section>
@@ -255,9 +194,9 @@ export default function PartnerLanding() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.5, delay: i * 0.08 }}
-              className="rounded-2xl border border-white/10 bg-white/3 p-6"
+              className="rounded-2xl border border-beige bg-white p-6"
             >
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-magenta/15 text-magenta-light">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-magenta/10 text-magenta">
                 <svg
                   width="22"
                   height="22"
@@ -269,10 +208,10 @@ export default function PartnerLanding() {
                   {p.icon}
                 </svg>
               </div>
-              <h3 className="mt-4 text-lg font-semibold text-white">
+              <h3 className="mt-4 text-lg font-semibold text-navy">
                 {p.title}
               </h3>
-              <p className="mt-2 text-sm leading-relaxed text-white/55">
+              <p className="mt-2 text-sm leading-relaxed text-navy/60">
                 {p.body}
               </p>
             </motion.div>
@@ -285,7 +224,7 @@ export default function PartnerLanding() {
             <h2 className="text-2xl font-bold sm:text-3xl">
               How it works
             </h2>
-            <p className="mx-auto mt-3 max-w-md text-sm text-white/50">
+            <p className="mx-auto mt-3 max-w-md text-sm text-navy/60">
               From application to your first engagement in three simple steps.
             </p>
           </div>
@@ -297,15 +236,15 @@ export default function PartnerLanding() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="relative rounded-2xl border border-white/10 bg-white/3 p-7"
+                className="relative rounded-2xl border border-beige bg-white p-7"
               >
-                <span className="text-sm font-semibold tracking-widest text-magenta-light">
+                <span className="text-sm font-semibold tracking-widest text-magenta">
                   {s.n}
                 </span>
-                <h3 className="mt-3 text-lg font-semibold text-white">
+                <h3 className="mt-3 text-lg font-semibold text-navy">
                   {s.title}
                 </h3>
-                <p className="mt-2 text-sm leading-relaxed text-white/55">
+                <p className="mt-2 text-sm leading-relaxed text-navy/60">
                   {s.body}
                 </p>
               </motion.div>
@@ -315,18 +254,18 @@ export default function PartnerLanding() {
 
         {/* Final CTA */}
         <section className="mt-24">
-          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-linear-to-br from-navy-light/40 to-magenta-dark/30 px-8 py-14 text-center">
+          <div className="relative overflow-hidden rounded-3xl bg-navy px-8 py-14 text-center text-white">
             <h2 className="text-2xl font-bold sm:text-3xl">
               Ready to partner with Logos RX?
             </h2>
-            <p className="mx-auto mt-3 max-w-lg text-sm text-white/60">
+            <p className="mx-auto mt-3 max-w-lg text-sm text-white/70">
               Join our marketing partner program and provide brand-support
               services for the pharmacy.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link
                 href="/partners/apply"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-linear-to-r from-magenta to-magenta-dark px-8 text-[15px] font-semibold text-white shadow-[0_0_24px_rgba(198,46,136,0.3)] transition-all hover:shadow-[0_0_32px_rgba(198,46,136,0.5)]"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-white px-8 text-[15px] font-semibold text-navy transition-colors hover:bg-white/90"
               >
                 Apply now
               </Link>
@@ -341,8 +280,8 @@ export default function PartnerLanding() {
         </section>
 
         {/* Footer */}
-        <footer className="mt-16 flex flex-col items-center gap-4 border-t border-white/10 pt-8 text-center">
-          <div className="flex items-center gap-6 text-white/25">
+        <footer className="mt-16 flex flex-col items-center gap-4 border-t border-beige pt-8 text-center">
+          <div className="flex items-center gap-6 text-navy/40">
             <span className="flex items-center gap-1.5 text-[11px] tracking-wide">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <rect x="3" y="6" width="8" height="6" rx="1.5" strokeLinecap="round" />
@@ -365,11 +304,11 @@ export default function PartnerLanding() {
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/" className="text-[11px] text-white/20 transition-colors hover:text-white/75">
+            <Link href="/" className="text-[11px] text-navy/40 transition-colors hover:text-navy">
               logosrx.com
             </Link>
-            <span className="text-[11px] text-white/10">&bull;</span>
-            <span className="text-[11px] text-white/20">
+            <span className="text-[11px] text-navy/20">&bull;</span>
+            <span className="text-[11px] text-navy/40">
               &copy; {new Date().getFullYear()} Logos RX
             </span>
           </div>

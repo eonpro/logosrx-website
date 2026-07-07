@@ -1,7 +1,7 @@
 import type { TimelineEvent, TimelineKind } from "@/lib/partners/crm";
 
 const DOT: Record<TimelineKind, string> = {
-  note: "bg-sky-500",
+  note: "bg-navy/40",
   stage_change: "bg-magenta",
   tag_change: "bg-amber-500",
   transaction: "bg-emerald-500",

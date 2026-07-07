@@ -1,12 +1,12 @@
 "use client";
 
 import { SignUp } from "@clerk/nextjs";
-import AuthShell from "@/components/auth/AuthShell";
+import AuthShellDark from "@/components/auth/AuthShellDark";
 import { clerkDarkAppearance } from "@/components/auth/clerk-dark-appearance";
 
 export default function SignUpPage() {
   return (
-    <AuthShell
+    <AuthShellDark
       subtitle="Provider Portal"
       footerLink={{
         text: "Already have an account?",
@@ -26,6 +26,6 @@ export default function SignUpPage() {
         fallbackRedirectUrl="/onboarding"
         appearance={clerkDarkAppearance}
       />
-    </AuthShell>
+    </AuthShellDark>
   );
 }

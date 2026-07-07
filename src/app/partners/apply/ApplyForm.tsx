@@ -6,7 +6,7 @@ import AuthShell from "@/components/auth/AuthShell";
 import { submitPartnerApplication } from "./actions";
 
 const inputClass =
-  "h-12 rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none transition-colors placeholder:text-white/20 focus:border-magenta focus:ring-1 focus:ring-magenta/30";
+  "h-12 rounded-xl border border-beige-dark bg-white px-4 text-navy outline-none transition-colors placeholder:text-navy/35 focus:border-magenta focus:ring-1 focus:ring-magenta/30";
 
 export default function ApplyForm() {
   const [orgName, setOrgName] = useState("");
@@ -47,17 +47,17 @@ export default function ApplyForm() {
     return (
       <AuthShell subtitle="Partner Program">
         <div className="flex flex-col gap-4 text-center">
-          <h1 className="text-xl font-semibold text-white">
+          <h1 className="text-xl font-semibold text-navy">
             Application received
           </h1>
-          <p className="text-sm text-white/60">
+          <p className="text-sm text-navy/60">
             Thanks — our team will review your application and reach out at{" "}
-            <span className="text-white/90">{email}</span>. Once approved,
+            <span className="font-medium text-navy">{email}</span>. Once approved,
             you&rsquo;ll get an activation link to set up your partner portal.
           </p>
           <Link
             href="/"
-            className="mx-auto mt-2 inline-block rounded-xl bg-gradient-to-r from-magenta to-magenta-dark px-6 py-3 text-[15px] font-semibold text-white shadow-[0_0_24px_rgba(198,46,136,0.3)] transition-all hover:shadow-[0_0_32px_rgba(198,46,136,0.5)]"
+            className="mx-auto mt-2 inline-block rounded-xl bg-magenta px-6 py-3 text-[15px] font-semibold text-white transition-colors hover:bg-magenta-dark"
           >
             Back to logosrx.com
           </Link>
@@ -77,10 +77,10 @@ export default function ApplyForm() {
     >
       <div className="flex flex-col gap-5">
         <div className="text-center">
-          <h1 className="text-xl font-semibold text-white">
+          <h1 className="text-xl font-semibold text-navy">
             Become a Logos RX marketing partner
           </h1>
-          <p className="mt-1 text-sm text-white/55">
+          <p className="mt-1 text-sm text-navy/60">
             Provide marketing and brand-support services for Logos RX.
           </p>
         </div>
@@ -156,7 +156,7 @@ export default function ApplyForm() {
           {error && (
             <p
               role="alert"
-              className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm text-red-300"
+              className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700"
             >
               {error}
             </p>
@@ -165,7 +165,7 @@ export default function ApplyForm() {
           <button
             type="submit"
             disabled={busy}
-            className="h-12 rounded-xl bg-gradient-to-r from-magenta to-magenta-dark text-[15px] font-semibold text-white shadow-[0_0_24px_rgba(198,46,136,0.3)] transition-all hover:shadow-[0_0_32px_rgba(198,46,136,0.5)] disabled:opacity-60"
+            className="h-12 rounded-xl bg-magenta text-[15px] font-semibold text-white transition-colors hover:bg-magenta-dark disabled:opacity-60"
           >
             {busy ? "Submitting…" : "Submit application"}
           </button>
@@ -186,9 +186,9 @@ function Field({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-xs font-medium uppercase tracking-wider text-white/40">
+      <span className="text-xs font-medium uppercase tracking-wider text-navy/55">
         {label}
-        {required && <span className="text-magenta-light"> *</span>}
+        {required && <span className="text-magenta"> *</span>}
       </span>
       {children}
     </label>
