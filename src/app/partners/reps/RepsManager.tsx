@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/portal";
 import {
   inviteRep,
+  removeRep,
   resendRepInvite,
   setRepPassword,
   setRepRate,
@@ -106,6 +107,20 @@ export default function RepsManager({
         rep.status === "suspended" ? "active" : "suspended",
       );
       if (!res.ok) setError(res.error ?? "Could not update the rep.");
+    });
+  }
+
+  function remove(rep: RepRow) {
+    const ok = window.confirm(
+      `Remove ${rep.name}? This deletes their login so the email and phone number can be reused. Past commissions and clinics are kept.`,
+    );
+    if (!ok) return;
+    setError("");
+    setNotice("");
+    startTransition(async () => {
+      const res = await removeRep(rep.id);
+      if (!res.ok) setError(res.error ?? "Could not remove the rep.");
+      else setNotice(`${rep.name} was removed.`);
     });
   }
 
@@ -309,6 +324,14 @@ export default function RepsManager({
                       className={btnGhost}
                     >
                       {rep.status === "suspended" ? "Reactivate" : "Suspend"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={() => remove(rep)}
+                      className={`${btnGhost} hover:!text-red-600`}
+                    >
+                      Remove
                     </button>
                   </td>
                 </tr>

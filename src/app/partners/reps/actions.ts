@@ -4,9 +4,15 @@ import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { clerkClient } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { partnerReps } from "@/lib/db/schema";
+import {
+  clinics,
+  partnerOrgMembers,
+  partnerOrgs,
+  partnerReps,
+} from "@/lib/db/schema";
 import { log } from "@/lib/observability/logger";
 import { requirePartner } from "@/lib/auth/partner";
+import { recordPartnerAudit } from "@/lib/audit/log";
 import {
   percentToBps,
   validateRepRateBps,
@@ -228,6 +234,80 @@ export async function resendRepInvite(
     };
   }
 
+  return { ok: true };
+}
+
+/**
+ * Org-owner action: permanently removes a rep and deletes their Clerk login,
+ * freeing the email and phone number for a fresh invite. Attribution history
+ * survives: commission entries, transactions, and clinic links keep their rows
+ * (the rep reference is nulled by the FKs); referral links and goals are
+ * removed with the rep.
+ */
+export async function removeRep(repId: number): Promise<RepActionResult> {
+  const ctx = await requirePartner({ orgOnly: true, minRole: "admin" });
+
+  const [deleted] = await db
+    .delete(partnerReps)
+    .where(and(eq(partnerReps.id, repId), eq(partnerReps.orgId, ctx.org.id)))
+    .returning({
+      clerkUserId: partnerReps.clerkUserId,
+      email: partnerReps.email,
+    });
+  if (!deleted) return { ok: false, error: "Rep not found." };
+
+  // Delete the Clerk login so the email/phone can be reused — unless the same
+  // account also backs an org owner, teammate, or clinic login (Clerk users
+  // are reused across roles by email), in which case it must survive.
+  if (deleted.clerkUserId) {
+    const clerkUserId = deleted.clerkUserId;
+    const [ownerRef, memberRef, clinicRef] = await Promise.all([
+      db
+        .select({ id: partnerOrgs.id })
+        .from(partnerOrgs)
+        .where(eq(partnerOrgs.clerkUserId, clerkUserId))
+        .limit(1),
+      db
+        .select({ id: partnerOrgMembers.id })
+        .from(partnerOrgMembers)
+        .where(eq(partnerOrgMembers.clerkUserId, clerkUserId))
+        .limit(1),
+      db
+        .select({ id: clinics.id })
+        .from(clinics)
+        .where(eq(clinics.clerkUserId, clerkUserId))
+        .limit(1),
+    ]);
+    const sharedLogin =
+      ownerRef.length > 0 || memberRef.length > 0 || clinicRef.length > 0;
+    if (sharedLogin) {
+      log.info("partner rep removed; Clerk user kept (shared with another role)", {
+        repId,
+        clerkUserId,
+      });
+    } else {
+      runAfterResponse(
+        (async () => {
+          try {
+            const client = await clerkClient();
+            await client.users.deleteUser(clerkUserId);
+          } catch (err) {
+            log.warn("partner rep Clerk delete failed (non-critical)", {
+              error: err instanceof Error ? err.message : "unknown",
+            });
+          }
+        })(),
+      );
+    }
+  }
+
+  await recordPartnerAudit(
+    ctx,
+    "partner.rep_remove",
+    { type: "partner_org", id: ctx.org.id },
+    { repId, email: deleted.email },
+  );
+  revalidatePath("/partners/reps");
   return { ok: true };
 }
 
