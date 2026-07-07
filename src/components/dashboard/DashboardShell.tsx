@@ -55,7 +55,7 @@ export default function DashboardShell({
                     aria-current={active ? "page" : undefined}
                     className={`rounded-full px-5 py-1.5 text-sm font-semibold transition-all ${
                       active
-                        ? "bg-navy text-white shadow-soft"
+                        ? "bg-plum text-white shadow-soft"
                         : "text-navy/55 hover:text-navy"
                     }`}
                   >
@@ -92,7 +92,7 @@ export default function DashboardShell({
                 href={t.href}
                 aria-current={active ? "page" : undefined}
                 className={`flex-1 rounded-full px-4 py-1.5 text-center text-sm font-semibold transition-all ${
-                  active ? "bg-navy text-white" : "text-navy/55"
+                  active ? "bg-plum text-white" : "text-navy/55"
                 }`}
               >
                 {t.label}

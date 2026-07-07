@@ -100,7 +100,7 @@ export default function OrgFloorManager({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search catalog to add a floor…"
-          className="h-10 w-72 rounded-2xl border border-beige-dark bg-white px-3.5 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10"
+          className="h-10 w-72 rounded-2xl border border-beige-dark bg-white px-3.5 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-plum focus:ring-2 focus:ring-plum/10"
         />
       </div>
 
@@ -157,7 +157,7 @@ export default function OrgFloorManager({
                         }
                         onBlur={(e) => save(p, e.target.value)}
                         placeholder="0.00"
-                        className="h-9 w-28 rounded-2xl border border-beige-dark bg-white px-3 text-right text-sm tabular-nums text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10"
+                        className="h-9 w-28 rounded-2xl border border-beige-dark bg-white px-3 text-right text-sm tabular-nums text-navy outline-none transition-all placeholder:text-navy/35 focus:border-plum focus:ring-2 focus:ring-plum/10"
                       />
                     </td>
                     <td className="py-2 text-right">

@@ -87,7 +87,7 @@ function TierField({
           onChange={(e) =>
             onChange({ ...value, state: e.target.value as TierState })
           }
-          className="appearance-none rounded-2xl border border-beige-dark bg-white px-2.5 py-2 text-xs text-navy outline-none transition-all focus:border-navy focus:ring-2 focus:ring-navy/10 disabled:opacity-60"
+          className="appearance-none rounded-2xl border border-beige-dark bg-white px-2.5 py-2 text-xs text-navy outline-none transition-all focus:border-plum focus:ring-2 focus:ring-plum/10 disabled:opacity-60"
         >
           <option value="price">$</option>
           <option value="na">N/A</option>
@@ -108,7 +108,7 @@ function TierField({
                 ? "Hidden (—)"
                 : "0.00"
           }
-          className="w-28 rounded-2xl border border-beige-dark bg-white px-3 py-2 text-sm text-navy outline-none transition-all focus:border-navy focus:ring-2 focus:ring-navy/10 disabled:bg-cream/60 disabled:text-navy/40"
+          className="w-28 rounded-2xl border border-beige-dark bg-white px-3 py-2 text-sm text-navy outline-none transition-all focus:border-plum focus:ring-2 focus:ring-plum/10 disabled:bg-cream/60 disabled:text-navy/40"
         />
       </div>
     </div>
@@ -137,7 +137,7 @@ function ChipMulti({
             onClick={() => onToggle(o)}
             className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
               on
-                ? "bg-navy text-white"
+                ? "bg-plum text-white"
                 : "bg-cream text-navy/70 hover:bg-beige"
             }`}
           >
@@ -417,7 +417,7 @@ function ProductRow({
             type="button"
             onClick={save}
             disabled={!dirty || pending}
-            className="rounded-full bg-navy px-4 py-1.5 text-xs font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98] disabled:opacity-50"
+            className="rounded-full bg-plum px-4 py-1.5 text-xs font-semibold text-white transition-all hover:bg-plum-deep active:scale-[0.98] disabled:opacity-50"
           >
             Save changes
           </button>
@@ -607,7 +607,7 @@ export default function CatalogManager({
               type="button"
               onClick={submitNew}
               disabled={pending || !newId.trim() || !newForm.name.trim()}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-navy px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98] disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-plum px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-plum-deep active:scale-[0.98] disabled:opacity-50"
             >
               Create product
             </button>

@@ -967,7 +967,7 @@ function ProviderCard({
                 }}
                 className={`flex-1 rounded-full border py-2.5 text-sm font-semibold transition-colors ${
                   hasAdditional === v
-                    ? "border-navy bg-navy/[0.04] text-navy"
+                    ? "border-plum bg-navy/[0.04] text-navy"
                     : "border-beige-dark bg-white text-navy/60 hover:border-navy/30"
                 }`}
               >
@@ -1063,7 +1063,7 @@ function SavingScreen() {
       </p>
       <div className="h-2 w-full overflow-hidden rounded-full bg-beige">
         <div
-          className="h-full rounded-full bg-navy transition-[width] duration-100"
+          className="h-full rounded-full bg-plum transition-[width] duration-100"
           style={{ width: `${pct}%` }}
         />
       </div>

@@ -95,7 +95,7 @@ export default function LinksManager({
               onChange={(e) => setLabel(e.target.value)}
               placeholder="Spring conference"
               maxLength={120}
-              className="h-10 w-64 rounded-full border border-beige-dark bg-white px-4 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10"
+              className="h-10 w-64 rounded-full border border-beige-dark bg-white px-4 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-plum focus:ring-2 focus:ring-plum/10"
             />
           </label>
 
@@ -107,7 +107,7 @@ export default function LinksManager({
               <select
                 value={repId}
                 onChange={(e) => setRepId(e.target.value)}
-                className="h-10 w-56 rounded-full border border-beige-dark bg-white px-4 text-sm text-navy outline-none transition-all focus:border-navy focus:ring-2 focus:ring-navy/10"
+                className="h-10 w-56 rounded-full border border-beige-dark bg-white px-4 text-sm text-navy outline-none transition-all focus:border-plum focus:ring-2 focus:ring-plum/10"
               >
                 <option value="">Organization-level</option>
                 {reps.map((r) => (

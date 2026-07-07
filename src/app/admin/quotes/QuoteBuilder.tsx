@@ -215,7 +215,7 @@ export default function QuoteBuilder({
                 <button
                   type="button"
                   onClick={() => copy(created.url, "link")}
-                  className="shrink-0 rounded-full bg-navy px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98]"
+                  className="shrink-0 rounded-full bg-plum px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-plum-deep active:scale-[0.98]"
                 >
                   {copied === "link" ? "Copied" : "Copy"}
                 </button>
@@ -235,7 +235,7 @@ export default function QuoteBuilder({
                 <button
                   type="button"
                   onClick={() => copy(created.password, "pw")}
-                  className="shrink-0 rounded-full bg-navy px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98]"
+                  className="shrink-0 rounded-full bg-plum px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-plum-deep active:scale-[0.98]"
                 >
                   {copied === "pw" ? "Copied" : "Copy"}
                 </button>

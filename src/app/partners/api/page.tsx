@@ -109,7 +109,7 @@ export default async function PartnerApiPage() {
           </code>
           . Base URL:
         </p>
-        <pre className="mt-3 overflow-x-auto rounded-2xl bg-navy px-4 py-3 text-xs text-white">
+        <pre className="mt-3 overflow-x-auto rounded-2xl bg-plum px-4 py-3 text-xs text-white">
 {`${apiBase}/summary?range=month
 ${apiBase}/clinics
 ${apiBase}/transactions?range=year

@@ -72,13 +72,13 @@ export default function RefundButton({
           onChange={(e) => setAmount(e.target.value)}
           placeholder={(remainingCents / 100).toFixed(2)}
           aria-label="Partial refund amount in dollars"
-          className="h-8 w-24 rounded-full border border-beige-dark bg-white px-3 text-right text-xs tabular-nums text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10"
+          className="h-8 w-24 rounded-full border border-beige-dark bg-white px-3 text-right text-xs tabular-nums text-navy outline-none transition-all placeholder:text-navy/35 focus:border-plum focus:ring-2 focus:ring-plum/10"
         />
         <button
           type="button"
           disabled={pending}
           onClick={() => submit(false)}
-          className="rounded-full bg-navy px-2.5 py-1 text-[11px] font-semibold text-white transition-all hover:bg-navy-light disabled:opacity-60"
+          className="rounded-full bg-plum px-2.5 py-1 text-[11px] font-semibold text-white transition-all hover:bg-plum-deep disabled:opacity-60"
         >
           Refund
         </button>

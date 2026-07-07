@@ -102,7 +102,7 @@ export default async function PartnerDashboardPage({
 
       <div className="grid gap-5 lg:grid-cols-3">
         {/* Hero: what you earned this period */}
-        <div className="rounded-3xl bg-navy p-7 text-white shadow-soft-lg sm:p-8 lg:col-span-2">
+        <div className="rounded-3xl bg-plum p-7 text-white shadow-soft-lg sm:p-8 lg:col-span-2">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/50">
             Commission earned · {resolved.label}
           </p>

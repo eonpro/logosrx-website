@@ -5,7 +5,7 @@ const DOT: Record<TimelineKind, string> = {
   stage_change: "bg-magenta",
   tag_change: "bg-amber-500",
   transaction: "bg-emerald-500",
-  joined: "bg-navy",
+  joined: "bg-plum",
 };
 
 function when(date: Date): string {

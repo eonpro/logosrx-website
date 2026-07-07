@@ -36,7 +36,7 @@ interface RepOption {
 }
 
 const inputClass =
-  "h-10 rounded-2xl border border-beige-dark bg-white px-3.5 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10";
+  "h-10 rounded-2xl border border-beige-dark bg-white px-3.5 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-plum focus:ring-2 focus:ring-plum/10";
 
 const labelClass =
   "text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45";
@@ -181,7 +181,7 @@ export default function PartnerOrgManager({
                 "Commission rate updated (applies to future transactions).",
               )
             }
-            className="h-10 rounded-full bg-navy px-5 text-sm font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98] disabled:opacity-60"
+            className="h-10 rounded-full bg-plum px-5 text-sm font-semibold text-white transition-all hover:bg-plum-deep active:scale-[0.98] disabled:opacity-60"
           >
             Save rate
           </button>
@@ -221,7 +221,7 @@ export default function PartnerOrgManager({
               }
               className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors disabled:opacity-60 ${
                 org.compensationModel === m
-                  ? "bg-navy text-white"
+                  ? "bg-plum text-white"
                   : "text-navy/60 hover:text-navy"
               }`}
             >
@@ -255,7 +255,7 @@ export default function PartnerOrgManager({
                 "Pending commission approved — now payable.",
               )
             }
-            className="rounded-full bg-navy px-4 py-1.5 text-xs font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98] disabled:opacity-60"
+            className="rounded-full bg-plum px-4 py-1.5 text-xs font-semibold text-white transition-all hover:bg-plum-deep active:scale-[0.98] disabled:opacity-60"
           >
             Approve all pending
           </button>

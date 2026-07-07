@@ -216,7 +216,7 @@ export default async function AdminOverview() {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         {/* Work queue — the reason an admin opens this page */}
-        <aside className="rounded-3xl bg-navy p-6 text-white shadow-soft-lg sm:p-7 lg:order-last">
+        <aside className="rounded-3xl bg-plum p-6 text-white shadow-soft-lg sm:p-7 lg:order-last">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/50">
             Needs attention
           </p>
@@ -236,7 +236,7 @@ export default async function AdminOverview() {
                       {a.label}
                     </span>
                     <span className="flex items-center gap-2">
-                      <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-white px-2 font-display text-sm font-semibold text-navy">
+                      <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-white px-2 font-display text-sm font-semibold text-plum">
                         {a.count}
                       </span>
                       <svg

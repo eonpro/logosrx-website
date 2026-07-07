@@ -190,7 +190,7 @@ export default function Storefront({
               onClick={() => setCategory(cat)}
               className={`whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-semibold transition-all ${
                 category === cat
-                  ? "bg-navy text-white shadow-soft"
+                  ? "bg-plum text-white shadow-soft"
                   : "border border-beige bg-white text-navy/60 hover:border-navy/30 hover:text-navy"
               }`}
             >
@@ -279,14 +279,14 @@ function HeroBanner({
               <button
                 type="button"
                 onClick={() => onSelectCategory(ctaCategory)}
-                className="rounded-full bg-navy px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-navy-deep active:scale-[0.98]"
+                className="rounded-full bg-plum px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-plum-deep active:scale-[0.98]"
               >
                 {promo.ctaLabel}
               </button>
             ) : (
               <a
                 href={promo.ctaHref}
-                className="rounded-full bg-navy px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-navy-deep active:scale-[0.98]"
+                className="rounded-full bg-plum px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-plum-deep active:scale-[0.98]"
               >
                 {promo.ctaLabel}
               </a>
@@ -500,7 +500,7 @@ function ProductCard({
             href={lifefileUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 rounded-full bg-navy px-4 py-2 text-center text-sm font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98]"
+            className="flex-1 rounded-full bg-plum px-4 py-2 text-center text-sm font-semibold text-white transition-all hover:bg-plum-deep active:scale-[0.98]"
           >
             Prescribe
           </a>

@@ -33,7 +33,7 @@ export default function ApproveOrgButton({ orgId }: { orgId: number }) {
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="off"
           placeholder="Optional password"
-          className="h-8 w-36 rounded-full border border-beige-dark bg-white px-3 text-[11px] text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10"
+          className="h-8 w-36 rounded-full border border-beige-dark bg-white px-3 text-[11px] text-navy outline-none transition-all placeholder:text-navy/35 focus:border-plum focus:ring-2 focus:ring-plum/10"
         />
         <button
           type="button"

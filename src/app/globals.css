@@ -20,6 +20,14 @@
   --color-beige: #E8E6E1;
   --color-beige-dark: #D9D6CF;
   --color-cream: #F5F4F1;
+  /*
+   * Portal contrast color — a deep brand plum continuing the magenta ramp
+   * (#C62E88 → #A8266F → plum). Used for filled UI (active nav, hero panels,
+   * primary buttons) inside `.theme-ink` surfaces so contrast elements read
+   * as brand, never black or blue. Defined at the root so utilities compile.
+   */
+  --color-plum: #8A2160;
+  --color-plum-deep: #6E1A4D;
 }
 
 /*

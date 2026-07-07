@@ -72,7 +72,7 @@ export default function ClinicRelationship({
             onChange={(e) =>
               run(() => setClinicStage(clinicId, e.target.value))
             }
-            className="h-10 w-48 rounded-full border border-beige-dark bg-white px-4 text-sm text-navy outline-none transition-all focus:border-navy focus:ring-2 focus:ring-navy/10 disabled:opacity-60"
+            className="h-10 w-48 rounded-full border border-beige-dark bg-white px-4 text-sm text-navy outline-none transition-all focus:border-plum focus:ring-2 focus:ring-plum/10 disabled:opacity-60"
           >
             {STAGES.map((s) => (
               <option key={s.id} value={s.id}>
@@ -114,7 +114,7 @@ export default function ClinicRelationship({
                 onChange={(e) => setTagInput(e.target.value)}
                 placeholder="Add tag…"
                 maxLength={40}
-                className="h-7 w-28 rounded-full border border-beige-dark bg-white px-3 text-xs text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10"
+                className="h-7 w-28 rounded-full border border-beige-dark bg-white px-3 text-xs text-navy outline-none transition-all placeholder:text-navy/35 focus:border-plum focus:ring-2 focus:ring-plum/10"
               />
             </form>
           </div>
@@ -137,7 +137,7 @@ export default function ClinicRelationship({
             onChange={(e) => setNote(e.target.value)}
             placeholder="Log a call, meeting, or context for this account…"
             maxLength={5000}
-            className="h-20 w-full resize-none rounded-2xl border border-beige-dark bg-white p-3 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10"
+            className="h-20 w-full resize-none rounded-2xl border border-beige-dark bg-white p-3 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-plum focus:ring-2 focus:ring-plum/10"
           />
           <button
             type="submit"

@@ -393,7 +393,7 @@ function CardReveal({
           <div>
             <button
               onClick={hide}
-              className="rounded-full bg-navy px-4 py-1.5 text-xs font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98]"
+              className="rounded-full bg-plum px-4 py-1.5 text-xs font-semibold text-white transition-all hover:bg-plum-deep active:scale-[0.98]"
             >
               Hide card
             </button>
@@ -433,7 +433,7 @@ function CardReveal({
                 <button
                   onClick={submit}
                   disabled={busy}
-                  className="rounded-full bg-navy px-4 py-1.5 text-xs font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98] disabled:opacity-60"
+                  className="rounded-full bg-plum px-4 py-1.5 text-xs font-semibold text-white transition-all hover:bg-plum-deep active:scale-[0.98] disabled:opacity-60"
                 >
                   {busy ? "Verifying…" : "Reveal"}
                 </button>
@@ -704,7 +704,7 @@ function PricingCard({
                   refresh();
                 })
               }
-              className="rounded-full bg-navy px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98] disabled:opacity-60"
+              className="rounded-full bg-plum px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-plum-deep active:scale-[0.98] disabled:opacity-60"
             >
               Add
             </button>
@@ -761,7 +761,7 @@ function CatalogPriceRow({
             onChange={(e) => setValue(e.target.value)}
             inputMode="decimal"
             placeholder={placeholder}
-            className={`w-20 rounded-2xl border bg-white px-2.5 py-1 text-sm text-navy outline-none transition-all focus:border-navy focus:ring-2 focus:ring-navy/10 ${
+            className={`w-20 rounded-2xl border bg-white px-2.5 py-1 text-sm text-navy outline-none transition-all focus:border-plum focus:ring-2 focus:ring-plum/10 ${
               hasOverride ? "border-magenta/50" : "border-beige-dark"
             }`}
           />
@@ -787,7 +787,7 @@ function CatalogPriceRow({
           className={`rounded-full px-3 py-1 text-xs font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-40 ${
             saved
               ? "bg-emerald-600 hover:bg-emerald-700"
-              : "bg-navy hover:bg-navy-light"
+              : "bg-plum hover:bg-plum-deep"
           }`}
         >
           {saved ? "Saved ✓" : "Save"}
@@ -846,7 +846,7 @@ function NotesCard({
                 refresh();
               })
             }
-            className="rounded-full bg-navy px-4 py-1.5 text-xs font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98] disabled:opacity-60"
+            className="rounded-full bg-plum px-4 py-1.5 text-xs font-semibold text-white transition-all hover:bg-plum-deep active:scale-[0.98] disabled:opacity-60"
           >
             Add note
           </button>

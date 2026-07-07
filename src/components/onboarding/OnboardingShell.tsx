@@ -44,7 +44,7 @@ export default function OnboardingShell({
         </div>
         <div className="h-1 w-full bg-beige/70">
           <div
-            className="h-full rounded-r-full bg-navy transition-[width] duration-500 ease-out"
+            className="h-full rounded-r-full bg-plum transition-[width] duration-500 ease-out"
             style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
             role="progressbar"
             aria-valuenow={Math.round(progress)}

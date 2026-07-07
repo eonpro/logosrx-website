@@ -8,7 +8,7 @@ import {
 } from "../actions";
 
 const inputClass =
-  "h-10 rounded-2xl border border-beige-dark bg-white px-3.5 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10";
+  "h-10 rounded-2xl border border-beige-dark bg-white px-3.5 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-plum focus:ring-2 focus:ring-plum/10";
 
 const labelClass =
   "text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45";
@@ -211,13 +211,13 @@ export default function TransactionEntry({
           placeholder={
             "clinic_id,date,amount,description,reference\n42,2026-06-01,1250.00,June order,LF-10293"
           }
-          className="mt-3 h-44 w-full resize-none rounded-2xl border border-beige-dark bg-white p-4 font-mono text-xs text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10"
+          className="mt-3 h-44 w-full resize-none rounded-2xl border border-beige-dark bg-white p-4 font-mono text-xs text-navy outline-none transition-all placeholder:text-navy/35 focus:border-plum focus:ring-2 focus:ring-plum/10"
         />
         <button
           type="button"
           disabled={pending}
           onClick={importCsv}
-          className="mt-3 h-10 rounded-full bg-navy px-6 text-sm font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98] disabled:opacity-60"
+          className="mt-3 h-10 rounded-full bg-plum px-6 text-sm font-semibold text-white transition-all hover:bg-plum-deep active:scale-[0.98] disabled:opacity-60"
         >
           {pending ? "Importing…" : "Import"}
         </button>

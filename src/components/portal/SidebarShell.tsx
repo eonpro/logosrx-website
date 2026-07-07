@@ -102,7 +102,7 @@ export default function SidebarShell({
                 onClick={() => setOpen(false)}
                 className={`group flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition-all ${
                   active
-                    ? "bg-navy font-semibold text-white shadow-soft"
+                    ? "bg-plum font-semibold text-white shadow-soft"
                     : "font-medium text-navy/60 hover:bg-navy/[0.05] hover:text-navy"
                 }`}
               >
@@ -125,7 +125,7 @@ export default function SidebarShell({
       <div className="space-y-2.5 px-4 pb-5">
         <a
           href="mailto:support@logosrx.com"
-          className="block rounded-2xl bg-navy px-4 py-3.5 text-white transition-transform hover:-translate-y-0.5"
+          className="block rounded-2xl bg-plum px-4 py-3.5 text-white transition-transform hover:-translate-y-0.5"
         >
           <p className="font-display text-[15px] font-medium">Need a hand?</p>
           <p className="mt-0.5 text-[12px] text-white/60">

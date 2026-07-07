@@ -177,7 +177,7 @@ export function ClinicsTable({ clinics }: { clinics: ClinicRow[] }) {
                         <Link
                           href={`/admin/clinics/${c.id}`}
                           onClick={(e) => e.stopPropagation()}
-                          className="rounded-full bg-navy px-4 py-1.5 text-xs font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98]"
+                          className="rounded-full bg-plum px-4 py-1.5 text-xs font-semibold text-white transition-all hover:bg-plum-deep active:scale-[0.98]"
                         >
                           Open full record →
                         </Link>

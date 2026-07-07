@@ -130,7 +130,7 @@ export default function ClinicPricingManager({
                       }
                       onBlur={(e) => save(row, e.target.value)}
                       placeholder="0.00"
-                      className="h-9 w-28 rounded-full border border-beige-dark bg-white px-3 text-right text-sm tabular-nums text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10"
+                      className="h-9 w-28 rounded-full border border-beige-dark bg-white px-3 text-right text-sm tabular-nums text-navy outline-none transition-all placeholder:text-navy/35 focus:border-plum focus:ring-2 focus:ring-plum/10"
                     />
                   </td>
                   <td className="py-2 pr-4 text-right tabular-nums">

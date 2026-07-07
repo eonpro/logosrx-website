@@ -255,7 +255,7 @@ export default function PartnerLanding() {
 
         {/* Final CTA */}
         <section className="mt-24">
-          <div className="relative overflow-hidden rounded-3xl bg-navy px-8 py-14 text-center text-white">
+          <div className="relative overflow-hidden rounded-3xl bg-plum px-8 py-14 text-center text-white">
             <h2 className="font-display text-3xl font-medium sm:text-4xl">
               Ready to partner with Logos RX?
             </h2>

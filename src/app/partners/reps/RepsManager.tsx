@@ -30,7 +30,7 @@ interface RepRow {
 }
 
 const inputClass =
-  "h-10 rounded-full border border-beige-dark bg-white px-4 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10";
+  "h-10 rounded-full border border-beige-dark bg-white px-4 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-plum focus:ring-2 focus:ring-plum/10";
 
 export default function RepsManager({
   reps,
@@ -278,7 +278,7 @@ export default function RepsManager({
                           updateRate(rep.id, e.target.value);
                         }
                       }}
-                      className="h-9 w-24 rounded-full border border-beige-dark bg-white px-3 text-right text-sm tabular-nums text-navy outline-none transition-all focus:border-navy focus:ring-2 focus:ring-navy/10"
+                      className="h-9 w-24 rounded-full border border-beige-dark bg-white px-3 text-right text-sm tabular-nums text-navy outline-none transition-all focus:border-plum focus:ring-2 focus:ring-plum/10"
                     />
                   </td>
                   <td className="px-5 py-4 text-right text-xs font-medium whitespace-nowrap">

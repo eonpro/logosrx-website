@@ -15,7 +15,7 @@ import Link from "next/link";
 /* ---------------------------------- class recipes --------------------------------- */
 
 export const btnPrimary =
-  "inline-flex items-center justify-center gap-2 rounded-full bg-navy px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-navy-light active:scale-[0.98] disabled:opacity-50";
+  "inline-flex items-center justify-center gap-2 rounded-full bg-plum px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-plum-deep active:scale-[0.98] disabled:opacity-50";
 
 export const btnAccent =
   "inline-flex items-center justify-center gap-2 rounded-full bg-magenta px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-magenta-dark active:scale-[0.98] disabled:opacity-50";
@@ -30,7 +30,7 @@ export const btnDanger =
   "inline-flex items-center justify-center gap-2 rounded-full border border-red-200 bg-white px-5 py-2.5 text-sm font-semibold text-red-700 transition-all hover:bg-red-50 active:scale-[0.98] disabled:opacity-50";
 
 export const inputClass =
-  "w-full rounded-2xl border border-beige-dark bg-white px-4 py-3 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10";
+  "w-full rounded-2xl border border-beige-dark bg-white px-4 py-3 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-plum focus:ring-2 focus:ring-plum/10";
 
 export const selectClass = `${inputClass} appearance-none`;
 
@@ -132,7 +132,7 @@ export function StatCard({
   );
   const cls = `rounded-3xl p-6 transition-all ${
     accent
-      ? "bg-navy text-white shadow-soft-lg [&_p]:text-white/60 [&_p:nth-child(2)]:text-white"
+      ? "bg-plum text-white shadow-soft-lg [&_p]:text-white/60 [&_p:nth-child(2)]:text-white"
       : `${cardClass}`
   } ${href ? "hover:-translate-y-0.5 hover:shadow-soft-lg" : ""}`;
   return href ? (
@@ -150,7 +150,7 @@ const BADGE_TONES = {
   danger: "bg-red-50 text-red-700 ring-red-600/15",
   neutral: "bg-navy/[0.06] text-navy/70 ring-navy/10",
   accent: "bg-magenta/10 text-magenta ring-magenta/20",
-  ink: "bg-navy text-white ring-navy",
+  ink: "bg-plum text-white ring-plum",
 } as const;
 
 export type BadgeTone = keyof typeof BADGE_TONES;

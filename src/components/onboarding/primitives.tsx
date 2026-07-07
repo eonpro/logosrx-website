@@ -3,7 +3,7 @@
 import type { Option } from "@/lib/onboarding/steps";
 
 export const fieldClass =
-  "w-full rounded-2xl border border-beige-dark bg-white px-4.5 py-3.5 text-[15px] text-navy placeholder:text-navy/35 outline-none transition-all focus:border-navy focus:ring-2 focus:ring-navy/10";
+  "w-full rounded-2xl border border-beige-dark bg-white px-4.5 py-3.5 text-[15px] text-navy placeholder:text-navy/35 outline-none transition-all focus:border-plum focus:ring-2 focus:ring-plum/10";
 
 export function StepHeading({
   title,
@@ -116,7 +116,7 @@ export function OptionList({
             onClick={() => onToggle(o.value)}
             className={`flex w-full items-center justify-between rounded-2xl border-2 px-5 py-4 text-left transition-all active:scale-[0.99] ${
               isSelected
-                ? "border-navy bg-navy/[0.03] shadow-soft"
+                ? "border-plum bg-plum/[0.04] shadow-soft"
                 : "border-beige bg-white hover:border-navy/30 hover:shadow-soft"
             }`}
           >
@@ -135,7 +135,7 @@ export function OptionList({
                 multiple ? "rounded-lg" : "rounded-full"
               } ${
                 isSelected
-                  ? "border-navy bg-navy text-white"
+                  ? "border-plum bg-plum text-white"
                   : "border-navy/20 bg-white"
               }`}
             >
@@ -173,7 +173,7 @@ export function ConsentCheckbox({
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="mt-0.5 h-4 w-4 shrink-0 accent-navy"
+        className="mt-0.5 h-4 w-4 shrink-0 accent-plum"
       />
       <span className="text-[13px] leading-relaxed text-navy/65">{children}</span>
     </label>
@@ -230,7 +230,7 @@ export function NavButtons({
         className={`flex h-[52px] flex-1 items-center justify-center gap-2 rounded-full text-[15px] font-semibold text-white transition-all active:scale-[0.99] disabled:opacity-60 ${
           submit
             ? "bg-magenta hover:bg-magenta-dark"
-            : "bg-navy hover:bg-navy-light"
+            : "bg-plum hover:bg-plum-deep"
         }`}
       >
         {loading ? "Saving..." : nextLabel}

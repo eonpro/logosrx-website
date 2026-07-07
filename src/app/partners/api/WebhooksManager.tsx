@@ -102,7 +102,7 @@ export default function WebhooksManager({
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://example.com/webhooks/logos"
             maxLength={500}
-            className="h-10 w-full max-w-lg rounded-full border border-beige-dark bg-white px-4 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10"
+            className="h-10 w-full max-w-lg rounded-full border border-beige-dark bg-white px-4 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-plum focus:ring-2 focus:ring-plum/10"
           />
         </label>
         <div className="flex flex-wrap gap-3">

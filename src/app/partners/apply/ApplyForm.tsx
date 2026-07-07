@@ -6,7 +6,7 @@ import AuthShell from "@/components/auth/AuthShell";
 import { submitPartnerApplication } from "./actions";
 
 const inputClass =
-  "h-12 rounded-2xl border border-beige-dark bg-white px-4 text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10";
+  "h-12 rounded-2xl border border-beige-dark bg-white px-4 text-navy outline-none transition-all placeholder:text-navy/35 focus:border-plum focus:ring-2 focus:ring-plum/10";
 
 export default function ApplyForm() {
   const [orgName, setOrgName] = useState("");

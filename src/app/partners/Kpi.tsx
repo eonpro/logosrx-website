@@ -16,7 +16,7 @@ export function KpiCard({
     <div
       className={`rounded-3xl p-6 ${
         accent
-          ? "bg-navy text-white shadow-soft-lg"
+          ? "bg-plum text-white shadow-soft-lg"
           : "border border-beige/70 bg-white shadow-soft"
       }`}
     >

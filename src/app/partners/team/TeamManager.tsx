@@ -28,7 +28,7 @@ interface MemberRow {
 }
 
 const inputClass =
-  "h-10 rounded-full border border-beige-dark bg-white px-4 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10";
+  "h-10 rounded-full border border-beige-dark bg-white px-4 text-sm text-navy outline-none transition-all placeholder:text-navy/35 focus:border-plum focus:ring-2 focus:ring-plum/10";
 
 export default function TeamManager({
   owner,
@@ -193,7 +193,7 @@ export default function TeamManager({
                     onChange={(e) =>
                       run(() => setMemberRole(m.id, e.target.value))
                     }
-                    className="h-8 rounded-full border border-beige-dark bg-white px-3 text-xs text-navy outline-none transition-all focus:border-navy focus:ring-2 focus:ring-navy/10 disabled:opacity-50"
+                    className="h-8 rounded-full border border-beige-dark bg-white px-3 text-xs text-navy outline-none transition-all focus:border-plum focus:ring-2 focus:ring-plum/10 disabled:opacity-50"
                   >
                     <option value="viewer">Viewer</option>
                     <option value="admin">Admin</option>

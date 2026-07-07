@@ -130,7 +130,7 @@ export default async function PartnerPricingPage({
                       aria-current={active ? "page" : undefined}
                       className={`block rounded-full px-4 py-2 text-sm transition-colors ${
                         active
-                          ? "bg-navy font-semibold text-white shadow-soft"
+                          ? "bg-plum font-semibold text-white shadow-soft"
                           : "text-navy/75 hover:bg-cream"
                       }`}
                     >

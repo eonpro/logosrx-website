@@ -20,7 +20,7 @@ export default function RangeFilter({
             aria-current={isActive ? "page" : undefined}
             className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
               isActive
-                ? "bg-navy text-white"
+                ? "bg-plum text-white"
                 : "border border-beige bg-white text-navy/70 hover:border-navy/30"
             }`}
           >

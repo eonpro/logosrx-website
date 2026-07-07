@@ -80,7 +80,7 @@ export default function QuoteGate({
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="XXXX-XXXX-XXXX"
-            className="h-12 rounded-2xl border border-beige-dark bg-white px-4 text-center font-mono text-base tracking-widest text-navy outline-none transition-all placeholder:text-navy/35 focus:border-navy focus:ring-2 focus:ring-navy/10"
+            className="h-12 rounded-2xl border border-beige-dark bg-white px-4 text-center font-mono text-base tracking-widest text-navy outline-none transition-all placeholder:text-navy/35 focus:border-plum focus:ring-2 focus:ring-plum/10"
             autoFocus
           />
         </label>
