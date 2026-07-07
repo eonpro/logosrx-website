@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { displayFont } from "@/lib/fonts";
 
 export interface SidebarNavItem {
   label: string;
@@ -11,6 +12,12 @@ export interface SidebarNavItem {
   icon: React.ReactNode;
   /** Match the route exactly (used for the "overview" root item). */
   exact?: boolean;
+  /**
+   * Optional group label. Rendered as an uppercase micro-heading whenever it
+   * differs from the previous item's section, giving the nav an information
+   * architecture instead of one flat list.
+   */
+  section?: string;
 }
 
 /**
@@ -75,37 +82,56 @@ export default function SidebarShell({
         </p>
       </div>
 
-      <nav className="mt-4 flex-1 space-y-1 overflow-y-auto px-3 pb-4">
-        {navItems.map((item) => {
+      <nav className="mt-3 flex-1 space-y-0.5 overflow-y-auto px-3 pb-4">
+        {navItems.map((item, i) => {
           const active = isActive(item);
+          const sectionLabel =
+            item.section && item.section !== navItems[i - 1]?.section
+              ? item.section
+              : null;
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={active ? "page" : undefined}
-              onClick={() => setOpen(false)}
-              className={`group flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition-all ${
-                active
-                  ? "bg-navy font-semibold text-white shadow-soft"
-                  : "font-medium text-navy/60 hover:bg-navy/[0.05] hover:text-navy"
-              }`}
-            >
-              <span
-                className={
+            <div key={item.href}>
+              {sectionLabel && (
+                <p className="mb-1.5 mt-5 px-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-navy/30">
+                  {sectionLabel}
+                </p>
+              )}
+              <Link
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                onClick={() => setOpen(false)}
+                className={`group flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition-all ${
                   active
-                    ? "text-white"
-                    : "text-navy/35 transition-colors group-hover:text-navy/60"
-                }
+                    ? "bg-navy font-semibold text-white shadow-soft"
+                    : "font-medium text-navy/60 hover:bg-navy/[0.05] hover:text-navy"
+                }`}
               >
-                {item.icon}
-              </span>
-              {item.label}
-            </Link>
+                <span
+                  className={
+                    active
+                      ? "text-white"
+                      : "text-navy/35 transition-colors group-hover:text-navy/60"
+                  }
+                >
+                  {item.icon}
+                </span>
+                {item.label}
+              </Link>
+            </div>
           );
         })}
       </nav>
 
-      <div className="px-4 pb-5">
+      <div className="space-y-2.5 px-4 pb-5">
+        <a
+          href="mailto:support@logosrx.com"
+          className="block rounded-2xl bg-navy px-4 py-3.5 text-white transition-transform hover:-translate-y-0.5"
+        >
+          <p className="font-display text-[15px] font-medium">Need a hand?</p>
+          <p className="mt-0.5 text-[12px] text-white/60">
+            Our team answers within a day.
+          </p>
+        </a>
         <div className="rounded-2xl bg-cream/80 px-4 py-3.5 ring-1 ring-beige/80">
           {footer}
         </div>
@@ -114,7 +140,7 @@ export default function SidebarShell({
   );
 
   return (
-    <div className="theme-ink flex min-h-screen bg-cream">
+    <div className={`theme-ink ${displayFont.variable} flex min-h-screen bg-cream`}>
       {/* Desktop: persistent floating sidebar panel */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[268px] p-3 lg:block">
         <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-beige/70 bg-white shadow-soft">

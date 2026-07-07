@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { displayFont } from "@/lib/fonts";
 
 /**
  * Public landing page for the Logos RX marketing partner program, shown at
@@ -85,7 +86,7 @@ const STEPS = [
 
 export default function PartnerLanding() {
   return (
-    <div className="theme-ink relative min-h-screen bg-cream text-navy">
+    <div className={`theme-ink ${displayFont.variable} relative min-h-screen bg-cream text-navy`}>
       <div className="relative z-10 mx-auto flex max-w-6xl flex-col px-6 py-10 sm:py-14">
         {/* Top bar */}
         <header className="flex items-center justify-between">
@@ -121,7 +122,7 @@ export default function PartnerLanding() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.05 }}
-            className="mt-5 max-w-3xl text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl"
+            className="font-display mt-5 max-w-3xl text-5xl font-medium leading-[1.02] sm:text-7xl"
           >
             Work with{" "}
             <span className="text-magenta">Logos RX</span>
@@ -221,7 +222,7 @@ export default function PartnerLanding() {
         {/* How it works */}
         <section className="mt-24">
           <div className="text-center">
-            <h2 className="text-2xl font-bold sm:text-3xl">
+            <h2 className="font-display text-3xl font-medium sm:text-4xl">
               How it works
             </h2>
             <p className="mx-auto mt-3 max-w-md text-sm text-navy/60">
@@ -255,7 +256,7 @@ export default function PartnerLanding() {
         {/* Final CTA */}
         <section className="mt-24">
           <div className="relative overflow-hidden rounded-3xl bg-navy px-8 py-14 text-center text-white">
-            <h2 className="text-2xl font-bold sm:text-3xl">
+            <h2 className="font-display text-3xl font-medium sm:text-4xl">
               Ready to partner with Logos RX?
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-sm text-white/70">

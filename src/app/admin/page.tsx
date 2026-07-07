@@ -10,9 +10,31 @@ import {
   featuredProducts,
   pricingQuotes,
 } from "@/lib/db/schema";
+import Link from "next/link";
 import { count, sql } from "drizzle-orm";
 import { requireAdmin } from "@/lib/auth/admin";
-import { PageHeader, StatCard, Badge, type BadgeTone } from "@/components/ui/portal";
+import { StatCard, Badge, type BadgeTone } from "@/components/ui/portal";
+
+/** Server-rendered greeting pinned to pharmacy HQ time (Tampa). */
+function greeting(): { hello: string; date: string } {
+  const now = new Date();
+  const hour = Number(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      hour: "numeric",
+      hour12: false,
+    }).format(now),
+  );
+  const hello =
+    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const date = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  }).format(now);
+  return { hello, date };
+}
 
 /**
  * One aggregate query per table (5 total), all issued in parallel. This
@@ -153,31 +175,105 @@ export default async function AdminOverview() {
     },
   ];
 
+  const { hello, date } = greeting();
+
+  const attention = [
+    {
+      label: "Clinics awaiting verification",
+      count: stats.accounts.pending,
+      href: "/admin/clinics",
+    },
+    {
+      label: "New clinic sign-ups",
+      count: stats.clinics.new,
+      href: "/admin/clinic-signups",
+    },
+    {
+      label: "New employment applications",
+      count: stats.applications.new,
+      href: "/admin/applications",
+    },
+    {
+      label: "Active pricing quotes",
+      count: stats.quotes.active,
+      href: "/admin/quotes",
+    },
+  ].filter((a) => a.count > 0);
+
   return (
     <div>
-      <PageHeader
-        eyebrow="Admin"
-        title="Dashboard"
-        description="Overview of all submissions and sign-ups."
-      />
+      <header className="mb-9">
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-navy/40">
+          Admin · {date}
+        </p>
+        <h1 className="font-display text-4xl font-medium text-navy sm:text-[2.85rem] sm:leading-[1.05]">
+          {hello}.
+        </h1>
+        <p className="mt-2 text-[15px] text-navy/55">
+          Here&rsquo;s what&rsquo;s happening across the pharmacy today.
+        </p>
+      </header>
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-        {data.map((card) => (
-          <StatCard
-            key={card.href}
-            href={card.href}
-            accent={card.accent}
-            label={card.label}
-            value={card.total}
-            sub={
-              card.badge > 0 ? (
-                <Badge tone={card.badgeTone}>
-                  {card.badge} {card.badgeLabel}
-                </Badge>
-              ) : undefined
-            }
-          />
-        ))}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        {/* Work queue — the reason an admin opens this page */}
+        <aside className="rounded-3xl bg-navy p-6 text-white shadow-soft-lg sm:p-7 lg:order-last">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/50">
+            Needs attention
+          </p>
+          {attention.length === 0 ? (
+            <p className="mt-5 text-sm text-white/60">
+              All clear — nothing is waiting on you right now.
+            </p>
+          ) : (
+            <ul className="mt-4 divide-y divide-white/10">
+              {attention.map((a) => (
+                <li key={a.href}>
+                  <Link
+                    href={a.href}
+                    className="group flex items-center justify-between gap-3 py-3.5"
+                  >
+                    <span className="text-sm text-white/80 transition-colors group-hover:text-white">
+                      {a.label}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-white px-2 font-display text-sm font-semibold text-navy">
+                        {a.count}
+                      </span>
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 14 14"
+                        fill="none"
+                        className="text-white/40 transition-transform group-hover:translate-x-0.5 group-hover:text-white"
+                      >
+                        <path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </aside>
+
+        {/* Stat tiles */}
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:col-span-2">
+          {data.map((card) => (
+            <StatCard
+              key={card.href}
+              href={card.href}
+              label={card.label}
+              value={card.total}
+              sub={
+                card.badge > 0 ? (
+                  <Badge tone={card.badgeTone}>
+                    {card.badge} {card.badgeLabel}
+                  </Badge>
+                ) : undefined
+              }
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

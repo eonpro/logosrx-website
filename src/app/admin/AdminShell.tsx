@@ -20,6 +20,7 @@ const navItems: SidebarNavItem[] = [
   },
   {
     label: "Applications",
+    section: "People",
     href: "/admin/applications",
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -30,6 +31,7 @@ const navItems: SidebarNavItem[] = [
   },
   {
     label: "Clinics",
+    section: "People",
     href: "/admin/clinics",
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -39,7 +41,18 @@ const navItems: SidebarNavItem[] = [
     ),
   },
   {
+    label: "Clinic Sign-ups",
+    section: "People",
+    href: "/admin/clinic-signups",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M3 10h4v7H3zM8 6h4v11H8zM13 3h4v14h-4z" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
     label: "Catalog",
+    section: "Commerce",
     href: "/admin/catalog",
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -50,6 +63,7 @@ const navItems: SidebarNavItem[] = [
   },
   {
     label: "Quotes",
+    section: "Commerce",
     href: "/admin/quotes",
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -60,6 +74,7 @@ const navItems: SidebarNavItem[] = [
   },
   {
     label: "Merchandising",
+    section: "Commerce",
     href: "/admin/merchandising",
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -69,6 +84,7 @@ const navItems: SidebarNavItem[] = [
   },
   {
     label: "Partners",
+    section: "Commerce",
     href: "/admin/partners",
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -80,16 +96,8 @@ const navItems: SidebarNavItem[] = [
     ),
   },
   {
-    label: "Clinic Sign-ups",
-    href: "/admin/clinic-signups",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M3 10h4v7H3zM8 6h4v11H8zM13 3h4v14h-4z" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
     label: "Email Sign-ups",
+    section: "System",
     href: "/admin/email-signups",
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -100,6 +108,7 @@ const navItems: SidebarNavItem[] = [
   },
   {
     label: "Audit Log",
+    section: "System",
     href: "/admin/audit",
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">

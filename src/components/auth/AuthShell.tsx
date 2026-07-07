@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { displayFont } from "@/lib/fonts";
 
 /**
  * Minimal light chrome for the auth + gated flows (sign-in, sign-up, activate,
@@ -30,7 +31,7 @@ export default function AuthShell({
 }) {
   const widthClass = width === "wide" ? "max-w-3xl" : "max-w-[420px]";
   return (
-    <div className="theme-ink relative flex min-h-screen items-center justify-center overflow-y-auto bg-cream py-12 sm:py-16">
+    <div className={`theme-ink ${displayFont.variable} relative flex min-h-screen items-center justify-center overflow-y-auto bg-cream py-12 sm:py-16`}>
       <div className={`relative z-10 w-full ${widthClass} px-6`}>
         <motion.div
           className="mb-10 flex flex-col items-center"

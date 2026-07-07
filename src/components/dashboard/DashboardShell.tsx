@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 import { SITE } from "@/lib/constants";
+import { displayFont } from "@/lib/fonts";
 
 const TABS = [
   { href: "/dashboard", label: "Storefront" },
@@ -31,7 +32,7 @@ export default function DashboardShell({
   const pathname = usePathname();
 
   return (
-    <div className="theme-ink min-h-screen bg-cream">
+    <div className={`theme-ink ${displayFont.variable} min-h-screen bg-cream`}>
       <header className="sticky top-0 z-20 border-b border-beige/80 bg-cream/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
           <div className="flex items-center gap-8">

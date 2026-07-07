@@ -33,6 +33,7 @@ const navItems: PartnerNavItem[] = [
   },
   {
     label: "Transactions",
+    section: "Track",
     href: "/partners/transactions",
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -42,6 +43,7 @@ const navItems: PartnerNavItem[] = [
   },
   {
     label: "Network",
+    section: "Track",
     href: "/partners/network",
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -54,6 +56,7 @@ const navItems: PartnerNavItem[] = [
   },
   {
     label: "Reports",
+    section: "Track",
     href: "/partners/reports",
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -64,6 +67,7 @@ const navItems: PartnerNavItem[] = [
   },
   {
     label: "Reps",
+    section: "Manage",
     href: "/partners/reps",
     only: "org",
     adminOnly: true,
@@ -76,6 +80,7 @@ const navItems: PartnerNavItem[] = [
   },
   {
     label: "Goals",
+    section: "Manage",
     href: "/partners/goals",
     only: "org",
     adminOnly: true,
@@ -89,6 +94,7 @@ const navItems: PartnerNavItem[] = [
   },
   {
     label: "Team",
+    section: "Manage",
     href: "/partners/team",
     only: "org",
     adminOnly: true,
@@ -102,6 +108,7 @@ const navItems: PartnerNavItem[] = [
   },
   {
     label: "API & Webhooks",
+    section: "Manage",
     href: "/partners/api",
     only: "org",
     adminOnly: true,
@@ -113,6 +120,7 @@ const navItems: PartnerNavItem[] = [
   },
   {
     label: "Referral Links",
+    section: "Earn",
     href: "/partners/links",
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -122,6 +130,7 @@ const navItems: PartnerNavItem[] = [
   },
   {
     label: "Clinic Pricing",
+    section: "Earn",
     href: "/partners/pricing",
     marginOnly: true,
     icon: (
@@ -132,6 +141,7 @@ const navItems: PartnerNavItem[] = [
   },
   {
     label: "Pricing Quotes",
+    section: "Earn",
     href: "/partners/quotes",
     quotesItem: true,
     icon: (
@@ -143,6 +153,7 @@ const navItems: PartnerNavItem[] = [
   },
   {
     label: "Payouts",
+    section: "Earn",
     href: "/partners/payouts",
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -154,6 +165,7 @@ const navItems: PartnerNavItem[] = [
   },
   {
     label: "Agreement",
+    section: "Earn",
     href: "/partners/agreement",
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">

@@ -1,51 +1,62 @@
 "use client";
 
 import Image from "next/image";
+import { displayFont } from "@/lib/fonts";
 
 /**
- * Light single-column layout for the intake wizard, hims-style: warm
- * off-white canvas, thin ink progress bar pinned to the top, wordmark, and a
- * roomy centered content column.
+ * Hims-style intake chrome: a slim top bar (wordmark left, step counter
+ * right) with the progress bar directly beneath it, then a roomy left-aligned
+ * question column. Serif display headlines come from `StepHeading`.
  */
 export default function OnboardingShell({
   progress,
+  step,
+  totalSteps,
   children,
 }: {
   /** 0-100, drives the top progress bar. */
   progress: number;
+  /** 1-based current step — shown as "Step X of Y" when provided. */
+  step?: number;
+  totalSteps?: number;
   children: React.ReactNode;
 }) {
   return (
-    <div className="theme-ink flex min-h-screen flex-col bg-cream">
-      <div className="fixed inset-x-0 top-0 z-20 h-1 bg-beige/70">
-        <div
-          className="h-full rounded-r-full bg-navy transition-[width] duration-500 ease-out"
-          style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
-          role="progressbar"
-          aria-valuenow={Math.round(progress)}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label="Onboarding progress"
-        />
-      </div>
-
-      <main className="flex flex-1 items-start justify-center px-6 py-14 sm:py-20">
-        <div className="w-full max-w-[30rem]">
-          <div className="mb-11 flex flex-col items-center text-center">
-            <Image
-              src="/images/logo.svg"
-              alt="Logos RX"
-              width={160}
-              height={51}
-              priority
-              className="h-10 w-auto"
-            />
-            <p className="mt-2.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-navy/35">
-              Compounding Excellence
+    <div
+      className={`theme-ink ${displayFont.variable} flex min-h-screen flex-col bg-cream`}
+    >
+      <header className="sticky top-0 z-20 bg-cream/90 backdrop-blur-md">
+        <div className="mx-auto flex h-16 w-full max-w-3xl items-center justify-between px-6">
+          <Image
+            src="/images/logo.svg"
+            alt="Logos RX"
+            width={132}
+            height={42}
+            priority
+            className="h-8 w-auto"
+          />
+          {step != null && totalSteps != null && (
+            <p className="text-[12px] font-semibold tabular-nums text-navy/45">
+              Step {Math.min(step, totalSteps)}{" "}
+              <span className="text-navy/30">of {totalSteps}</span>
             </p>
-          </div>
-          {children}
+          )}
         </div>
+        <div className="h-1 w-full bg-beige/70">
+          <div
+            className="h-full rounded-r-full bg-navy transition-[width] duration-500 ease-out"
+            style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+            role="progressbar"
+            aria-valuenow={Math.round(progress)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Onboarding progress"
+          />
+        </div>
+      </header>
+
+      <main className="flex flex-1 justify-center px-6 pb-16 pt-12 sm:pt-16">
+        <div className="w-full max-w-[33rem]">{children}</div>
       </main>
 
       <footer className="pb-8 text-center text-[11px] text-navy/35">

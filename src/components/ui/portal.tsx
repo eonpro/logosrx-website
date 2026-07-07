@@ -72,7 +72,7 @@ export function PageHeader({
             {eyebrow}
           </p>
         )}
-        <h1 className="text-3xl font-bold tracking-tight text-navy sm:text-4xl">
+        <h1 className="font-display text-4xl font-medium text-navy sm:text-[2.85rem] sm:leading-[1.05]">
           {title}
         </h1>
         {description && (
@@ -122,7 +122,7 @@ export function StatCard({
       <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
         {label}
       </p>
-      <p className="mt-3 text-3xl font-bold tracking-tight tabular-nums text-navy">
+      <p className="mt-3 font-display text-[2.1rem] font-medium leading-none tabular-nums text-navy">
         {value}
       </p>
       {sub != null && (

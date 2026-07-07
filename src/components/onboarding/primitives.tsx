@@ -14,11 +14,11 @@ export function StepHeading({
 }) {
   return (
     <div className="mb-8">
-      <h1 className="text-[28px] font-bold leading-[1.15] tracking-tight text-navy sm:text-[32px]">
+      <h1 className="font-display text-[32px] font-medium leading-[1.12] text-navy sm:text-[38px]">
         {title}
       </h1>
       {subtitle && (
-        <p className="mt-3 text-[15px] leading-relaxed text-navy/55">{subtitle}</p>
+        <p className="mt-3.5 text-[15px] leading-relaxed text-navy/55">{subtitle}</p>
       )}
     </div>
   );

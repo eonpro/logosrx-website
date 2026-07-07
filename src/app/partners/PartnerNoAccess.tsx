@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { displayFont } from "@/lib/fonts";
 import { btnAccent, btnGhost } from "@/components/ui/portal";
 
 /**
@@ -7,7 +8,7 @@ import { btnAccent, btnGhost } from "@/components/ui/portal";
  */
 export default function PartnerNoAccess() {
   return (
-    <div className="theme-ink flex min-h-screen items-center justify-center bg-cream p-8">
+    <div className={`theme-ink ${displayFont.variable} flex min-h-screen items-center justify-center bg-cream p-8`}>
       <div className="max-w-md rounded-3xl border border-beige/70 bg-white p-10 text-center shadow-soft">
         <h1 className="text-2xl font-bold tracking-tight text-navy">
           No partner access

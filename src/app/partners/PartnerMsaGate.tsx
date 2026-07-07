@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import SignaturePad from "@/components/onboarding/SignaturePad";
+import { displayFont } from "@/lib/fonts";
 import AgreementDocument from "@/components/partners/AgreementDocument";
 import { MSA_TITLE } from "@/lib/partners/msa";
 import { signPartnerMsa } from "./agreement/actions";
@@ -78,7 +79,7 @@ export default function PartnerMsaGate({
   }
 
   return (
-    <div className="theme-ink relative min-h-screen bg-cream text-navy">
+    <div className={`theme-ink ${displayFont.variable} relative min-h-screen bg-cream text-navy`}>
       <div className="relative z-10 mx-auto flex max-w-3xl flex-col px-6 py-10 sm:py-14">
         <div className="flex flex-col items-center text-center">
           <Image
@@ -92,7 +93,7 @@ export default function PartnerMsaGate({
           <p className="mt-4 text-[11px] font-medium uppercase tracking-[0.25em] text-magenta">
             Partner Program
           </p>
-          <h1 className="mt-3 text-2xl font-bold sm:text-3xl">
+          <h1 className="font-display mt-3 text-3xl font-medium sm:text-4xl">
             Sign your {MSA_TITLE}
           </h1>
           <p className="mt-2 max-w-xl text-sm text-navy/60">

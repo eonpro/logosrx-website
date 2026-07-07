@@ -68,6 +68,17 @@
     0 16px 40px -12px rgba(28, 26, 23, 0.14);
 }
 
+/*
+ * Editorial display face for portal headlines (variable Fraunces via
+ * next/font — see src/lib/fonts.ts). The variable is attached at each portal
+ * shell root, so this utility resolves only inside internal surfaces.
+ */
+@utility font-display {
+  font-family: var(--font-display), Georgia, "Times New Roman", serif;
+  font-variation-settings: "SOFT" 60;
+  letter-spacing: -0.01em;
+}
+
 html {
   position: relative;
   /*

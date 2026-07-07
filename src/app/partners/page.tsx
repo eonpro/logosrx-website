@@ -15,7 +15,7 @@ import {
   listPartnerTransactions,
 } from "@/lib/partners/queries";
 import { getViewerGoalProgress } from "@/lib/partners/goals";
-import { PageHeader, StatCard, EmptyState, tableWrapClass, theadClass, rowClass, btnGhost } from "@/components/ui/portal";
+import { StatCard, EmptyState, tableWrapClass, theadClass, rowClass, btnGhost } from "@/components/ui/portal";
 import PartnerLanding from "./PartnerLanding";
 import PartnerNoAccess from "./PartnerNoAccess";
 import RangeFilter from "./RangeFilter";
@@ -78,57 +78,88 @@ export default async function PartnerDashboardPage({
       ? ctx.rep!.commissionRateBps
       : ctx.org.commissionRateBps;
 
+  const displayName = ctx.kind === "rep" ? ctx.rep!.name : ctx.org.name;
+  const firstName = displayName.split(/\s+/)[0];
+
   return (
     <div>
-      <PageHeader
-        eyebrow="Partner Portal"
-        title={`Welcome, ${ctx.kind === "rep" ? ctx.rep!.name : ctx.org.name}`}
-        description={
-          <>
+      <header className="mb-9 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-navy/40">
+            Partner Portal
+          </p>
+          <h1 className="font-display text-4xl font-medium text-navy sm:text-[2.85rem] sm:leading-[1.05]">
+            Welcome back, {firstName}.
+          </h1>
+          <p className="mt-2 text-[15px] text-navy/55">
             Your commission rate is{" "}
-            <span className="font-semibold text-navy">
-              {formatBps(rateBps)}
-            </span>{" "}
-            of attributed revenue. Showing {resolved.label.toLowerCase()}.
-          </>
-        }
-        actions={<RangeFilter current={resolved.id} basePath="/partners" />}
-      />
+            <span className="font-semibold text-navy">{formatBps(rateBps)}</span>{" "}
+            of attributed revenue.
+          </p>
+        </div>
+        <RangeFilter current={resolved.id} basePath="/partners" />
+      </header>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label={`Revenue (${resolved.label})`}
-          value={formatCents(revenue.revenueCents)}
-          sub={`${revenue.transactionCount} transaction${revenue.transactionCount === 1 ? "" : "s"}`}
-        />
-        <StatCard
-          label={`Commission earned (${resolved.label})`}
-          value={formatCents(commission.ownCents)}
-          sub={
-            ctx.kind === "org"
-              ? `+ ${formatCents(commission.repCents)} to your reps`
-              : undefined
-          }
-          accent
-        />
-        <StatCard
-          label="Payable now"
-          value={formatCents(unpaidCents)}
-          sub={
-            awaitingCents > 0
-              ? `+ ${formatCents(awaitingCents)} awaiting approval`
-              : "Approved, pending payout"
-          }
-        />
-        <StatCard
-          label="Linked clinics"
-          value={String(clinicCount)}
-          sub={
-            <Link href="/partners/network" className="text-magenta hover:underline">
-              View network →
-            </Link>
-          }
-        />
+      <div className="grid gap-5 lg:grid-cols-3">
+        {/* Hero: what you earned this period */}
+        <div className="rounded-3xl bg-navy p-7 text-white shadow-soft-lg sm:p-8 lg:col-span-2">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/50">
+            Commission earned · {resolved.label}
+          </p>
+          <p className="mt-4 font-display text-5xl font-medium leading-none tabular-nums sm:text-6xl">
+            {formatCents(commission.ownCents)}
+          </p>
+          {ctx.kind === "org" && (
+            <p className="mt-2.5 text-sm text-white/55">
+              + {formatCents(commission.repCents)} earned by your reps
+            </p>
+          )}
+          <div className="mt-7 flex flex-wrap gap-x-10 gap-y-4 border-t border-white/10 pt-5">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45">
+                Attributed revenue
+              </p>
+              <p className="mt-1 font-display text-2xl font-medium tabular-nums">
+                {formatCents(revenue.revenueCents)}
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45">
+                Transactions
+              </p>
+              <p className="mt-1 font-display text-2xl font-medium tabular-nums">
+                {revenue.transactionCount}
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45">
+                Your rate
+              </p>
+              <p className="mt-1 font-display text-2xl font-medium tabular-nums">
+                {formatBps(rateBps)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Side stack */}
+        <div className="flex flex-col gap-5">
+          <StatCard
+            label="Payable now"
+            value={formatCents(unpaidCents)}
+            sub={
+              awaitingCents > 0
+                ? `+ ${formatCents(awaitingCents)} awaiting approval`
+                : "Approved, pending payout"
+            }
+          />
+          <StatCard
+            label="Linked clinics"
+            value={String(clinicCount)}
+            sub="View your network →"
+            href="/partners/network"
+          />
+        </div>
       </div>
 
       {goals.length > 0 && (

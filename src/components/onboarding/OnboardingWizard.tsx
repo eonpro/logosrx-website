@@ -271,7 +271,11 @@ export default function OnboardingWizard({
   }
 
   return (
-    <OnboardingShell progress={progress}>
+    <OnboardingShell
+      progress={progress}
+      step={index + 1}
+      totalSteps={STEP_IDS.length}
+    >
       <AnimatePresence mode="wait">
         <motion.div
           key={stepId}
