@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# raw vial frame export (decoded copies live in public/images/vial-frames)
+/vial-frames.json
+
 # editor
 .cursor/
 .vscode/

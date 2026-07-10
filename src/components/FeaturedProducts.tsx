@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import ProductCard from "./ProductCard";
+import VialLoop from "./VialLoop";
 import { getPublicFeaturedProducts } from "@/data/products";
 import { SITE } from "@/lib/constants";
 
@@ -67,7 +68,7 @@ export default function FeaturedProducts() {
             className="pointer-events-none absolute -bottom-32 -left-20 h-72 w-72 rounded-full bg-sky/20 blur-3xl"
           />
 
-          <div className="relative grid items-center gap-10 lg:grid-cols-[1.4fr_1fr]">
+          <div className="relative grid items-center gap-10 lg:grid-cols-[1.3fr_auto_1fr]">
             {/* Left: messaging */}
             <div>
               <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-white/80">
@@ -101,6 +102,17 @@ export default function FeaturedProducts() {
                   </li>
                 ))}
               </ul>
+            </div>
+
+            {/* Center: rotating compounded vial (alpha frames over the navy panel) */}
+            <div className="pointer-events-none hidden select-none justify-center lg:flex">
+              <div className="relative">
+                <div
+                  aria-hidden
+                  className="absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky/15 blur-2xl"
+                />
+                <VialLoop className="relative h-72 w-auto drop-shadow-[0_18px_30px_rgba(0,0,0,0.45)]" />
+              </div>
             </div>
 
             {/* Right: action */}
