@@ -105,13 +105,13 @@ export default function FeaturedProducts() {
             </div>
 
             {/* Center: rotating compounded vial (alpha frames over the navy panel) */}
-            <div className="pointer-events-none hidden select-none justify-center lg:flex">
+            <div className="pointer-events-none flex select-none justify-center">
               <div className="relative">
                 <div
                   aria-hidden
-                  className="absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky/15 blur-2xl"
+                  className="absolute left-1/2 top-1/2 h-44 w-44 -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky/15 blur-2xl lg:h-56 lg:w-56"
                 />
-                <VialLoop className="relative h-72 w-auto drop-shadow-[0_18px_30px_rgba(0,0,0,0.45)]" />
+                <VialLoop className="relative h-56 w-auto drop-shadow-[0_18px_30px_rgba(0,0,0,0.45)] lg:h-72" />
               </div>
             </div>
 
