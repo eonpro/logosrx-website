@@ -130,6 +130,14 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // Unlisted, privately-shared reports (e.g. the thermal stability
+        // study). Reachable only via a direct link we hand out voluntarily —
+        // keep it out of every search index and answer-engine crawl. Not
+        // listed in the sitemap and not linked from any page.
+        source: "/reports/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }],
+      },
+      {
         // Self-hosted marketing media (P1d). 30 days immutable cache —
         // filenames are version-pinned manually, so cache busting is opt-in.
         source: "/videos/:path*",

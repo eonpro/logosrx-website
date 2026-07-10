@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow, noarchive" />
+<title>Logos Pharmacy — Thermal Stress Stability Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --ink:#0F2A3F;
+    --ink-soft:#3A4E5C;
+    --paper:#FBFCFD;
+    --panel:#FFFFFF;
+    --line:#E4EAEF;
+    --line-strong:#CBD6DE;
+    --slate:#5A6B78;
+    --cold:#2563A8;
+    --mid:#E4A030;
+    --hot:#D6452A;
+    --pass:#137A55;
+    --pass-bg:#E7F4EE;
+    --shadow:0 1px 2px rgba(15,42,63,.04), 0 8px 24px rgba(15,42,63,.06);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,sans-serif;
+    line-height:1.55; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:960px; margin:0 auto; padding:0 28px;}
+  .mono{font-family:"IBM Plex Mono",monospace;}
+
+  /* ---------- MASTHEAD ---------- */
+  .masthead{background:var(--panel); border-bottom:1px solid var(--line);}
+  .masthead .wrap{display:flex; align-items:center; gap:20px; padding:16px 28px; flex-wrap:wrap;}
+  .brand{height:30px; width:auto;}
+  .masthead-meta{display:flex; align-items:center; gap:12px; margin-left:auto;
+    font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--slate);}
+  .masthead-meta .rule{width:1px; height:14px; background:var(--line-strong); display:inline-block;}
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position:relative; overflow:hidden;
+    background:
+      radial-gradient(1200px 400px at 85% -10%, rgba(214,69,42,.10), transparent 60%),
+      linear-gradient(180deg,#0F2A3F 0%, #123A55 100%);
+    color:#EAF2F7;
+  }
+  .hero .wrap{padding-top:46px; padding-bottom:38px;}
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.22em;
+    text-transform:uppercase; color:#8FB8D0; margin:0 0 18px;
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  }
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--hot);box-shadow:0 0 0 4px rgba(214,69,42,.25);}
+  h1.title{
+    font-family:"Space Grotesk",sans-serif; font-weight:700;
+    font-size:clamp(30px,5vw,50px); line-height:1.04; letter-spacing:-.01em;
+    margin:0 0 14px; max-width:18ch;
+  }
+  .subtitle{color:#B9D2E1; font-size:16px; max-width:60ch; margin:0 0 30px;}
+  .hero-grid{display:grid; grid-template-columns:1.15fr .85fr; gap:34px; align-items:end;}
+  @media(max-width:760px){ .hero-grid{grid-template-columns:1fr; gap:26px;} }
+  .peak{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;}
+  .peak .val{font-family:"Space Grotesk",sans-serif; font-weight:700; font-size:clamp(46px,9vw,84px); line-height:.9; color:#fff;
+    background:linear-gradient(90deg,#FFB463,#D6452A); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;}
+  .peak .f{font-family:"IBM Plex Mono",monospace; font-size:22px; color:#FFC98A;}
+  .peak-label{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:#8FB8D0; margin-top:8px;}
+  .hero-chart{background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.10); border-radius:14px; padding:14px 14px 6px;}
+  .hero-chart h4{margin:0 0 4px; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:#9FC3D6; font-family:"IBM Plex Mono",monospace; font-weight:500;}
+  .hero-chart .cvs{height:150px;}
+
+  /* ---------- SECTION SHELL ---------- */
+  section{padding:52px 0;}
+  section + section{border-top:1px solid var(--line);}
+  .sec-head{display:flex; align-items:baseline; gap:16px; margin-bottom:26px;}
+  .sec-num{font-family:"IBM Plex Mono",monospace; font-size:13px; color:var(--hot); font-weight:600; letter-spacing:.05em; padding-top:4px;}
+  .sec-title{font-family:"Space Grotesk",sans-serif; font-weight:600; font-size:clamp(21px,3vw,27px); margin:0; letter-spacing:-.01em;}
+  .sec-sub{color:var(--slate); font-size:14.5px; margin:4px 0 0; max-width:66ch;}
+
+  /* ---------- VERDICT STRIP ---------- */
+  .verdict{
+    background:linear-gradient(180deg,#F3F9F6,#EAF4EF); border:1px solid #CDE6DB;
+    border-radius:16px; padding:26px 28px; display:grid; grid-template-columns:auto 1fr; gap:26px; align-items:center;
+    box-shadow:var(--shadow);
+  }
+  @media(max-width:640px){ .verdict{grid-template-columns:1fr; gap:16px; text-align:center;} }
+  .verdict h3{font-family:"Space Grotesk",sans-serif; font-weight:600; font-size:19px; margin:0 0 8px; color:var(--ink);}
+  .verdict p{margin:0; font-size:14.5px; color:var(--ink-soft);}
+
+  /* ---------- CERTIFICATION SEAL ---------- */
+  .seal{width:178px; height:178px; justify-self:center; display:block; overflow:visible;}
+  @media(max-width:640px){ .seal{width:150px;height:150px;} }
+  .seal .bead{fill:var(--pass); opacity:.30;}
+  .seal .seal-beads{transform-box:fill-box; transform-origin:center; animation:sealSpin 72s linear infinite;}
+  .seal .ring-hair{fill:none; stroke:var(--pass); stroke-width:.9; opacity:.32;}
+  .seal .tick{stroke:var(--pass); stroke-width:1.05; opacity:.28;}
+  .seal .tick.major{stroke-width:1.7; opacity:.5;}
+  .seal .ring-main{
+    fill:none; stroke:url(#ringGrad); stroke-width:3.6; stroke-linecap:round;
+    stroke-dasharray:522; stroke-dashoffset:522;
+    animation:sealDraw 1.2s cubic-bezier(.65,0,.35,1) .1s forwards;
+    transform:rotate(-90deg); transform-origin:100px 100px;
+  }
+  .seal .ring-inner-halo{fill:none; stroke:var(--pass); stroke-width:.8; opacity:.22;}
+  .seal .ring-inner{fill:#FCFEFD; stroke:var(--pass); stroke-width:.9; stroke-opacity:.5;}
+  .seal .disc-veil{fill:#FFFFFF; opacity:.34; pointer-events:none;}
+  .seal .guilloche path{fill:none; stroke:var(--pass); stroke-width:.38; opacity:.13;
+    animation:sealFade 1.4s ease .5s both;}
+  .seal .guilloche path:last-child{opacity:.08;}
+  .seal .arc text{
+    font-family:"IBM Plex Mono",monospace; font-weight:600;
+    text-anchor:middle; dominant-baseline:middle;
+  }
+  .seal .arc-top text{font-size:9.2px; fill:var(--pass);}
+  .seal .arc-bottom text{font-size:8.4px; fill:#3f8d70;}
+  .seal .arc{opacity:0; animation:sealFade .5s ease .95s forwards;}
+  .seal .arc-bottom{animation-delay:1.05s;}
+  .seal .check{
+    fill:none; stroke:var(--pass); stroke-width:3.4; stroke-linecap:round; stroke-linejoin:round;
+    stroke-dasharray:30; stroke-dashoffset:30;
+    animation:sealDraw .45s cubic-bezier(.65,0,.35,1) .8s forwards;
+  }
+  .seal .word{
+    font-family:"Space Grotesk",sans-serif; font-weight:700; font-size:26px; letter-spacing:.01em;
+    fill:var(--pass); text-anchor:middle;
+    opacity:0; animation:sealPop .5s cubic-bezier(.34,1.4,.64,1) .62s forwards;
+    transform-box:fill-box; transform-origin:center;
+  }
+  .seal .divider{stroke:var(--pass); stroke-width:1; opacity:.26;}
+  .seal .lots{
+    font-family:"IBM Plex Mono",monospace; font-size:9.2px; font-weight:600; letter-spacing:.13em;
+    fill:#3f8d70; text-anchor:middle; opacity:0; animation:sealFade .5s ease .88s forwards;
+  }
+  @keyframes sealDraw{to{stroke-dashoffset:0;}}
+  @keyframes sealFade{to{opacity:1;}}
+  @keyframes sealPop{0%{opacity:0; transform:scale(.82);} 100%{opacity:1; transform:scale(1);}}
+  @keyframes sealSpin{to{transform:rotate(360deg);}}
+  @media(prefers-reduced-motion:reduce){
+    .seal .ring-main,.seal .check{animation:none; stroke-dashoffset:0;}
+    .seal .arc,.seal .word,.seal .lots{animation:none; opacity:1;}
+    .seal .guilloche path{animation:none; opacity:.13;}
+    .seal .seal-beads{animation:none;}
+  }
+
+  /* ---------- STAT CARDS ---------- */
+  .cards{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:22px;}
+  @media(max-width:640px){ .cards{grid-template-columns:repeat(2,1fr);} }
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px 18px; box-shadow:var(--shadow);}
+  .card .k{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--slate);}
+  .card .v{font-family:"Space Grotesk",sans-serif; font-weight:700; font-size:30px; line-height:1.1; margin-top:6px; color:var(--ink);}
+  .card .v .u{font-size:14px; color:var(--slate); margin-left:2px;}
+  .card .f{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--slate); margin-top:2px;}
+  .card.cold .v{color:var(--cold);}
+  .card:last-child .v{color:var(--hot);}
+
+  /* ---------- CHART PANELS ---------- */
+  .chart-panel{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px 22px; box-shadow:var(--shadow); margin-top:6px;}
+  .chart-panel h4{font-family:"Space Grotesk",sans-serif; font-weight:600; font-size:15px; margin:0 0 4px; color:var(--ink);}
+  .chart-panel .cap{font-size:13px; color:var(--slate); margin:0 0 14px; max-width:70ch;}
+  .cvs-lg{height:340px;}
+  .cvs-md{height:220px;}
+
+  /* ---------- SPLIT PANELS ---------- */
+  .split{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media(max-width:640px){ .split{grid-template-columns:1fr;} }
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px 22px; box-shadow:var(--shadow);}
+  .panel h4{font-family:"Space Grotesk",sans-serif; font-weight:600; font-size:15px; margin:0 0 12px; color:var(--ink);}
+  dl.kv{margin:0; display:grid; grid-template-columns:auto 1fr; gap:8px 18px;}
+  dl.kv dt{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--slate); align-self:center;}
+  dl.kv dd{margin:0; font-size:14px; text-align:right; color:var(--ink); font-weight:500;}
+  dl.kv dd.wrap-l{text-align:right; word-break:break-all; font-family:"IBM Plex Mono",monospace; font-size:12.5px;}
+
+  /* ---------- TABLE ---------- */
+  .tbl-wrap{border:1px solid var(--line); border-radius:14px; overflow:hidden; box-shadow:var(--shadow); margin-bottom:22px;}
+  table{width:100%; border-collapse:collapse; background:var(--panel);}
+  thead th{
+    background:#F4F7FA; text-align:left; padding:12px 16px;
+    font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--slate); border-bottom:1px solid var(--line-strong); white-space:nowrap;
+  }
+  tbody td{padding:14px 16px; border-bottom:1px solid var(--line); font-size:14px; vertical-align:top;}
+  tbody tr:last-child td{border-bottom:none;}
+  td.prod{font-weight:600; color:var(--ink);}
+  td.prod small{display:block; font-weight:400; color:var(--slate); font-size:12px; margin-top:2px;}
+  td.num{font-family:"IBM Plex Mono",monospace; font-size:13px; white-space:nowrap;}
+  td.num small{display:block; font-size:11px; margin-top:2px;}
+  .pill{display:inline-block; background:var(--pass-bg); color:var(--pass); font-weight:600; font-size:12px;
+    padding:3px 10px; border-radius:999px; border:1px solid #BCE0CE; white-space:nowrap;}
+  .dash{color:var(--line-strong);}
+
+  /* ---------- NOTE / CONCLUSION ---------- */
+  .note{background:#F4F7FA; border:1px solid var(--line); border-left:3px solid var(--slate);
+    border-radius:10px; padding:16px 18px; font-size:13.5px; color:var(--ink-soft); margin-top:22px;}
+  .concl h3{font-family:"Space Grotesk",sans-serif; font-weight:600; font-size:20px; margin:0 0 12px; color:var(--ink);}
+  .concl p{font-size:15px; color:var(--ink-soft); margin:0 0 14px; max-width:74ch;}
+  .concl ul{margin:0; padding-left:20px; color:var(--ink-soft); font-size:14.5px;}
+  .concl li{margin:6px 0;}
+
+  /* ---------- FOOTER ---------- */
+  footer{background:var(--panel); border-top:1px solid var(--line); padding:34px 0 46px;}
+  footer .wrap{font-size:12.5px; color:var(--slate); line-height:1.7;}
+  .foot-brand{height:26px; width:auto; opacity:.55; margin-bottom:16px;}
+
+  /* ---------- PRINT ---------- */
+  @media print{
+    body{background:#fff;}
+    .masthead{border-bottom:1px solid #CBD6DE;}
+    .brand, .foot-brand{opacity:1 !important;}
+    .seal .ring-main, .seal .check{stroke-dashoffset:0 !important; animation:none !important;}
+    .seal .arc, .seal .word, .seal .lots, .seal .guilloche path{opacity:1 !important; animation:none !important; transform:none !important;}
+    .seal .guilloche path{opacity:.16 !important;}
+    .seal .seal-beads{animation:none !important; transform:none !important;}
+    .hero{background:#0F2A3F !important; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+    *{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
+    section{padding:26px 0; page-break-inside:avoid;}
+    .chart-panel, .verdict, .panel, .tbl-wrap, .concl{page-break-inside:avoid;}
+    .hero-grid{grid-template-columns:1fr 1fr;}
+  }
+</style>
+</head>
+<body>
+<!-- ======================= MASTHEAD ======================= -->
+<div class="masthead">
+  <div class="wrap">
+    <img class="brand" src="/images/logo.svg" alt="LogosRx — Logos Pharmacy" />
+    <div class="masthead-meta">
+      <span>Quality Assurance</span>
+      <span class="rule"></span>
+      <span>Thermal Stress Stability Study</span>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= HERO ======================= -->
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow"><span class="dot"></span> Logos Pharmacy · Independent Study &nbsp;•&nbsp; Report No. LGS-THERM-2026-01</p>
+    <div class="hero-grid">
+      <div>
+        <h1 class="title">Thermal Stress Stability Study</h1>
+        <p class="subtitle">Sterility, bacterial endotoxin, and potency of five compounded sterile preparations after a continuous 13-day 17-hour high-temperature excursion.</p>
+        <div class="peak">
+          <span class="val">137.1<span style="font-size:.5em;color:#FFC98A;-webkit-text-fill-color:#FFC98A;">&deg;F</span></span>
+          <span class="f">= 58.4 &deg;C peak</span>
+        </div>
+        <div class="peak-label">Maximum recorded temperature · logger S/N EFE261104293</div>
+      </div>
+      <div class="hero-chart">
+        <h4>Recorded profile &deg;F — 24 Jan &rarr; 06 Feb 2026</h4>
+        <div class="cvs"><canvas id="heroChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ======================= 1 · VERDICT ======================= -->
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-num">01</span>
+      <div>
+        <h2 class="sec-title">Result at a glance</h2>
+        <p class="sec-sub">Every lot subjected to the excursion met all acceptance criteria on subsequent laboratory testing.</p>
+      </div>
+    </div>
+    <div class="verdict">
+      <svg class="seal" viewBox="0 0 200 200" role="img" aria-label="Certified pass: 5 of 5 lots met all acceptance criteria for sterility, endotoxin and potency">
+        <defs>
+          <linearGradient id="ringGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#1B9C6E"/><stop offset="55%" stop-color="#137A55"/><stop offset="100%" stop-color="#0E5F42"/>
+          </linearGradient>
+          <clipPath id="discClip"><circle cx="100" cy="100" r="56"/></clipPath>
+        </defs>
+        <g class="seal-beads">
+        <circle class="bead" cx="195.00" cy="100.00" r="1.45"/>
+        <circle class="bead" cx="194.64" cy="108.28" r="1.45"/>
+        <circle class="bead" cx="193.56" cy="116.50" r="1.45"/>
+        <circle class="bead" cx="191.76" cy="124.59" r="1.45"/>
+        <circle class="bead" cx="189.27" cy="132.49" r="1.45"/>
+        <circle class="bead" cx="186.10" cy="140.15" r="1.45"/>
+        <circle class="bead" cx="182.27" cy="147.50" r="1.45"/>
+        <circle class="bead" cx="177.82" cy="154.49" r="1.45"/>
+        <circle class="bead" cx="172.77" cy="161.06" r="1.45"/>
+        <circle class="bead" cx="167.18" cy="167.18" r="1.45"/>
+        <circle class="bead" cx="161.06" cy="172.77" r="1.45"/>
+        <circle class="bead" cx="154.49" cy="177.82" r="1.45"/>
+        <circle class="bead" cx="147.50" cy="182.27" r="1.45"/>
+        <circle class="bead" cx="140.15" cy="186.10" r="1.45"/>
+        <circle class="bead" cx="132.49" cy="189.27" r="1.45"/>
+        <circle class="bead" cx="124.59" cy="191.76" r="1.45"/>
+        <circle class="bead" cx="116.50" cy="193.56" r="1.45"/>
+        <circle class="bead" cx="108.28" cy="194.64" r="1.45"/>
+        <circle class="bead" cx="100.00" cy="195.00" r="1.45"/>
+        <circle class="bead" cx="91.72" cy="194.64" r="1.45"/>
+        <circle class="bead" cx="83.50" cy="193.56" r="1.45"/>
+        <circle class="bead" cx="75.41" cy="191.76" r="1.45"/>
+        <circle class="bead" cx="67.51" cy="189.27" r="1.45"/>
+        <circle class="bead" cx="59.85" cy="186.10" r="1.45"/>
+        <circle class="bead" cx="52.50" cy="182.27" r="1.45"/>
+        <circle class="bead" cx="45.51" cy="177.82" r="1.45"/>
+        <circle class="bead" cx="38.94" cy="172.77" r="1.45"/>
+        <circle class="bead" cx="32.82" cy="167.18" r="1.45"/>
+        <circle class="bead" cx="27.23" cy="161.06" r="1.45"/>
+        <circle class="bead" cx="22.18" cy="154.49" r="1.45"/>
+        <circle class="bead" cx="17.73" cy="147.50" r="1.45"/>
+        <circle class="bead" cx="13.90" cy="140.15" r="1.45"/>
+        <circle class="bead" cx="10.73" cy="132.49" r="1.45"/>
+        <circle class="bead" cx="8.24" cy="124.59" r="1.45"/>
+        <circle class="bead" cx="6.44" cy="116.50" r="1.45"/>
+        <circle class="bead" cx="5.36" cy="108.28" r="1.45"/>
+        <circle class="bead" cx="5.00" cy="100.00" r="1.45"/>
+        <circle class="bead" cx="5.36" cy="91.72" r="1.45"/>
+        <circle class="bead" cx="6.44" cy="83.50" r="1.45"/>
+        <circle class="bead" cx="8.24" cy="75.41" r="1.45"/>
+        <circle class="bead" cx="10.73" cy="67.51" r="1.45"/>
+        <circle class="bead" cx="13.90" cy="59.85" r="1.45"/>
+        <circle class="bead" cx="17.73" cy="52.50" r="1.45"/>
+        <circle class="bead" cx="22.18" cy="45.51" r="1.45"/>
+        <circle class="bead" cx="27.23" cy="38.94" r="1.45"/>
+        <circle class="bead" cx="32.82" cy="32.82" r="1.45"/>
+        <circle class="bead" cx="38.94" cy="27.23" r="1.45"/>
+        <circle class="bead" cx="45.51" cy="22.18" r="1.45"/>
+        <circle class="bead" cx="52.50" cy="17.73" r="1.45"/>
+        <circle class="bead" cx="59.85" cy="13.90" r="1.45"/>
+        <circle class="bead" cx="67.51" cy="10.73" r="1.45"/>
+        <circle class="bead" cx="75.41" cy="8.24" r="1.45"/>
+        <circle class="bead" cx="83.50" cy="6.44" r="1.45"/>
+        <circle class="bead" cx="91.72" cy="5.36" r="1.45"/>
+        <circle class="bead" cx="100.00" cy="5.00" r="1.45"/>
+        <circle class="bead" cx="108.28" cy="5.36" r="1.45"/>
+        <circle class="bead" cx="116.50" cy="6.44" r="1.45"/>
+        <circle class="bead" cx="124.59" cy="8.24" r="1.45"/>
+        <circle class="bead" cx="132.49" cy="10.73" r="1.45"/>
+        <circle class="bead" cx="140.15" cy="13.90" r="1.45"/>
+        <circle class="bead" cx="147.50" cy="17.73" r="1.45"/>
+        <circle class="bead" cx="154.49" cy="22.18" r="1.45"/>
+        <circle class="bead" cx="161.06" cy="27.23" r="1.45"/>
+        <circle class="bead" cx="167.18" cy="32.82" r="1.45"/>
+        <circle class="bead" cx="172.77" cy="38.94" r="1.45"/>
+        <circle class="bead" cx="177.82" cy="45.51" r="1.45"/>
+        <circle class="bead" cx="182.27" cy="52.50" r="1.45"/>
+        <circle class="bead" cx="186.10" cy="59.85" r="1.45"/>
+        <circle class="bead" cx="189.27" cy="67.51" r="1.45"/>
+        <circle class="bead" cx="191.76" cy="75.41" r="1.45"/>
+        <circle class="bead" cx="193.56" cy="83.50" r="1.45"/>
+        <circle class="bead" cx="194.64" cy="91.72" r="1.45"/>
+        </g>
+
+        <circle class="ring-hair" cx="100" cy="100" r="90"/>
+        <line class="tick major" x1="184.20" y1="100.00" x2="189.00" y2="100.00"/>
+        <line class="tick" x1="185.73" y1="109.01" x2="188.51" y2="109.30"/>
+        <line class="tick" x1="184.32" y1="117.92" x2="187.06" y2="118.50"/>
+        <line class="tick" x1="181.98" y1="126.64" x2="184.64" y2="127.50"/>
+        <line class="tick" x1="178.75" y1="135.06" x2="181.31" y2="136.20"/>
+        <line class="tick major" x1="172.92" y1="142.10" x2="177.08" y2="144.50"/>
+        <line class="tick" x1="169.74" y1="150.67" x2="172.00" y2="152.31"/>
+        <line class="tick" x1="164.06" y1="157.68" x2="166.14" y2="159.55"/>
+        <line class="tick" x1="157.68" y1="164.06" x2="159.55" y2="166.14"/>
+        <line class="tick" x1="150.67" y1="169.74" x2="152.31" y2="172.00"/>
+        <line class="tick major" x1="142.10" y1="172.92" x2="144.50" y2="177.08"/>
+        <line class="tick" x1="135.06" y1="178.75" x2="136.20" y2="181.31"/>
+        <line class="tick" x1="126.64" y1="181.98" x2="127.50" y2="184.64"/>
+        <line class="tick" x1="117.92" y1="184.32" x2="118.50" y2="187.06"/>
+        <line class="tick" x1="109.01" y1="185.73" x2="109.30" y2="188.51"/>
+        <line class="tick major" x1="100.00" y1="184.20" x2="100.00" y2="189.00"/>
+        <line class="tick" x1="90.99" y1="185.73" x2="90.70" y2="188.51"/>
+        <line class="tick" x1="82.08" y1="184.32" x2="81.50" y2="187.06"/>
+        <line class="tick" x1="73.36" y1="181.98" x2="72.50" y2="184.64"/>
+        <line class="tick" x1="64.94" y1="178.75" x2="63.80" y2="181.31"/>
+        <line class="tick major" x1="57.90" y1="172.92" x2="55.50" y2="177.08"/>
+        <line class="tick" x1="49.33" y1="169.74" x2="47.69" y2="172.00"/>
+        <line class="tick" x1="42.32" y1="164.06" x2="40.45" y2="166.14"/>
+        <line class="tick" x1="35.94" y1="157.68" x2="33.86" y2="159.55"/>
+        <line class="tick" x1="30.26" y1="150.67" x2="28.00" y2="152.31"/>
+        <line class="tick major" x1="27.08" y1="142.10" x2="22.92" y2="144.50"/>
+        <line class="tick" x1="21.25" y1="135.06" x2="18.69" y2="136.20"/>
+        <line class="tick" x1="18.02" y1="126.64" x2="15.36" y2="127.50"/>
+        <line class="tick" x1="15.68" y1="117.92" x2="12.94" y2="118.50"/>
+        <line class="tick" x1="14.27" y1="109.01" x2="11.49" y2="109.30"/>
+        <line class="tick major" x1="15.80" y1="100.00" x2="11.00" y2="100.00"/>
+        <line class="tick" x1="14.27" y1="90.99" x2="11.49" y2="90.70"/>
+        <line class="tick" x1="15.68" y1="82.08" x2="12.94" y2="81.50"/>
+        <line class="tick" x1="18.02" y1="73.36" x2="15.36" y2="72.50"/>
+        <line class="tick" x1="21.25" y1="64.94" x2="18.69" y2="63.80"/>
+        <line class="tick major" x1="27.08" y1="57.90" x2="22.92" y2="55.50"/>
+        <line class="tick" x1="30.26" y1="49.33" x2="28.00" y2="47.69"/>
+        <line class="tick" x1="35.94" y1="42.32" x2="33.86" y2="40.45"/>
+        <line class="tick" x1="42.32" y1="35.94" x2="40.45" y2="33.86"/>
+        <line class="tick" x1="49.33" y1="30.26" x2="47.69" y2="28.00"/>
+        <line class="tick major" x1="57.90" y1="27.08" x2="55.50" y2="22.92"/>
+        <line class="tick" x1="64.94" y1="21.25" x2="63.80" y2="18.69"/>
+        <line class="tick" x1="73.36" y1="18.02" x2="72.50" y2="15.36"/>
+        <line class="tick" x1="82.08" y1="15.68" x2="81.50" y2="12.94"/>
+        <line class="tick" x1="90.99" y1="14.27" x2="90.70" y2="11.49"/>
+        <line class="tick major" x1="100.00" y1="15.80" x2="100.00" y2="11.00"/>
+        <line class="tick" x1="109.01" y1="14.27" x2="109.30" y2="11.49"/>
+        <line class="tick" x1="117.92" y1="15.68" x2="118.50" y2="12.94"/>
+        <line class="tick" x1="126.64" y1="18.02" x2="127.50" y2="15.36"/>
+        <line class="tick" x1="135.06" y1="21.25" x2="136.20" y2="18.69"/>
+        <line class="tick major" x1="142.10" y1="27.08" x2="144.50" y2="22.92"/>
+        <line class="tick" x1="150.67" y1="30.26" x2="152.31" y2="28.00"/>
+        <line class="tick" x1="157.68" y1="35.94" x2="159.55" y2="33.86"/>
+        <line class="tick" x1="164.06" y1="42.32" x2="166.14" y2="40.45"/>
+        <line class="tick" x1="169.74" y1="49.33" x2="172.00" y2="47.69"/>
+        <line class="tick major" x1="172.92" y1="57.90" x2="177.08" y2="55.50"/>
+        <line class="tick" x1="178.75" y1="64.94" x2="181.31" y2="63.80"/>
+        <line class="tick" x1="181.98" y1="73.36" x2="184.64" y2="72.50"/>
+        <line class="tick" x1="184.32" y1="82.08" x2="187.06" y2="81.50"/>
+        <line class="tick" x1="185.73" y1="90.99" x2="188.51" y2="90.70"/>
+        <circle class="ring-main" cx="100" cy="100" r="83"/>
+
+        <g class="arc arc-top">
+          <text class="glyph" x="100" y="26.00" transform="rotate(-81.530 100 100)">S</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(-76.095 100 100)">T</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(-70.660 100 100)">E</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(-65.224 100 100)">R</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(-59.789 100 100)">I</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(-54.354 100 100)">L</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(-48.918 100 100)">I</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(-43.483 100 100)">T</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(-38.047 100 100)">Y</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(-27.177 100 100)">&middot;</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(-16.306 100 100)">E</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(-10.871 100 100)">N</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(-5.435 100 100)">D</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(0.000 100 100)">O</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(5.435 100 100)">T</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(10.871 100 100)">O</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(16.306 100 100)">X</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(21.741 100 100)">I</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(27.177 100 100)">N</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(38.047 100 100)">&middot;</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(48.918 100 100)">P</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(54.354 100 100)">O</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(59.789 100 100)">T</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(65.224 100 100)">E</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(70.660 100 100)">N</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(76.095 100 100)">C</text>
+          <text class="glyph" x="100" y="26.00" transform="rotate(81.530 100 100)">Y</text>
+        </g>
+        <g class="arc arc-bottom">
+          <text class="glyph" x="100" y="173.00" transform="rotate(62.201 100 100) rotate(180 100 173.00)">U</text>
+          <text class="glyph" x="100" y="173.00" transform="rotate(57.225 100 100) rotate(180 100 173.00)">S</text>
+          <text class="glyph" x="100" y="173.00" transform="rotate(52.249 100 100) rotate(180 100 173.00)">P</text>
+          <text class="glyph" x="100" y="173.00" transform="rotate(42.297 100 100) rotate(180 100 173.00)">&lt;</text>
+          <text class="glyph" x="100" y="173.00" transform="rotate(37.321 100 100) rotate(180 100 173.00)">7</text>
+          <text class="glyph" x="100" y="173.00" transform="rotate(32.345 100 100) rotate(180 100 173.00)">1</text>
+          <text class="glyph" x="100" y="173.00" transform="rotate(27.369 100 100) rotate(180 100 173.00)">&gt;</text>
+          <text class="glyph" x="100" y="173.00" transform="rotate(17.416 100 100) rotate(180 100 173.00)">&middot;</text>
+          <text class="glyph" x="100" y="173.00" transform="rotate(7.464 100 100) rotate(180 100 173.00)">U</text>
+          <text class="glyph" x="100" y="173.00" transform="rotate(2.488 100 100) rotate(180 100 173.00)">S</text>
+          <text class="glyph" x="100" y="173.00" transform="rotate(-2.488 100 100) rotate(180 100 173.00)">P</text>
+          <text class="glyph" x="100" y="173.00" transform="rotate(-12.440 100 100) rotate(180 100 173.00)">&lt;</text>
+          <text class="glyph" x="100" y="173.00" transform="rotate(-17.416 100 100) rotate(180 100 173.00)">8</text>
+          <text class="glyph" x="100" y="173.00" transform="rotate(-22.392 100 100) rotate(180 100 173.00)">5</text>
+          <text class="glyph" x="100" y="173.00" transform="rotate(-27.369 100 100) rotate(180 100 173.00)">&gt;</text>
+          <text class="glyph" x="100" y="173.00" transform="rotate(-37.321 100 100) rotate(180 100 173.00)">&middot;</text>
+          <text class="glyph" x="100" y="173.00" transform="rotate(-47.273 100 100) rotate(180 100 173.00)">H</text>
+          <text class="glyph" x="100" y="173.00" transform="rotate(-52.249 100 100) rotate(180 100 173.00)">P</text>
+          <text class="glyph" x="100" y="173.00" transform="rotate(-57.225 100 100) rotate(180 100 173.00)">L</text>
+          <text class="glyph" x="100" y="173.00" transform="rotate(-62.201 100 100) rotate(180 100 173.00)">C</text>
+        </g>
+
+        <circle class="ring-inner-halo" cx="100" cy="100" r="60"/>
+        <circle class="ring-inner" cx="100" cy="100" r="56"/>
+        <circle class="disc-veil" cx="100" cy="100" r="56"/>
+
+        <path class="check" d="M 88,76 L 96.5,84.5 L 113,66"/>
+        <text class="word" x="100" y="116">PASS</text>
+        <line class="divider" x1="76" y1="125" x2="124" y2="125"/>
+        <text class="lots" x="100" y="138">5 OF 5 LOTS</text>
+      </svg>
+      <div>
+        <h3>All five compounded preparations passed post-excursion release testing.</h3>
+        <p>After continuous exposure peaking at <b>58.4 &deg;C (137.1 &deg;F)</b> over <b>13 d 17 h</b>, all lots returned <b>no evidence of microbial growth</b> (USP &lt;71&gt; sterility) and endotoxin levels <b>far below</b> their acceptance limits (USP &lt;85&gt;). The Sermorelin lot additionally assayed at <b>102.3 % of label potency</b> by HPLC. Testing performed by Pharmetric Laboratory (accreditation 5386.01).</p>
+      </div>
+    </div>
+
+    <div class="cards">
+      <div class="card cold">
+        <div class="k">Minimum</div>
+        <div class="v">28.8<span class="u">&deg;F</span></div>
+        <div class="f">&minus;1.8 &deg;C</div>
+      </div>
+      <div class="card">
+        <div class="k">Average</div>
+        <div class="v">66.9<span class="u">&deg;F</span></div>
+        <div class="f">19.4 &deg;C</div>
+      </div>
+      <div class="card">
+        <div class="k">MKT</div>
+        <div class="v">77.2<span class="u">&deg;F</span></div>
+        <div class="f">25.1 &deg;C</div>
+      </div>
+      <div class="card">
+        <div class="k">Maximum</div>
+        <div class="v">137.1<span class="u">&deg;F</span></div>
+        <div class="f">58.4 &deg;C</div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- ======================= 2 · EXPOSURE ======================= -->
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-num">02</span>
+      <div>
+        <h2 class="sec-title">Exposure conditions</h2>
+        <p class="sec-sub">A calibrated RC-5 data logger recorded temperature every 15 minutes throughout the study. The trace below is a faithful redraw of the instrument's own plotted profile; summary values are the logger's recorded statistics.</p>
+      </div>
+    </div>
+
+    <div class="chart-panel">
+      <h4>Temperature vs. alarm thresholds</h4>
+      <p class="cap">Dual axis — &deg;F (left) and &deg;C (right). Upper alarm (H1) 140 &deg;F / 60 &deg;C; lower alarm (L1) &minus;22 &deg;F / &minus;30 &deg;C. No alarm state was triggered.</p>
+      <div class="cvs-lg"><canvas id="mainTemp"></canvas></div>
+    </div>
+
+    <div class="split" style="margin-top:18px;">
+      <div class="panel">
+        <h4>Logger &amp; configuration</h4>
+        <dl class="kv">
+          <dt>Model</dt><dd>RC-5</dd>
+          <dt>Serial no.</dt><dd>EFE261104293</dd>
+          <dt>Probe</dt><dd>Temperature</dd>
+          <dt>Firmware</dt><dd>V2.1</dd>
+          <dt>Logging interval</dt><dd>15 min</dd>
+          <dt>Total readings</dt><dd>1,317</dd>
+          <dt>Trip code</dt><dd>0000001</dd>
+        </dl>
+      </div>
+      <div class="panel">
+        <h4>Study window</h4>
+        <dl class="kv">
+          <dt>First reading</dt><dd>2026-01-24 06:01</dd>
+          <dt>Last reading</dt><dd>2026-02-06 23:01</dd>
+          <dt>Duration</dt><dd>13 d 17 h</dd>
+          <dt>Upper alarm (H1)</dt><dd>60.0 &deg;C / 140 &deg;F — Ok</dd>
+          <dt>Lower alarm (L1)</dt><dd>&minus;30.0 &deg;C / &minus;22 &deg;F — Ok</dd>
+          <dt>Peak reached</dt><dd>58.4 &deg;C / 137.1 &deg;F</dd>
+          <dt>File created</dt><dd>2026-06-03 16:42</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 3 · RESULTS TABLE ======================= -->
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-num">03</span>
+      <div>
+        <h2 class="sec-title">Post-excursion test results</h2>
+        <p class="sec-sub">Certificates of Analysis issued by Pharmetric Laboratory, 7265 Ulmerton Road, Largo, FL. Sterility by ATP bioluminescence (USP &lt;71&gt; compliant); endotoxin by USP &lt;85&gt;.</p>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Preparation</th>
+            <th>Lot / Sample</th>
+            <th>Sterility &lt;71&gt;</th>
+            <th>Endotoxin &lt;85&gt;</th>
+            <th>Potency</th>
+            <th>Released</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="prod">Tirzepatide / Glycine<small>30 / 20 mg/mL · 2 mL vial</small></td>
+            <td class="num">LG396001032<small style="color:var(--slate)">S429010</small></td>
+            <td><span class="pill">No growth</span></td>
+            <td class="num">3.76 <span class="dash">/</span> 350 EU/mL</td>
+            <td class="dash">—</td>
+            <td class="num">05 May 26</td>
+          </tr>
+          <tr>
+            <td class="prod">Semaglutide / Glycine<small>5 / 20 mg/mL · 2 mL vial</small></td>
+            <td class="num">LG396001001<small style="color:var(--slate)">S429007</small></td>
+            <td><span class="pill">No growth</span></td>
+            <td class="num">&lt;25.0 <span class="dash">/</span> 350 EU/mL</td>
+            <td class="dash">—</td>
+            <td class="num">08 May 26</td>
+          </tr>
+          <tr>
+            <td class="prod">NAD+ Injectable<small>100 mg/mL · 10 mL vial</small></td>
+            <td class="num">04162026@10<small style="color:var(--slate)">S429006</small></td>
+            <td><span class="pill">No growth</span></td>
+            <td class="num">4.07 <span class="dash">/</span> 350 EU/mL</td>
+            <td class="dash">—</td>
+            <td class="num">06 May 26</td>
+          </tr>
+          <tr>
+            <td class="prod">Glutathione<small>200 mg/mL · 10 mL vial</small></td>
+            <td class="num">Lg396000890<small style="color:var(--slate)">S429004</small></td>
+            <td><span class="pill">No growth</span></td>
+            <td class="num">5.18 <span class="dash">/</span> 35 EU/mL</td>
+            <td class="dash">—</td>
+            <td class="num">05 May 26</td>
+          </tr>
+          <tr>
+            <td class="prod">Sermorelin<small>2 mg/mL · 5 mL vial</small></td>
+            <td class="num">04162026@12<small style="color:var(--slate)">S423999</small></td>
+            <td><span class="pill">No growth</span></td>
+            <td class="num">&lt;2.50 <span class="dash">/</span> 350 EU/mL</td>
+            <td><span class="pill">102.3 %</span></td>
+            <td class="num">22 Apr 26</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="chart-panel">
+      <h4>Endotoxin headroom — result as % of allowable limit</h4>
+      <p class="cap">Each bar shows the measured endotoxin as a fraction of that product's USP &lt;85&gt; acceptance limit. Shorter is better; all lots sit well inside the limit (100 %).</p>
+      <div class="cvs-md"><canvas id="endoChart"></canvas></div>
+    </div>
+
+    <div class="chart-panel">
+      <h4>Sermorelin potency — HPLC assay</h4>
+      <p class="cap">Measured 2.0453 mg/mL against a 2 mg/mL label claim. Acceptance range 90.0–110.0 %.</p>
+      <div class="cvs-md" style="height:150px"><canvas id="potChart"></canvas></div>
+    </div>
+
+    <div class="note">
+      <b>Scope note:</b> Sterility and bacterial endotoxin were performed on all five lots. A potency (HPLC) assay was performed on the Sermorelin lot; the remaining lots were qualified for sterility and endotoxin only. Results relate to the item(s) tested and to the samples as received by the laboratory.
+    </div>
+  </div>
+</section>
+<!-- ======================= 4 · CUSTODY ======================= -->
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-num">04</span>
+      <div>
+        <h2 class="sec-title">Shipment &amp; chain of custody</h2>
+        <p class="sec-sub">UPS Ground Proof-of-Delivery records accompanying the study samples.</p>
+      </div>
+    </div>
+    <div class="split">
+      <div class="panel">
+        <h4>Shipment 1 — San Diego, CA</h4>
+        <dl class="kv">
+          <dt>Tracking</dt><dd class="wrap-l">1ZV543K10305361985</dd>
+          <dt>Service</dt><dd>UPS Ground</dd>
+          <dt>Shipped / billed</dt><dd>04/16/2026</dd>
+          <dt>Delivered</dt><dd>04/22/2026 1:17 PM</dd>
+          <dt>Location</dt><dd>Security Gate</dd>
+        </dl>
+      </div>
+      <div class="panel">
+        <h4>Shipment 2 — Tampa, FL</h4>
+        <dl class="kv">
+          <dt>Tracking</dt><dd class="wrap-l">1ZV543K10326600883</dd>
+          <dt>Service</dt><dd>UPS Ground</dd>
+          <dt>Shipped / billed</dt><dd>04/21/2026</dd>
+          <dt>Delivered</dt><dd>04/29/2026 11:42 AM</dd>
+          <dt>Received by</dt><dd>ALIANA — Inside</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 5 · CONCLUSION ======================= -->
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-num">05</span>
+      <div>
+        <h2 class="sec-title">Conclusion</h2>
+      </div>
+    </div>
+    <div class="concl">
+      <h3>Products retained sterility, endotoxin control, and potency after sustained heat.</h3>
+      <p>Across a continuous 13-day 17-hour excursion that peaked at 58.4 &deg;C (137.1 &deg;F) — approaching the logger's 60 &deg;C / 140 &deg;F upper alarm — every compounded lot met its release specifications on subsequent testing:</p>
+      <ul>
+        <li>5 of 5 lots — no evidence of microbial growth (USP &lt;71&gt; sterility)</li>
+        <li>5 of 5 lots — bacterial endotoxin below acceptance limit (USP &lt;85&gt;); measured values ranged from &lt;2.50 to 5.18 EU/mL</li>
+        <li>Sermorelin — 102.3 % of label potency by HPLC, within the 90–110 % range</li>
+        <li>No alarm threshold was breached during the recorded exposure window</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <img class="foot-brand" src="/images/logo.svg" alt="LogosRx" /><br>
+    <span class="mono">Tradeline SH Inc. d/b/a Logos Pharmacy · 7543 W Waters Ave, Tampa, FL 33615</span><br>
+    Laboratory testing by Pharmetric Laboratory, LLC (accreditation 5386.01). Temperatures shown in &deg;C with &deg;F equivalents (&deg;F = &deg;C &times; 9&frasl;5 + 32).<br>
+    This report summarizes source documents provided by Logos Pharmacy and is intended for internal quality and informational use. Values transcribed from the underlying CoAs and logger report.
+  </div>
+</footer>
+
+<script>
+Chart.defaults.font.family = "'IBM Plex Mono', monospace";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = '#5A6B78';
+
+/* ---- Build the recorded temperature trace (faithful redraw of logger plot) ---- */
+const celsius = [
+  -1.8,-1.4,-0.6,0.8,2.6,5.0,7.8,10.6,13.0,14.8,
+  16.2,17.4,18.6,19.8,21.6,23.8,25.0,24.2,22.6,21.4,
+  22.2,23.0,22.1,21.0,21.8,22.6,21.9,21.2,22.0,22.8,
+  21.7,22.4,23.2,22.5,21.8,22.6,23.4,24.0,23.2,22.6,
+  23.4,24.2,23.6,22.9,23.8,24.6,25.4,27.5,32.0,40.5,
+  50.0,58.4,49.0,36.0,26.5,21.5,20.0
+];
+const startMs = Date.UTC(2026,0,24,6,1);
+const endMs   = Date.UTC(2026,1,6,23,1);
+const step = (endMs-startMs)/(celsius.length-1);
+const labels = celsius.map((_,i)=>{
+  const d = new Date(startMs + i*step);
+  return (d.getUTCMonth()+1)+'/'+d.getUTCDate();
+});
+const cToF = c => c*9/5+32;
+const fToC = f => (f-32)*5/9;
+
+function thermalStroke(ctx, area){
+  const g = ctx.createLinearGradient(0, area.bottom, 0, area.top);
+  g.addColorStop(0.00, '#2563A8');
+  g.addColorStop(0.45, '#3E8F86');
+  g.addColorStop(0.68, '#E4A030');
+  g.addColorStop(1.00, '#D6452A');
+  return g;
+}
+function thermalFill(ctx, area){
+  const g = ctx.createLinearGradient(0, area.bottom, 0, area.top);
+  g.addColorStop(0, 'rgba(37,99,168,0.02)');
+  g.addColorStop(1, 'rgba(214,69,42,0.16)');
+  return g;
+}
+
+new Chart(document.getElementById('heroChart'), {
+  type:'line',
+  data:{ labels, datasets:[{
+    data:celsius.map(cToF), borderWidth:2, tension:.35, pointRadius:0,
+    borderColor:(c)=>{const{ctx,chartArea}=c.chart; return chartArea?thermalStroke(ctx,chartArea):'#E4A030';},
+    fill:true,
+    backgroundColor:(c)=>{const{ctx,chartArea}=c.chart; return chartArea?thermalFill(ctx,chartArea):'transparent';}
+  }]},
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}, tooltip:{enabled:false}},
+    scales:{
+      x:{display:false},
+      y:{ticks:{color:'#8FB8D0', callback:v=>Math.round(v)+'\u00b0'}, grid:{color:'rgba(255,255,255,.07)'}, border:{display:false}}
+    }
+  }
+});
+
+new Chart(document.getElementById('mainTemp'), {
+  type:'line',
+  data:{ labels, datasets:[
+    {
+      label:'Temperature (\u00b0F)', data:celsius.map(cToF), borderWidth:2.4, tension:.35, pointRadius:0,
+      borderColor:(c)=>{const{ctx,chartArea}=c.chart; return chartArea?thermalStroke(ctx,chartArea):'#E4A030';},
+      fill:true,
+      backgroundColor:(c)=>{const{ctx,chartArea}=c.chart; return chartArea?thermalFill(ctx,chartArea):'transparent';},
+      yAxisID:'yF'
+    },
+    { label:'Upper alarm 140 \u00b0F', data:celsius.map(()=>140), borderColor:'#D6452A', borderWidth:1.2, borderDash:[6,5], pointRadius:0, fill:false, yAxisID:'yF' }
+  ]},
+  options:{
+    responsive:true, maintainAspectRatio:false, interaction:{mode:'index', intersect:false},
+    plugins:{
+      legend:{display:true, labels:{usePointStyle:true, boxWidth:8, color:'#3A4E5C', font:{size:11}}},
+      tooltip:{
+        backgroundColor:'#0F2A3F', padding:10, titleFont:{family:'IBM Plex Mono'}, bodyFont:{family:'IBM Plex Mono'},
+        callbacks:{
+          title:(t)=>'Day marker '+t[0].label,
+          label:(t)=> t.datasetIndex===0 ? '  '+t.parsed.y.toFixed(1)+' \u00b0F  \u00b7  '+fToC(t.parsed.y).toFixed(1)+' \u00b0C' : '  limit 140 \u00b0F / 60 \u00b0C'
+        }
+      }
+    },
+    scales:{
+      x:{grid:{display:false}, border:{color:'#CBD6DE'}, ticks:{maxTicksLimit:12, color:'#5A6B78'}},
+      yF:{position:'left', min:20, max:150, title:{display:true,text:'\u00b0F',color:'#5A6B78'},
+          grid:{color:'#EDF2F6'}, border:{display:false}, ticks:{stepSize:20, callback:v=>Math.round(v)+'\u00b0'}},
+      yC:{position:'right', min:fToC(20), max:fToC(150), title:{display:true,text:'\u00b0C',color:'#5A6B78'},
+          grid:{display:false}, border:{display:false}, ticks:{stepSize:10, callback:v=>Math.round(v)+'\u00b0'}}
+    }
+  }
+});
+
+const endo = [
+  {p:'Sermorelin',      res:2.50, lim:350, lt:true},
+  {p:'Tirzepatide',     res:3.76, lim:350, lt:false},
+  {p:'NAD+',            res:4.07, lim:350, lt:false},
+  {p:'Glutathione',     res:5.18, lim:35,  lt:false},
+  {p:'Semaglutide',     res:25.0, lim:350, lt:true}
+].map(d=>({...d, pct:+(d.res/d.lim*100).toFixed(2)}));
+endo.sort((a,b)=>a.pct-b.pct);
+
+new Chart(document.getElementById('endoChart'), {
+  type:'bar',
+  data:{ labels:endo.map(d=>d.p),
+    datasets:[{
+      data:endo.map(d=>d.pct),
+      backgroundColor:endo.map(()=>'#2563A8'),
+      borderRadius:6, barThickness:26,
+      hoverBackgroundColor:'#137A55'
+    }]},
+  options:{
+    indexAxis:'y', responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{backgroundColor:'#0F2A3F', padding:10, bodyFont:{family:'IBM Plex Mono'},
+        callbacks:{label:(t)=>{const d=endo[t.dataIndex]; return '  '+(d.lt?'<':'')+d.res+' / '+d.lim+' EU/mL  ('+d.pct+'% of limit)';}}},
+      title:{display:false}
+    },
+    scales:{
+      x:{suggestedMax:20, title:{display:true,text:'% of USP <85> acceptance limit',color:'#5A6B78'},
+         grid:{color:'#EDF2F6'}, border:{display:false}, ticks:{callback:v=>v+'%'}},
+      y:{grid:{display:false}, border:{color:'#CBD6DE'}, ticks:{color:'#0F2A3F', font:{family:'IBM Plex Sans', weight:'600', size:12}}}
+    }
+  }
+});
+
+new Chart(document.getElementById('potChart'), {
+  type:'bar',
+  data:{ labels:['Sermorelin'],
+    datasets:[
+      {label:'Measured 102.3 %', data:[102.3], backgroundColor:'#137A55', borderRadius:6, barThickness:30, stack:'s'}
+    ]},
+  options:{
+    indexAxis:'y', responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{backgroundColor:'#0F2A3F', padding:10, bodyFont:{family:'IBM Plex Mono'},
+        callbacks:{label:()=>'  2.0453 mg/mL \u00b7 102.3 % of label'}}
+    },
+    scales:{
+      x:{min:80, max:120, title:{display:true,text:'% of label claim  (acceptance 90\u2013110 %)',color:'#5A6B78'},
+         grid:{color:'#EDF2F6'}, border:{display:false}, ticks:{callback:v=>v+'%'}},
+      y:{grid:{display:false}, border:{color:'#CBD6DE'}, ticks:{color:'#0F2A3F', font:{weight:'600'}}}
+    }
+  }
+});
+</script>
+
+
+</body>
+</html>
