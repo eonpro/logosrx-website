@@ -12,15 +12,13 @@ interface MobileMenuProps {
   onClose: () => void;
 }
 
-/**
- * Featured carousel: prefer products that have a real photo so the menu
- * showcases imagery rather than placeholders, then backfill with the rest
- * to keep up to six tiles.
- */
-const featuredProducts = [
-  ...products.filter((p) => p.image),
-  ...products.filter((p) => !p.image),
-].slice(0, 6);
+// Featured carousel: curated list only — no GLP-1s or testosterone.
+const FEATURED_SLUGS = ["nad-plus", "sermorelin", "enclomiphene-citrate", "anastrozole"];
+
+const featuredProducts = FEATURED_SLUGS.flatMap((slug) => {
+  const product = products.find((p) => p.slug === slug);
+  return product ? [product] : [];
+});
 
 export default function MobileMenu({ open, onClose }: MobileMenuProps) {
   return (
