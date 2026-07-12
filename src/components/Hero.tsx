@@ -27,7 +27,7 @@ export default function Hero() {
             {SITE.name}
           </p>
 
-          <h1 className="text-[2rem] sm:text-5xl lg:text-6xl xl:text-7xl leading-[0.95] tracking-tight text-navy mb-6 sm:mb-8 font-bold">
+          <h1 className="text-[2rem] sm:text-5xl lg:text-6xl xl:text-7xl leading-[0.98] tracking-tight text-navy mb-6 sm:mb-8 font-medium">
             Compounding Excellence, Personalized.
           </h1>
 

@@ -57,7 +57,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
       {/* Info — inside the same card, no separator */}
       <div className="px-5 pb-5 pt-0">
-        <h3 className="text-lg font-bold text-navy leading-snug">
+        <h3 className="text-lg font-medium tracking-tight text-navy leading-snug">
           {product.name}
         </h3>
         <p className="text-[13px] text-navy/65 mt-0.5">

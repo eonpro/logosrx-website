@@ -16,7 +16,7 @@ export default function PatientRefill() {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl text-navy leading-tight mb-8">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-navy leading-[1.05] mb-8">
               Patient Refill
             </h2>
 

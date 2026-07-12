@@ -64,7 +64,7 @@ export default function DrivenByExcellence() {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.6, delay: 0.15 }}
           >
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl text-navy leading-tight mb-6">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-navy leading-[1.05] mb-6">
               Driven by Excellence
             </h2>
             <p className="text-lg leading-relaxed text-navy/60">

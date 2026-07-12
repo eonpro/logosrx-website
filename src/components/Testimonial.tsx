@@ -29,7 +29,7 @@ export default function Testimonial() {
               />
             </div>
 
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl text-white leading-tight mb-8">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-white leading-[1.05] mb-8">
               Empowering providers,
               <br />
               transforming patient outcomes.

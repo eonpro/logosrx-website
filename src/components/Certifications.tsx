@@ -72,7 +72,7 @@ export default function Certifications() {
             </p>
             <span className="h-px w-8 bg-magenta/40" />
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-navy">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight leading-[1.05] text-navy">
             Certifications & Compliance
           </h2>
           <p className="mx-auto mt-5 max-w-xl text-base sm:text-lg leading-relaxed text-navy/60">
@@ -104,7 +104,7 @@ export default function Certifications() {
                 )}
               </div>
 
-              <h3 className="mt-6 text-base font-semibold tracking-tight text-navy">
+              <h3 className="mt-6 text-base font-medium tracking-tight text-navy">
                 {badge.title}
               </h3>
               <p className="mt-2 max-w-[15rem] text-sm leading-relaxed text-navy/55">

@@ -20,7 +20,7 @@ export default function FeaturedProducts() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.5 }}
-            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-navy"
+            className="text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight leading-[1.05] text-navy"
           >
             Our Products
           </motion.h2>
@@ -76,7 +76,7 @@ export default function FeaturedProducts() {
                 Verified clinics only
               </span>
 
-              <h3 className="mt-5 text-2xl font-bold leading-tight text-white sm:text-3xl">
+              <h3 className="mt-5 text-2xl font-medium tracking-tight leading-tight text-white sm:text-3xl">
                 Custom provider pricing,
                 <br className="hidden sm:block" /> unlocked for your clinic
               </h3>

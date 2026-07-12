@@ -45,7 +45,7 @@ export default function Newsletter() {
           className="flex flex-col lg:flex-row items-center justify-between gap-8"
         >
           <div className="text-center lg:text-left">
-            <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+            <h3 className="text-2xl sm:text-3xl font-medium tracking-tight text-white mb-2">
               Stay in the loop
             </h3>
             <p className="text-white/85 text-sm sm:text-base">

@@ -13,7 +13,7 @@ export default function FAQ() {
             <p className="text-xs sm:text-sm font-semibold tracking-[0.2em] uppercase text-magenta mb-3">
               FAQ
             </p>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-navy leading-tight mb-6">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-navy leading-[1.05] mb-6">
               Frequently Asked Questions
             </h2>
             <p className="text-navy/70 leading-relaxed">

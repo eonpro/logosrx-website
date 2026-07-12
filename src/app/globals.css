@@ -131,6 +131,13 @@ body {
     sans-serif;
   color: var(--color-navy);
   background: #ffffff;
+  /*
+   * Hims-style body tracking: their 16 px body copy runs at -0.176 px
+   * (-0.011em). The slight negative tracking tightens word-shapes and reads
+   * more "product" than default browser spacing. Headings tighten further
+   * via `tracking-tight` (-0.025em) at the component level.
+   */
+  letter-spacing: -0.011em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;

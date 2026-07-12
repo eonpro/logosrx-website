@@ -24,7 +24,7 @@ export default function BuildingTrust() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.6 }}
-            className="text-4xl sm:text-5xl lg:text-6xl text-white leading-tight"
+            className="text-4xl sm:text-5xl lg:text-6xl font-medium tracking-tight text-white leading-[1.05]"
           >
             Building Trust
           </motion.h2>

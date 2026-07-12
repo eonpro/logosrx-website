@@ -41,7 +41,7 @@ export default function HowItWorks() {
           transition={{ duration: 0.5 }}
           className="text-center mb-12 sm:mb-16"
         >
-          <h2 className="text-4xl sm:text-5xl font-bold text-navy">
+          <h2 className="text-4xl sm:text-5xl font-medium tracking-tight leading-[1.05] text-navy">
             How It Works
           </h2>
         </motion.div>
@@ -60,10 +60,10 @@ export default function HowItWorks() {
                 <span className="mb-5 flex h-9 w-9 items-center justify-center rounded-full bg-[#9795a3] text-sm font-bold text-white">
                   {step.number}
                 </span>
-                <h3 className="text-xl font-bold text-navy mb-3">
+                <h3 className="text-xl font-medium tracking-tight text-navy mb-3">
                   {step.title}
                 </h3>
-                <p className="text-sm leading-relaxed text-navy/60 max-w-xs">
+                <p className="text-base leading-relaxed text-navy/60 max-w-xs">
                   {step.description}
                 </p>
               </div>
