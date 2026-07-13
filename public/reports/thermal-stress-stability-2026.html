@@ -75,6 +75,35 @@
   .hero-chart{background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.10); border-radius:14px; padding:14px 14px 6px;}
   .hero-chart h4{margin:0 0 4px; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:#9FC3D6; font-family:"IBM Plex Mono",monospace; font-weight:500;}
   .hero-chart .cvs{height:150px;}
+  /* download button — hero (on dark) */
+  .dl-hero{
+    display:inline-flex; align-items:center; gap:10px; margin-top:26px;
+    font-family:"IBM Plex Mono",monospace; font-size:13px; letter-spacing:.04em; font-weight:500;
+    color:#EAF2F7; text-decoration:none; padding:11px 18px; border-radius:10px;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.16);
+    transition:background .2s ease, border-color .2s ease, transform .2s ease;
+  }
+  .dl-hero:hover{background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.30); transform:translateY(-1px);}
+  .dl-hero svg{flex:none;}
+  .dl-hero .sz{color:#8FB8D0;}
+
+  /* download panel — end of report (on light) */
+  .dl-panel{
+    display:flex; align-items:center; gap:22px; flex-wrap:wrap; justify-content:space-between;
+    background:linear-gradient(180deg,#F3F9F6,#EAF4EF); border:1px solid #CDE6DB;
+    border-radius:16px; padding:24px 26px; box-shadow:var(--shadow); margin-top:26px;
+  }
+  .dl-panel .dl-copy h4{font-family:"Space Grotesk",sans-serif; font-weight:600; font-size:17px; margin:0 0 4px; color:var(--ink);}
+  .dl-panel .dl-copy p{margin:0; font-size:13.5px; color:var(--ink-soft);}
+  .dl-btn{
+    display:inline-flex; align-items:center; gap:10px; white-space:nowrap;
+    font-family:"IBM Plex Sans",sans-serif; font-size:14px; font-weight:600;
+    color:#fff; text-decoration:none; padding:13px 22px; border-radius:11px;
+    background:var(--pass); border:1px solid #0E5F42; box-shadow:0 6px 16px rgba(19,122,85,.24);
+    transition:background .2s ease, transform .2s ease, box-shadow .2s ease;
+  }
+  .dl-btn:hover{background:#0E6A49; transform:translateY(-1px); box-shadow:0 10px 22px rgba(19,122,85,.30);}
+  .dl-btn svg{flex:none;}
 
   /* ---------- SECTION SHELL ---------- */
   section{padding:52px 0;}
@@ -208,8 +237,18 @@
   footer .wrap{font-size:12.5px; color:var(--slate); line-height:1.7;}
   .foot-brand{height:26px; width:auto; opacity:.55; margin-bottom:16px;}
 
+  /* ---------- SCROLL REVEAL ---------- */
+  .reveal{opacity:0; transform:translateY(26px);
+    transition:opacity .7s cubic-bezier(.22,.61,.36,1), transform .7s cubic-bezier(.22,.61,.36,1);
+    transition-delay:var(--reveal-delay,0ms); will-change:opacity,transform;}
+  .reveal.in{opacity:1; transform:none;}
+  @media(prefers-reduced-motion:reduce){
+    .reveal{opacity:1 !important; transform:none !important; transition:none !important;}
+  }
+
   /* ---------- PRINT ---------- */
   @media print{
+    .reveal{opacity:1 !important; transform:none !important;}
     body{background:#fff;}
     .masthead{border-bottom:1px solid #CBD6DE;}
     .brand, .foot-brand{opacity:1 !important;}
@@ -251,6 +290,13 @@
           <span class="f">= 58.4 &deg;C peak</span>
         </div>
         <div class="peak-label">Maximum recorded temperature · logger S/N EFE261104293</div>
+        <a class="dl-hero" href="/reports/thermal-stress-stability-study-full.pdf" download>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M8 1.5v8.5m0 0L4.75 6.75M8 10l3.25-3.25" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2.5 11.5v1.5a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          Download full study (PDF)
+        </a>
       </div>
       <div class="hero-chart">
         <h4>Recorded profile &deg;F — 24 Jan &rarr; 06 Feb 2026</h4>
@@ -691,6 +737,20 @@
         <li>Sermorelin — 102.3 % of label potency by HPLC, within the 90–110 % range</li>
         <li>No alarm threshold was breached during the recorded exposure window</li>
       </ul>
+
+      <div class="dl-panel">
+        <div class="dl-copy">
+          <h4>Full study &amp; source documents</h4>
+          <p>Complete report with the logger export, Certificates of Analysis, and chain-of-custody records.</p>
+        </div>
+        <a class="dl-btn" href="/reports/thermal-stress-stability-study-full.pdf" download>
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M8 1.5v8.5m0 0L4.75 6.75M8 10l3.25-3.25" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2.5 11.5v1.5a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          Download PDF
+        </a>
+      </div>
     </div>
   </div>
 </section>
@@ -743,7 +803,153 @@ function thermalFill(ctx, area){
   return g;
 }
 
-new Chart(document.getElementById('heroChart'), {
+/* ---- Animation helpers -------------------------------------------------- */
+const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* Progressive "draw-in" for line charts: each point eases in left-to-right,
+   rising from the previous point so the trace appears to be plotted live. */
+function progressiveLine(totalMs, yScaleId){
+  if(prefersReduced) return false;
+  const step = totalMs / celsius.length;
+  const prevY = (ctx)=>{
+    if(ctx.index === 0){
+      const s = ctx.chart.scales[yScaleId];
+      return s ? s.getPixelForValue(ctx.raw) : ctx.chart.chartArea.bottom;
+    }
+    const prev = ctx.chart.getDatasetMeta(ctx.datasetIndex).data[ctx.index - 1];
+    return prev ? prev.getProps(['y'], true).y : ctx.chart.chartArea.bottom;
+  };
+  return {
+    x:{type:'number', easing:'easeOutQuad', duration:step, from:NaN,
+       delay(ctx){ if(ctx.type!=='data' || ctx.xStarted) return 0; ctx.xStarted=true; return ctx.index*step; }},
+    y:{type:'number', easing:'easeOutQuad', duration:step, from:prevY,
+       delay(ctx){ if(ctx.type!=='data' || ctx.yStarted) return 0; ctx.yStarted=true; return ctx.index*step; }}
+  };
+}
+
+/* Staggered grow-from-axis for horizontal bar charts. */
+function barGrow(staggerMs){
+  if(prefersReduced) return {duration:0};
+  return {
+    duration:1000, easing:'easeOutQuart',
+    delay(ctx){ return (ctx.type==='data' && ctx.mode==='default') ? ctx.dataIndex*staggerMs : 0; }
+  };
+}
+
+/* Defer chart creation until it scrolls into view so the entrance animation
+   plays where the reader can actually see it. */
+function mountOnView(id, factory){
+  const el = document.getElementById(id);
+  if(!el) return;
+  if(prefersReduced || !('IntersectionObserver' in window)){ factory(); return; }
+  const io = new IntersectionObserver((entries, obs)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ factory(); obs.unobserve(e.target); } });
+  }, {threshold:0.28, rootMargin:'0px 0px -10% 0px'});
+  io.observe(el);
+}
+
+/* ---- Page-wide scroll reveal: fade + rise every block as it enters view -- */
+(function scrollReveal(){
+  const sel = '.sec-head, .verdict, .card, .chart-panel, .panel, .tbl-wrap, .note, .concl';
+  const blocks = [...document.querySelectorAll(sel)];
+  if(prefersReduced || !('IntersectionObserver' in window)){ return; }
+  blocks.forEach(b=>b.classList.add('reveal'));
+  const io = new IntersectionObserver((entries, obs)=>{
+    entries.forEach(e=>{
+      if(!e.isIntersecting) return;
+      // Stagger stat cards so they cascade in as a row.
+      if(e.target.classList.contains('card')){
+        const sibs = [...e.target.parentElement.children];
+        e.target.style.setProperty('--reveal-delay', (sibs.indexOf(e.target)*80)+'ms');
+      }
+      e.target.classList.add('in');
+      obs.unobserve(e.target);
+    });
+  }, {threshold:0.16, rootMargin:'0px 0px -8% 0px'});
+  blocks.forEach(b=>io.observe(b));
+})();
+
+/* ---- Shared chart plugins ---------------------------------------------- */
+/* Value labels drawn at the end of each horizontal bar. */
+function barValueLabels(format){
+  return {
+    id:'barValueLabels',
+    afterDatasetsDraw(chart){
+      const {ctx} = chart;
+      const meta = chart.getDatasetMeta(0);
+      ctx.save();
+      ctx.font = "600 11px 'IBM Plex Mono', monospace";
+      ctx.textBaseline = 'middle';
+      meta.data.forEach((bar, i)=>{
+        const p = bar.getProps(['x','y','base'], false);
+        if(!isFinite(p.x) || !isFinite(p.y)) return;
+        // Only paint once the bar has grown enough to read (keeps it in sync
+        // with the grow-in animation instead of popping the number early).
+        if(Math.abs(p.x - p.base) < 3) return;
+        ctx.fillStyle = '#3A4E5C';
+        ctx.textAlign = 'left';
+        ctx.fillText(format(chart.data.datasets[0].data[i], i), p.x + 8, p.y);
+      });
+      ctx.restore();
+    }
+  };
+}
+
+/* Shaded acceptance band + dashed target line for the potency gauge. */
+const potencyBand = {
+  id:'potencyBand',
+  beforeDatasetsDraw(chart){
+    const {ctx, chartArea:a, scales:{x}} = chart;
+    if(!x) return;
+    const lo = x.getPixelForValue(90), hi = x.getPixelForValue(110), mid = x.getPixelForValue(100);
+    ctx.save();
+    ctx.fillStyle = 'rgba(19,122,85,0.08)';
+    ctx.fillRect(lo, a.top, hi-lo, a.bottom-a.top);
+    ctx.strokeStyle = 'rgba(19,122,85,0.35)';
+    ctx.setLineDash([5,4]); ctx.lineWidth = 1;
+    [lo,hi].forEach(px=>{ ctx.beginPath(); ctx.moveTo(px,a.top); ctx.lineTo(px,a.bottom); ctx.stroke(); });
+    ctx.setLineDash([]); ctx.strokeStyle = 'rgba(19,122,85,0.55)'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(mid,a.top); ctx.lineTo(mid,a.bottom); ctx.stroke();
+    ctx.fillStyle = '#137A55'; ctx.font = "600 10px 'IBM Plex Mono', monospace"; ctx.textAlign = 'center';
+    ctx.fillText('100 %', mid, a.top - 4);
+    ctx.restore();
+  }
+};
+
+/* Peak-temperature marker: dot + callout at the hottest reading. */
+const peakIdx = celsius.indexOf(Math.max(...celsius));
+function peakMarker(yScaleId){
+  return {
+    id:'peakMarker',
+    afterDatasetsDraw(chart){
+      const meta = chart.getDatasetMeta(0);
+      const el = meta.data[peakIdx];
+      if(!el) return;
+      const {x,y} = el.getProps(['x','y'], false);
+      if(!isFinite(x) || !isFinite(y)) return;
+      const {ctx} = chart;
+      ctx.save();
+      // pulse halo
+      ctx.beginPath(); ctx.arc(x,y,7,0,Math.PI*2); ctx.fillStyle = 'rgba(214,69,42,0.18)'; ctx.fill();
+      ctx.beginPath(); ctx.arc(x,y,3.6,0,Math.PI*2); ctx.fillStyle = '#D6452A';
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.fill(); ctx.stroke();
+      // callout
+      const label = '137.1 \u00b0F peak';
+      ctx.font = "600 11px 'IBM Plex Mono', monospace";
+      const w = ctx.measureText(label).width + 14;
+      let bx = x - w/2, by = y - 34;
+      bx = Math.max(chart.chartArea.left+2, Math.min(bx, chart.chartArea.right - w - 2));
+      ctx.fillStyle = '#0F2A3F';
+      ctx.beginPath(); ctx.roundRect(bx, by, w, 20, 5); ctx.fill();
+      ctx.fillStyle = '#FFC98A'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(label, bx + w/2, by + 10);
+      ctx.restore();
+    }
+  };
+}
+
+/* ---- HERO mini chart ---------------------------------------------------- */
+mountOnView('heroChart', ()=> new Chart(document.getElementById('heroChart'), {
   type:'line',
   data:{ labels, datasets:[{
     data:celsius.map(cToF), borderWidth:2, tension:.35, pointRadius:0,
@@ -753,15 +959,17 @@ new Chart(document.getElementById('heroChart'), {
   }]},
   options:{
     responsive:true, maintainAspectRatio:false,
+    animations: progressiveLine(1500, 'y'),
     plugins:{legend:{display:false}, tooltip:{enabled:false}},
     scales:{
       x:{display:false},
       y:{ticks:{color:'#8FB8D0', callback:v=>Math.round(v)+'\u00b0'}, grid:{color:'rgba(255,255,255,.07)'}, border:{display:false}}
     }
   }
-});
+}));
 
-new Chart(document.getElementById('mainTemp'), {
+/* ---- MAIN temperature chart --------------------------------------------- */
+mountOnView('mainTemp', ()=> new Chart(document.getElementById('mainTemp'), {
   type:'line',
   data:{ labels, datasets:[
     {
@@ -773,8 +981,10 @@ new Chart(document.getElementById('mainTemp'), {
     },
     { label:'Upper alarm 140 \u00b0F', data:celsius.map(()=>140), borderColor:'#D6452A', borderWidth:1.2, borderDash:[6,5], pointRadius:0, fill:false, yAxisID:'yF' }
   ]},
+  plugins:[peakMarker('yF')],
   options:{
     responsive:true, maintainAspectRatio:false, interaction:{mode:'index', intersect:false},
+    animations: progressiveLine(2200, 'yF'),
     plugins:{
       legend:{display:true, labels:{usePointStyle:true, boxWidth:8, color:'#3A4E5C', font:{size:11}}},
       tooltip:{
@@ -793,7 +1003,7 @@ new Chart(document.getElementById('mainTemp'), {
           grid:{display:false}, border:{display:false}, ticks:{stepSize:10, callback:v=>Math.round(v)+'\u00b0'}}
     }
   }
-});
+}));
 
 const endo = [
   {p:'Sermorelin',      res:2.50, lim:350, lt:true},
@@ -804,17 +1014,29 @@ const endo = [
 ].map(d=>({...d, pct:+(d.res/d.lim*100).toFixed(2)}));
 endo.sort((a,b)=>a.pct-b.pct);
 
-new Chart(document.getElementById('endoChart'), {
+/* ---- ENDOTOXIN headroom chart ------------------------------------------- */
+function endoBarFill(c){
+  const {ctx, chartArea} = c.chart;
+  if(!chartArea) return '#2563A8';
+  const g = ctx.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
+  g.addColorStop(0, '#2F74C0');
+  g.addColorStop(1, '#1E4E86');
+  return g;
+}
+mountOnView('endoChart', ()=> new Chart(document.getElementById('endoChart'), {
   type:'bar',
   data:{ labels:endo.map(d=>d.p),
     datasets:[{
       data:endo.map(d=>d.pct),
-      backgroundColor:endo.map(()=>'#2563A8'),
+      backgroundColor:endoBarFill,
       borderRadius:6, barThickness:26,
       hoverBackgroundColor:'#137A55'
     }]},
+  plugins:[barValueLabels((v)=>v.toFixed(v<1?2:1)+'%')],
   options:{
     indexAxis:'y', responsive:true, maintainAspectRatio:false,
+    layout:{padding:{right:56}},
+    animation: barGrow(140),
     plugins:{
       legend:{display:false},
       tooltip:{backgroundColor:'#0F2A3F', padding:10, bodyFont:{family:'IBM Plex Mono'},
@@ -827,16 +1049,28 @@ new Chart(document.getElementById('endoChart'), {
       y:{grid:{display:false}, border:{color:'#CBD6DE'}, ticks:{color:'#0F2A3F', font:{family:'IBM Plex Sans', weight:'600', size:12}}}
     }
   }
-});
+}));
 
-new Chart(document.getElementById('potChart'), {
+/* ---- POTENCY gauge ------------------------------------------------------ */
+function potBarFill(c){
+  const {ctx, chartArea} = c.chart;
+  if(!chartArea) return '#137A55';
+  const g = ctx.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
+  g.addColorStop(0, '#1B9C6E');
+  g.addColorStop(1, '#0E5F42');
+  return g;
+}
+mountOnView('potChart', ()=> new Chart(document.getElementById('potChart'), {
   type:'bar',
   data:{ labels:['Sermorelin'],
     datasets:[
-      {label:'Measured 102.3 %', data:[102.3], backgroundColor:'#137A55', borderRadius:6, barThickness:30, stack:'s'}
+      {label:'Measured 102.3 %', data:[102.3], backgroundColor:potBarFill, borderRadius:6, barThickness:30, stack:'s'}
     ]},
+  plugins:[potencyBand, barValueLabels(()=>'102.3 %')],
   options:{
     indexAxis:'y', responsive:true, maintainAspectRatio:false,
+    layout:{padding:{right:64}},
+    animation: barGrow(0),
     plugins:{
       legend:{display:false},
       tooltip:{backgroundColor:'#0F2A3F', padding:10, bodyFont:{family:'IBM Plex Mono'},
@@ -848,7 +1082,7 @@ new Chart(document.getElementById('potChart'), {
       y:{grid:{display:false}, border:{color:'#CBD6DE'}, ticks:{color:'#0F2A3F', font:{weight:'600'}}}
     }
   }
-});
+}));
 </script>
 
 
