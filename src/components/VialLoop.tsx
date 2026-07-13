@@ -103,7 +103,7 @@ export default function VialLoop({ className }: { className?: string }) {
       width={FRAME_WIDTH}
       height={FRAME_HEIGHT}
       role="img"
-      aria-label="Rotating Logos RX compounded medication vial"
+      aria-label="Rotating Logos RX compounded Sermorelin vial"
       className={className}
     />
   );
