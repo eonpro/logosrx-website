@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
   getCatalogDownloadConfig,
-  getFlipbookPages,
   verifyCatalogToken,
 } from "@/lib/catalog/download";
-import Flipbook from "./Flipbook";
+import { buildBookPriceIndex, type BookPriceItem } from "@/data/catalog-book";
+import { getCatalogProducts } from "@/lib/catalog/store";
+import CatalogBook from "@/components/catalog-book/CatalogBook";
+import { buildBookPages } from "@/components/catalog-book/buildBookPages";
 
 export const dynamic = "force-dynamic";
 
@@ -21,12 +23,13 @@ interface PageProps {
 }
 
 /**
- * `/download/catalog/view?key=…` — the page-flip online catalog. Same private
- * token gate as the download; an invalid/absent key (or unconfigured flipbook)
- * renders the site 404.
+ * `/download/catalog/view?key=…` — the native online catalog book. Same
+ * private token gate as the PDF download; an invalid/absent key renders the
+ * site 404. Pages are composed from `products.ts` / `learning.ts`, and
+ * suggested-retail prices come live from the catalog DB.
  */
 export default async function CatalogViewPage({ searchParams }: PageProps) {
-  const { token, flipbookUrl } = getCatalogDownloadConfig();
+  const { token } = getCatalogDownloadConfig();
   const params = await searchParams;
   const key =
     typeof params.key === "string"
@@ -39,18 +42,25 @@ export default async function CatalogViewPage({ searchParams }: PageProps) {
     notFound();
   }
 
-  const pages = await getFlipbookPages(flipbookUrl);
-  if (!pages) {
-    notFound();
+  // Live suggested-retail pricing. A DB hiccup must never take down the
+  // viewer — pages simply render without their pricing blocks.
+  let priceIndex: Record<string, BookPriceItem> = {};
+  try {
+    priceIndex = buildBookPriceIndex(await getCatalogProducts());
+  } catch {
+    priceIndex = {};
   }
 
+  const { meta, nodes } = buildBookPages(priceIndex);
   const safeKey = encodeURIComponent(key as string);
 
   return (
-    <Flipbook
-      pages={pages}
+    <CatalogBook
+      pages={meta}
       pdfHref={`/download/catalog/file?key=${safeKey}`}
       backHref={`/download/catalog?key=${safeKey}`}
-    />
+    >
+      {nodes}
+    </CatalogBook>
   );
 }

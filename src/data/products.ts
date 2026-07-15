@@ -46,6 +46,7 @@ export const THERAPEUTIC_AREAS = [
   "Peptide Therapy",
   "Longevity",
   "Dermatology",
+  "Sexual Wellness",
   "Wellness",
   "Supportive Care",
 ] as const;
@@ -1741,6 +1742,91 @@ export const products: Product[] = [
       },
     ],
     relatedSlugs: ["minoxidil"],
+  },
+
+  /* ───── Sexual Wellness ───── */
+  {
+    slug: "tadalafil",
+    name: "Tadalafil",
+    modifier: "Daily-use PDE-5 inhibitor",
+    modifierStyle: "subtitle",
+    category: "Sexual Wellness",
+    categoryKey: "Oral Capsules",
+    tagline:
+      "A selective PDE-5 inhibitor providing steady, daily support for erectile function and BPH-related urinary symptoms.",
+    heroBullets: [
+      "Selective phosphodiesterase type 5 (PDE-5) inhibitor",
+      "5 mg daily dosing — no need to time around activity",
+      "Supports lower urinary tract symptoms associated with BPH",
+      "May be taken with or without food",
+    ],
+    descriptionParagraphs: [
+      "Tadalafil is a selective phosphodiesterase type 5 inhibitor commonly used in men for erectile dysfunction, benign prostatic hyperplasia symptoms, or patients experiencing both conditions. At the 5 mg daily dose, tadalafil provides steady systemic exposure and is often selected when the clinical goal is consistent erectile-function support without needing to time medication closely around sexual activity, while also supporting lower urinary tract symptoms associated with BPH. Tadalafil tablets may be taken with or without food.",
+      "Mechanistically, tadalafil enhances nitric oxide–mediated cGMP activity in smooth muscle. In erectile tissue, this supports relaxation of cavernosal smooth muscle and improved blood flow during sexual stimulation. PDE-5 activity is also present in smooth muscle of the prostate, bladder, and associated vasculature, which helps explain tadalafil's clinical use in urinary prostate symptom protocols, although the exact BPH symptom mechanism has not been fully established. Sexual stimulation is still required for an erectile response; tadalafil does not directly increase libido.",
+    ],
+    description:
+      "Selective PDE-5 inhibitor for daily erectile-function and BPH symptom support.",
+    image: "/images/products/tadalafil.webp",
+    imageAlt: "Logos RX Tadalafil 5 mg oral capsule",
+    concentration: "5 mg",
+    form: "Oral Capsules",
+    size: "As prescribed",
+    activeIngredient: {
+      name: "Tadalafil",
+      description:
+        "A long-acting selective phosphodiesterase type 5 (PDE-5) inhibitor that enhances nitric oxide–mediated cGMP activity in vascular and prostatic smooth muscle.",
+    },
+    ingredientHighlights: [
+      {
+        title: "Steady daily exposure",
+        description:
+          "Tadalafil's long half-life supports once-daily dosing with consistent systemic levels — no need to plan doses around sexual activity.",
+      },
+      {
+        title: "Dual indication",
+        description:
+          "Addresses both erectile dysfunction and lower urinary tract symptoms associated with benign prostatic hyperplasia.",
+      },
+      {
+        title: "Stimulation-dependent",
+        description:
+          "Tadalafil enables the natural erectile response; it does not directly increase libido, and sexual stimulation is still required.",
+      },
+    ],
+    howToTake: ORAL_HOW_TO_TAKE(
+      "Take 1 tablet (5 mg) by mouth once daily at approximately the same time each day, with or without food. Do not take more than once daily.",
+    ),
+    variants: [{ strength: "5 mg", form: "Capsules", quantity: "As prescribed" }],
+    variantColumns: ["strength", "form", "quantity"],
+    dosageSchedule: {
+      columns: ["weeks", "mg", "directions"],
+      rows: [
+        {
+          weeks: "1–12",
+          mg: "5 mg daily",
+          directions:
+            "Take 1 tablet by mouth once daily at approximately the same time each day, with or without food. Do not take more than once daily.",
+        },
+      ],
+    },
+    details: [
+      { label: "How to Use", content: "Take orally once daily at the same time each day, with or without food." },
+      { label: "Strengths", content: "5 mg capsules" },
+      { label: "Form", content: "Oral capsules" },
+      { label: "Schedule", content: "Once daily." },
+      { label: "BUD", content: "Refer to the dispensing label for the beyond-use date." },
+    ],
+    faqs: [
+      {
+        q: "How is daily tadalafil different from as-needed dosing?",
+        a: "The 5 mg daily dose maintains steady medication levels, so erectile-function support is continuous rather than timed to a single event. It's often preferred by patients who value spontaneity or who also have BPH-related urinary symptoms.",
+      },
+      {
+        q: "Does tadalafil increase libido?",
+        a: "No. Tadalafil supports the physiological erectile response through improved blood flow, but sexual stimulation is still required and it does not directly affect desire.",
+      },
+    ],
+    relatedSlugs: ["testosterone-cypionate", "enclomiphene-citrate"],
   },
 ];
 

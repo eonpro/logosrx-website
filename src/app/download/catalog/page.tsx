@@ -56,7 +56,7 @@ interface PageProps {
  * the link's validity isn't distinguishable from a non-existent page.
  */
 export default async function CatalogDownloadPage({ searchParams }: PageProps) {
-  const { token, pdfUrl, coverUrl, flipbookUrl } = getCatalogDownloadConfig();
+  const { token, pdfUrl, coverUrl } = getCatalogDownloadConfig();
   const params = await searchParams;
   const key =
     typeof params.key === "string"
@@ -72,7 +72,6 @@ export default async function CatalogDownloadPage({ searchParams }: PageProps) {
   const safeKey = encodeURIComponent(key as string);
   const fileHref = `/download/catalog/file?key=${safeKey}`;
   const viewHref = `/download/catalog/view?key=${safeKey}`;
-  const hasFlipbook = Boolean(flipbookUrl);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-white via-white to-[#262262]/5 px-6 py-16">
@@ -140,31 +139,25 @@ export default async function CatalogDownloadPage({ searchParams }: PageProps) {
 
             <div className="mt-8">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                {hasFlipbook && (
-                  <Link
-                    href={viewHref}
-                    prefetch={false}
-                    className="inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-magenta px-7 py-4 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-magenta-dark sm:w-auto"
+                <Link
+                  href={viewHref}
+                  prefetch={false}
+                  className="inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-magenta px-7 py-4 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-magenta-dark sm:w-auto"
+                >
+                  <svg
+                    className="h-4 w-4"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
                   >
-                    <svg
-                      className="h-4 w-4"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                      aria-hidden="true"
-                    >
-                      <path d="M10 4C5.5 4 2.2 7 1 10c1.2 3 4.5 6 9 6s7.8-3 9-6c-1.2-3-4.5-6-9-6Zm0 9.5A3.5 3.5 0 1 1 10 6.5a3.5 3.5 0 0 1 0 7Zm0-1.8a1.7 1.7 0 1 0 0-3.4 1.7 1.7 0 0 0 0 3.4Z" />
-                    </svg>
-                    View online
-                  </Link>
-                )}
+                    <path d="M10 4C5.5 4 2.2 7 1 10c1.2 3 4.5 6 9 6s7.8-3 9-6c-1.2-3-4.5-6-9-6Zm0 9.5A3.5 3.5 0 1 1 10 6.5a3.5 3.5 0 0 1 0 7Zm0-1.8a1.7 1.7 0 1 0 0-3.4 1.7 1.7 0 0 0 0 3.4Z" />
+                  </svg>
+                  View online
+                </Link>
                 <Link
                   href={fileHref}
                   prefetch={false}
-                  className={
-                    hasFlipbook
-                      ? "inline-flex w-full items-center justify-center gap-2.5 rounded-full border border-navy/20 px-7 py-4 text-sm font-semibold uppercase tracking-wide text-navy transition-colors hover:bg-navy/5 sm:w-auto"
-                      : "inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-magenta px-7 py-4 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-magenta-dark sm:w-auto"
-                  }
+                  className="inline-flex w-full items-center justify-center gap-2.5 rounded-full border border-navy/20 px-7 py-4 text-sm font-semibold uppercase tracking-wide text-navy transition-colors hover:bg-navy/5 sm:w-auto"
                 >
                   <svg
                     className="h-4 w-4"

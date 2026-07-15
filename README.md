@@ -106,10 +106,13 @@ Opening that link shows a branded **landing page** (`page.tsx`) with the catalog
 cover, a summary of what's inside, and two buttons — **View online** and
 **Download PDF** — rather than force-downloading the 34 MB file on arrival.
 
-- **View online** opens a page-flip **flipbook** at `/download/catalog/view`
-  (`Flipbook.tsx`, built on the MIT `page-flip` library) — one full landscape
-  page at a time with a realistic page-curl. It reads the optimized WebP page
-  images from a `manifest.json` in Blob (`CATALOG_FLIPBOOK_URL`).
+- **View online** opens the **native catalog book** at `/download/catalog/view`
+  — real HTML pages (one full-screen page at a time with prev/next, arrow keys,
+  swipe, a table of contents, and `#page-id` deep links) composed from
+  `src/data/catalog-book.ts` (page manifest), `src/data/products.ts` (product
+  content), and `src/data/learning.ts` (dosage charts). Suggested-retail
+  prices are read live from the `catalog_products` table, so edits in
+  `/admin/catalog` appear immediately.
 - **Download PDF** points at the token-gated streaming route
   (`/download/catalog/file`), which streams the file through itself, so the
   underlying blob URL is never exposed and the browser gets a clean
@@ -136,19 +139,14 @@ A wrong/absent key returns a generic 404 on every route. Rotating
    | `CATALOG_PDF_URL` | Vercel Blob URL of the uploaded PDF (server-only). |
    | `CATALOG_DOWNLOAD_TOKEN` | High-entropy secret required as `?key=`. Rotate to revoke. |
    | `CATALOG_COVER_URL` | _(optional)_ Cover image shown on the landing page. Falls back to a styled placeholder when unset. |
-   | `CATALOG_FLIPBOOK_URL` | _(optional)_ URL of the flipbook `manifest.json`. When set, a "View online" button appears. |
 
-To publish an updated catalog, re-run `npm run catalog:upload` and update
+To publish an updated catalog PDF, re-run `npm run catalog:upload` and update
 `CATALOG_PDF_URL` (the existing token is reused).
 
-### Online flipbook
+### Online catalog book
 
-Build the flipbook page images (optimizes the numbered catalog page JPGs to
-WebP, uploads them, and prints `CATALOG_FLIPBOOK_URL`):
-
-```bash
-npm run catalog:flipbook -- "/path/to/LOGOS RX CATALOG 2026"
-```
-
-Then set the printed `CATALOG_FLIPBOOK_URL` in your hosting env. Re-run and
-update the var whenever the catalog pages change.
+The online version needs no uploads or extra env vars: it renders natively
+from the codebase. To add, remove, or reorder pages, edit the page manifest in
+`src/data/catalog-book.ts`; product pages pull their content from
+`src/data/products.ts` and their suggested-retail pricing live from the
+`catalog_products` table.
