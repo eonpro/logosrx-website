@@ -1,4 +1,6 @@
-import { useId } from "react";
+"use client";
+
+import { useId, useState } from "react";
 import type { DosageChartRow } from "@/data/learning";
 
 interface DosageChartProps {
@@ -8,11 +10,23 @@ interface DosageChartProps {
 }
 
 /**
- * Two-column dosage chart with a centered insulin-syringe illustration.
- *
- * Left column = mg dose; right column = mL volume. The number column on
- * the syringe SVG ticks from `0` to `maxUnits` (default 100) so the
- * mg ↔ mL ↔ Units triad reads at a glance — mirroring the print catalog.
+ * Units drawn on a U-100 insulin syringe for a given mL volume
+ * (1 mL = 100 units). Returns `null` when the string has no parsable number.
+ */
+function unitsForMl(ml: string): number | null {
+  const match = /([\d.]+)/.exec(ml);
+  if (!match) return null;
+  const value = Number.parseFloat(match[1]);
+  if (!Number.isFinite(value)) return null;
+  return Math.round(value * 100);
+}
+
+/**
+ * Interactive dosage chart: two dose columns (mg | mL) around a realistic
+ * insulin-syringe illustration. Selecting any dose row animates the syringe
+ * to that fill level — stopper on the graduation, liquid to match, and a
+ * magenta units callout — so patients can see exactly what "0.5 mL" looks
+ * like on the syringe in their hand.
  */
 export default function DosageChart({ rows, maxUnits = 100 }: DosageChartProps) {
   // Ascending top→bottom (10 … 100) so each unit mark lines up with its
@@ -21,66 +35,95 @@ export default function DosageChart({ rows, maxUnits = 100 }: DosageChartProps) 
   const tickStep = Math.round(maxUnits / 10);
   const ticks = Array.from({ length: 10 }, (_, i) => (i + 1) * tickStep);
 
+  // Start on the emphasized reference row (falls back to the last row).
+  const emphasisIndex = rows.findIndex((r) => r.emphasis);
+  const [selected, setSelected] = useState(
+    emphasisIndex >= 0 ? emphasisIndex : rows.length - 1,
+  );
+
+  const selectedUnits = rows[selected] ? unitsForMl(rows[selected].ml) : null;
+
+  const chipClass = (isSelected: boolean, align: "left" | "right") =>
+    `w-full min-w-[110px] cursor-pointer rounded-lg px-4 py-2 text-sm transition-colors duration-200 ${
+      align === "right" ? "text-right" : "text-left"
+    } ${
+      isSelected
+        ? "bg-magenta/10 font-semibold text-magenta ring-1 ring-magenta/30"
+        : "bg-cream text-navy/80 hover:bg-beige/70"
+    } focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-magenta`;
+
   return (
-    <div className="relative grid grid-cols-[1fr_auto_1fr] gap-4 sm:gap-6 items-center">
-      {/* Left column — MG header + rows */}
-      <div className="flex flex-col items-end gap-2">
-        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-navy/70 mb-2">
-          MG
-        </p>
-        {rows.map((r) => (
-          <div
-            key={`mg-${r.mg}`}
-            className={`rounded-lg px-4 py-2 text-sm w-full text-right min-w-[110px] ${
-              r.emphasis
-                ? "bg-magenta/10 text-magenta font-semibold"
-                : "bg-cream text-navy/80"
-            }`}
-          >
-            {r.mg}
-          </div>
-        ))}
+    <div>
+      <div className="relative grid grid-cols-[1fr_auto_1fr] items-center gap-4 sm:gap-6">
+        {/* Left column — MG header + rows */}
+        <div className="flex flex-col items-end gap-2">
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.2em] text-navy/70">
+            MG
+          </p>
+          {rows.map((r, i) => (
+            <button
+              key={`mg-${r.mg}`}
+              type="button"
+              aria-pressed={i === selected}
+              onClick={() => setSelected(i)}
+              onMouseEnter={() => setSelected(i)}
+              className={chipClass(i === selected, "right")}
+            >
+              {r.mg}
+            </button>
+          ))}
+        </div>
+
+        {/* Center — Syringe SVG */}
+        <div className="flex flex-col items-center justify-end self-stretch pb-2">
+          <SyringeSvg
+            ticks={ticks}
+            tickStep={tickStep}
+            selectedUnits={selectedUnits}
+          />
+        </div>
+
+        {/* Right column — ML header + rows */}
+        <div className="flex flex-col items-start gap-2">
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.2em] text-navy/70">
+            ML
+          </p>
+          {rows.map((r, i) => (
+            <button
+              key={`ml-${r.ml}`}
+              type="button"
+              aria-pressed={i === selected}
+              onClick={() => setSelected(i)}
+              onMouseEnter={() => setSelected(i)}
+              className={chipClass(i === selected, "left")}
+            >
+              {r.ml}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Center — Syringe SVG */}
-      <div className="flex flex-col items-center self-stretch justify-end pb-2">
-        <SyringeSvg ticks={ticks} highlightTickIndex={9} />
-      </div>
-
-      {/* Right column — ML header + rows */}
-      <div className="flex flex-col items-start gap-2">
-        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-navy/70 mb-2">
-          ML
-        </p>
-        {rows.map((r) => (
-          <div
-            key={`ml-${r.ml}`}
-            className={`rounded-lg px-4 py-2 text-sm w-full min-w-[110px] ${
-              r.emphasis
-                ? "bg-magenta/10 text-magenta font-semibold"
-                : "bg-cream text-navy/80"
-            }`}
-          >
-            {r.ml}
-          </div>
-        ))}
-      </div>
+      <p className="mt-4 text-center text-xs text-navy/50">
+        Tap or hover a dose to see it drawn on the syringe.
+      </p>
     </div>
   );
 }
 
 /**
- * Realistic vertical insulin syringe: beveled needle + hub, glass barrel with
- * cylindrical shading and a faint medication fill, printed unit graduations
- * (major ticks labeled, 5-unit minor ticks between), rubber stopper, finger
- * flange, and plunger rod with thumb pad. Pure SVG, no external assets.
+ * Realistic vertical insulin syringe: hair-thin beveled needle + hub, slim
+ * glass barrel with cylindrical shading, printed unit graduations (major
+ * ticks labeled, 5-unit minor ticks between), and an animated rubber stopper
+ * + medication fill that tracks the selected dose. Pure SVG, no assets.
  */
 function SyringeSvg({
   ticks,
-  highlightTickIndex,
+  tickStep,
+  selectedUnits,
 }: {
   ticks: number[];
-  highlightTickIndex?: number;
+  tickStep: number;
+  selectedUnits: number | null;
 }) {
   // Unique gradient ids so multiple charts can coexist on one page.
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
@@ -96,7 +139,18 @@ function SyringeSvg({
   const BARREL_BOT = 352;
   const TICK_TOP = 84;
   const TICK_STEP = 26;
-  const STOPPER_Y = 326; // rubber stopper, below the last graduation (y=318)
+
+  /** Y of the graduation line for a unit value (continuous, clamped). */
+  const yForUnits = (units: number) => {
+    const y = TICK_TOP + (units / tickStep - 1) * TICK_STEP;
+    const last = TICK_TOP + (ticks.length - 1) * TICK_STEP;
+    return Math.min(Math.max(y, TICK_TOP), last);
+  };
+
+  const maxUnits = ticks[ticks.length - 1];
+  const levelY = yForUnits(selectedUnits ?? maxUnits);
+  const stopperY = levelY + 2; // rubber stopper sits right on the graduation
+  const move = { transition: "all 450ms cubic-bezier(0.4, 0, 0.2, 1)" } as const;
 
   return (
     <svg
@@ -105,7 +159,11 @@ function SyringeSvg({
       viewBox="0 0 140 436"
       fill="none"
       role="img"
-      aria-label={`Insulin syringe with unit markings from ${ticks[0]} to ${ticks[ticks.length - 1]}`}
+      aria-label={
+        selectedUnits === null
+          ? `Insulin syringe with unit markings from ${ticks[0]} to ${maxUnits}`
+          : `Insulin syringe drawn to ${selectedUnits} units`
+      }
     >
       <defs>
         {/* Glass barrel: darker edges, bright center highlight */}
@@ -176,14 +234,29 @@ function SyringeSvg({
         strokeWidth="1.2"
       />
 
-      {/* Medication fill: needle end down to the rubber stopper */}
+      {/* ── Plunger rod (behind the liquid, visible through the glass) ── */}
+      <rect
+        x={CX - 4}
+        y={stopperY + 18}
+        width="8"
+        height={BARREL_BOT + 60 - (stopperY + 18)}
+        rx="1.5"
+        fill={`url(#${rodId})`}
+        stroke="#262262"
+        strokeOpacity="0.35"
+        strokeWidth="0.7"
+        style={move}
+      />
+
+      {/* ── Medication fill: needle end down to the rubber stopper ── */}
       <rect
         x={BARREL_L + 2}
         y={BARREL_TOP + 4}
         width={BARREL_R - BARREL_L - 4}
-        height={STOPPER_Y - BARREL_TOP - 4}
+        height={Math.max(stopperY - BARREL_TOP - 4, 0)}
         rx="4"
         fill={`url(#${liquidId})`}
+        style={move}
       />
       {/* Meniscus at the top of the liquid */}
       <ellipse
@@ -208,7 +281,7 @@ function SyringeSvg({
       {/* ── Graduations ── */}
       {ticks.map((t, i) => {
         const y = TICK_TOP + i * TICK_STEP;
-        const isHighlight = i === highlightTickIndex;
+        const isHighlight = t === selectedUnits;
         return (
           <g key={t}>
             {/* Major tick: printed line on each wall */}
@@ -250,6 +323,7 @@ function SyringeSvg({
               fill={isHighlight ? "#C62E88" : "#262262"}
               fillOpacity={isHighlight ? 1 : 0.75}
               textAnchor="middle"
+              style={{ transition: "fill 250ms" }}
             >
               {t}
             </text>
@@ -257,34 +331,62 @@ function SyringeSvg({
         );
       })}
 
-      {/* ── Rubber stopper (two ribs) ── */}
-      <rect
-        x={BARREL_L + 2.5}
-        y={STOPPER_Y}
-        width={BARREL_R - BARREL_L - 5}
-        height="8"
-        rx="2.5"
-        fill="#1a1750"
-        opacity="0.85"
-      />
-      <rect
-        x={BARREL_L + 2.5}
-        y={STOPPER_Y + 11}
-        width={BARREL_R - BARREL_L - 5}
-        height="8"
-        rx="2.5"
-        fill="#1a1750"
-        opacity="0.85"
-      />
-      <rect
-        x={BARREL_L + 4}
-        y={STOPPER_Y + 1.5}
-        width={BARREL_R - BARREL_L - 8}
-        height="2"
-        rx="1"
-        fill="white"
-        opacity="0.25"
-      />
+      {/* ── Dose level: magenta line + units callout (moves via transform,
+            which transitions reliably across browsers) ── */}
+      {selectedUnits !== null && (
+        <g style={move} transform={`translate(0 ${levelY})`}>
+          <line
+            x1={BARREL_L - 4}
+            x2={BARREL_R + 2}
+            y1={0}
+            y2={0}
+            stroke="#C62E88"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
+          <text
+            x={BARREL_L - 8}
+            y={4}
+            fontSize="11.5"
+            fontWeight={800}
+            fill="#C62E88"
+            textAnchor="end"
+          >
+            {selectedUnits}u
+          </text>
+        </g>
+      )}
+
+      {/* ── Rubber stopper (two ribs), riding the dose level ── */}
+      <g style={move} transform={`translate(0 ${stopperY})`}>
+        <rect
+          x={BARREL_L + 2.5}
+          y={0}
+          width={BARREL_R - BARREL_L - 5}
+          height="8"
+          rx="2.5"
+          fill="#1a1750"
+          opacity="0.85"
+        />
+        <rect
+          x={BARREL_L + 2.5}
+          y={11}
+          width={BARREL_R - BARREL_L - 5}
+          height="8"
+          rx="2.5"
+          fill="#1a1750"
+          opacity="0.85"
+        />
+        <rect
+          x={BARREL_L + 4}
+          y={1.5}
+          width={BARREL_R - BARREL_L - 8}
+          height="2"
+          rx="1"
+          fill="white"
+          opacity="0.25"
+        />
+      </g>
 
       {/* ── Finger flange ── */}
       <rect
@@ -299,18 +401,7 @@ function SyringeSvg({
         strokeWidth="1"
       />
 
-      {/* ── Plunger rod + thumb pad ── */}
-      <rect
-        x={CX - 4}
-        y={BARREL_BOT + 5}
-        width="8"
-        height="53"
-        rx="1.5"
-        fill={`url(#${rodId})`}
-        stroke="#262262"
-        strokeOpacity="0.35"
-        strokeWidth="0.7"
-      />
+      {/* ── Thumb pad (fixed, below the barrel) ── */}
       <ellipse cx={CX} cy={BARREL_BOT + 70} rx="20" ry="3.5" fill="#262262" opacity="0.12" />
       <rect
         x={CX - 17}
