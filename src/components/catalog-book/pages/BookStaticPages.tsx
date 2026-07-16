@@ -1,6 +1,8 @@
 import Image from "next/image";
 import type { ComponentType } from "react";
 import type { StaticPageId } from "@/data/catalog-book";
+import { STATE_LICENSES } from "@/data/licenses";
+import USLicenseMap from "@/components/USLicenseMap";
 import { CONTACT, HOURS, SITE } from "@/lib/constants";
 
 /**
@@ -633,69 +635,65 @@ function ShippingPage() {
   );
 }
 
-/** Active state licenses, verbatim from the print catalog's STATES page. */
-const STATE_LICENSES: readonly [state: string, license: string][] = [
-  ["Arizona", "YO10146"],
-  ["Colorado", "OSP.008086"],
-  ["Connecticut", "PCN0004487"],
-  ["Delaware", "A9_0013209"],
-  ["Florida", "PH35710"],
-  ["Georgia", "PHNR001834"],
-  ["Hawaii", "2234"],
-  ["Idaho", "3671078"],
-  ["Iowa", "6000"],
-  ["Illinois", "54023301"],
-  ["Maine", "MO40003870"],
-  ["Minnesota", "267202"],
-  ["Missouri", "2025027288"],
-  ["Montana", "PHA-MOP-LIC-117305"],
-  ["North Dakota", "PHAR2300"],
-  ["New Hampshire", "NR2395"],
-  ["Nevada", "PH04794"],
-  ["New Jersey", "28R000272200"],
-  ["New Mexico", "PH00005974"],
-  ["New York", "41913"],
-  ["Ohio", "242000118"],
-  ["Pennsylvania", "NP002337"],
-  ["Rhode Island", "PHN12761"],
-  ["South Dakota", "4002592"],
-  ["Utah", "1423657"],
-  ["Vermont", "36.0135138"],
-  ["Washington D.C.", "NRX250001489"],
-  ["Washington State", "PHNR.FO70125403"],
-  ["Wisconsin", "3599-43"],
-  ["Wyoming", "NR52563"],
-];
-
 function StatesPage() {
   return (
     <PageShell className="bg-white">
-      <h2 className="text-3xl font-bold leading-tight text-navy sm:text-4xl">
-        Logos Rx State Licenses
-      </h2>
-      <p className="mt-2 text-lg font-medium italic text-sky">
-        Expanding Access. Elevating Care. Nationwide.
-      </p>
-      <div className="mt-5 max-w-4xl space-y-4 text-sm leading-relaxed text-navy/75 sm:text-[15px]">
-        <p>
-          At Logos Rx, we are proud to be a multi-state licensed 503A
-          compounding pharmacy, committed to delivering trusted, compliant, and
-          high-quality compounded medications across the United States. Each
-          license reflects our dedication to safety, transparency, and
-          regulatory excellence—allowing us to serve patients and providers in
-          more states every year.
+      <div className="book-rise">
+        <h2 className="text-3xl font-bold leading-tight text-navy sm:text-4xl">
+          Logos Rx State Licenses
+        </h2>
+        <p className="mt-2 text-lg font-medium italic text-sky">
+          Expanding Access. Elevating Care. Nationwide.
         </p>
-        <p>Our pharmacy currently holds active licenses in the following states:</p>
+        <div className="mt-5 max-w-4xl space-y-4 text-sm leading-relaxed text-navy/75 sm:text-[15px]">
+          <p>
+            At Logos Rx, we are proud to be a multi-state licensed 503A
+            compounding pharmacy, committed to delivering trusted, compliant,
+            and high-quality compounded medications across the United States.
+            Each license reflects our dedication to safety, transparency, and
+            regulatory excellence—allowing us to serve patients and providers
+            in more states every year.
+          </p>
+          <p>
+            Our pharmacy currently holds active licenses in{" "}
+            <strong className="text-navy">
+              {STATE_LICENSES.length} jurisdictions
+            </strong>
+            :
+          </p>
+        </div>
       </div>
 
-      <ul className="mt-6 grid grid-cols-1 gap-x-10 gap-y-1.5 sm:grid-cols-2 lg:grid-cols-3">
-        {STATE_LICENSES.map(([state, license]) => (
+      {/* Choropleth: licensed jurisdictions in navy (hover for license #). */}
+      <div
+        className="book-rise mx-auto mt-8 w-full max-w-2xl"
+        style={{ animationDelay: "140ms" }}
+      >
+        <USLicenseMap />
+        <div className="mt-3 flex items-center justify-center gap-5 text-xs text-navy/60">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-sm bg-navy" /> Licensed
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-sm bg-[#E2E1DD]" /> Coming
+            soon
+          </span>
+        </div>
+      </div>
+
+      <ul
+        className="book-rise mt-8 grid grid-cols-1 gap-x-10 gap-y-1.5 sm:grid-cols-2 lg:grid-cols-3"
+        style={{ animationDelay: "260ms" }}
+      >
+        {STATE_LICENSES.map((license) => (
           <li
-            key={state}
-            className="flex items-baseline justify-between gap-4 border-b border-beige/60 py-1.5 text-sm"
+            key={license.code}
+            className="flex items-baseline justify-between gap-4 border-b border-beige/60 py-1.5 text-sm transition-colors hover:bg-cream/60"
           >
-            <span className="font-medium text-navy">{state}</span>
-            <span className="tabular-nums text-navy/60">{license}</span>
+            <span className="font-medium text-navy">{license.name}</span>
+            <span className="tabular-nums text-navy/60">
+              {license.licenseNumber}
+            </span>
           </li>
         ))}
       </ul>
