@@ -39,10 +39,30 @@ if (dsn) {
       }),
     ],
 
-    beforeSend(event) {
+    beforeSend(event, hint) {
       // Belt-and-braces: drop request bodies on the off chance they contain
       // form data with PII.
       if (event.request?.data) delete event.request.data;
+
+      // WebKit reports a failed `response.json()` parse with the generic
+      // "The string did not match the expected pattern." (DOMException 12).
+      // clerk-js's session keep-alive does exactly that when Clerk's API
+      // rate-limits it (429 + non-JSON body), surfacing as a stackless
+      // unhandled rejection we can't act on (LOGOSRX-WEBSITE-C). Drop only
+      // that precise signature — stackless + unhandled — so anything with a
+      // traceable frame still reports.
+      const exception = event.exception?.values?.[0];
+      const isWebKitPatternNoise =
+        exception?.value === "The string did not match the expected pattern." &&
+        exception.mechanism?.handled === false &&
+        !exception.stacktrace?.frames?.length;
+      if (isWebKitPatternNoise) {
+        if (process.env.NODE_ENV === "development") {
+          console.debug("[sentry] dropped WebKit pattern noise", hint);
+        }
+        return null;
+      }
+
       return event;
     },
   });
