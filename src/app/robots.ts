@@ -13,6 +13,10 @@ export default function robots(): MetadataRoute.Robots {
     "/api/",
     "/sign-in",
     "/sign-up",
+    // Private licensure share page — noindex meta on the route; disallow here
+    // keeps crawlers from even fetching it.
+    "/licensing",
+    "/licensing/",
   ];
 
   // The catalog is competitive pricing intel; keep it out of search indexes
