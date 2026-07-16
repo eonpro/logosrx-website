@@ -14,6 +14,52 @@ import { CONTACT, HOURS, SITE } from "@/lib/constants";
 
 /* ──────────────────────────── Shared bits ──────────────────────────── */
 
+/**
+ * A page reproduced 1:1 from the print catalog artwork. Used where the
+ * designed spread can't be improved on in HTML (cover, welcome, shipping).
+ * The artwork is letterboxed to always be fully visible; a blurred copy
+ * fills the leftover stage so the bars never read as empty chrome.
+ */
+function ArtworkPage({
+  src,
+  alt,
+  priority = false,
+  flipOnClick = false,
+}: {
+  src: string;
+  alt: string;
+  priority?: boolean;
+  /** Make the whole page a "next page" target (used by the cover). */
+  flipOnClick?: boolean;
+}) {
+  return (
+    <div
+      {...(flipOnClick ? { "data-book-next": true } : {})}
+      className={`relative min-h-full overflow-hidden ${flipOnClick ? "cursor-pointer" : ""}`}
+    >
+      <Image
+        src={src}
+        alt=""
+        aria-hidden="true"
+        width={2200}
+        height={1700}
+        sizes="100vw"
+        className="absolute inset-0 h-full w-full scale-110 object-cover blur-2xl"
+        priority={priority}
+      />
+      <Image
+        src={src}
+        alt={alt}
+        width={2200}
+        height={1700}
+        sizes="(min-width: 1152px) 1152px, 100vw"
+        className="absolute inset-0 h-full w-full object-contain"
+        priority={priority}
+      />
+    </div>
+  );
+}
+
 function PageShell({
   className,
   children,
@@ -32,116 +78,21 @@ function PageShell({
 
 function CoverPage() {
   return (
-    <div className="relative flex min-h-full flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-navy-deep via-navy to-navy-deep px-6 py-16 text-center">
-      {/* Watermark, echoing the print cover's oversized vertical type */}
-      <p
-        aria-hidden="true"
-        className="pointer-events-none absolute -left-6 top-1/2 -translate-y-1/2 select-none text-7xl font-bold leading-none text-white/[0.05] sm:text-8xl"
-      >
-        Compounding
-        <br />
-        Excellence
-      </p>
-
-      <Image
-        src="/images/logo-white.svg"
-        alt="Logos RX"
-        width={280}
-        height={84}
-        className="book-rise h-16 w-auto sm:h-20"
-        priority
-      />
-      <p
-        className="book-rise mt-6 text-sm font-medium text-white/70"
-        style={{ animationDelay: "120ms" }}
-      >
-        Trusted by 5000+ providers
-      </p>
-      <h2
-        className="book-rise mt-8 text-4xl font-bold text-white sm:text-5xl"
-        style={{ animationDelay: "220ms" }}
-      >
-        Product Catalog 2026
-      </h2>
-
-      {/* Flips forward via the shell's data-book-next delegation. */}
-      <button
-        type="button"
-        data-book-next
-        className="book-rise mt-10 inline-flex items-center gap-2.5 rounded-full bg-magenta px-7 py-3.5 text-sm font-semibold uppercase tracking-wide text-white transition-all hover:bg-magenta-dark hover:shadow-lg hover:shadow-magenta/30 active:scale-95"
-        style={{ animationDelay: "320ms" }}
-      >
-        Browse the catalog
-        <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-          <path
-            fillRule="evenodd"
-            d="M7.3 15.7a1 1 0 0 1 0-1.4l4.3-4.3-4.3-4.3a1 1 0 0 1 1.42-1.4l5 5a1 1 0 0 1 0 1.4l-5 5a1 1 0 0 1-1.4 0Z"
-            clipRule="evenodd"
-          />
-        </svg>
-      </button>
-
-      <div
-        className="book-rise mt-12 flex items-center gap-6"
-        style={{ animationDelay: "420ms" }}
-      >
-        <span className="text-xs uppercase tracking-wider text-white/50">
-          Certifications:
-        </span>
-        <span className="rounded-lg bg-white/10 px-3 py-2 text-xs font-semibold text-white">
-          LegitScript Certified
-        </span>
-        <Image
-          src="/images/certifications/nabp.svg"
-          alt="NABP — National Association of Boards of Pharmacy"
-          width={110}
-          height={40}
-          className="h-9 w-auto rounded-lg bg-white/90 p-1.5"
-        />
-      </div>
-
-      <p
-        className="book-rise mt-10 text-xs text-white/40"
-        style={{ animationDelay: "520ms" }}
-      >
-        Use <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-sans">←</kbd>{" "}
-        <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-sans">→</kbd> or
-        swipe to flip pages
-      </p>
-    </div>
+    <ArtworkPage
+      src="/images/catalog-book/page-cover.webp"
+      alt="Logos RX Product Catalog 2026 — Compounding Excellence. Trusted by 5000+ providers. LegitScript and NABP certified. Click or use the arrows to browse."
+      priority
+      flipOnClick
+    />
   );
 }
 
 function WelcomePage() {
   return (
-    <div className="flex min-h-full flex-col bg-navy-deep">
-      <div className="px-6 pb-6 pt-10 text-center sm:px-10">
-        <p className="text-lg text-white/80">Welcome to the</p>
-        <h2 className="mt-1 text-4xl font-bold text-white sm:text-5xl">
-          new and improved
-        </h2>
-      </div>
-      <div className="relative mx-6 flex-1 overflow-hidden rounded-2xl sm:mx-10">
-        {/* Storefront photo crop from the print catalog */}
-        <Image
-          src="/images/catalog-book/storefront.webp"
-          alt="The Logos RX compounding pharmacy storefront"
-          width={1400}
-          height={860}
-          className="h-full w-full object-cover"
-        />
-      </div>
-      <div className="flex flex-col items-center gap-2 px-6 py-8 text-center">
-        <h3 className="text-2xl font-bold text-white">503A Compounding Pharmacy</h3>
-        <p className="text-sm text-white/75">
-          www.logosrx.com <span className="mx-2 text-magenta">|</span> @logosrx
-        </p>
-      </div>
-      <div
-        aria-hidden="true"
-        className="h-2 w-full bg-gradient-to-r from-sky via-magenta to-purple"
-      />
-    </div>
+    <ArtworkPage
+      src="/images/catalog-book/page-welcome.webp"
+      alt="Welcome to the new and improved Logos RX — the 503A compounding pharmacy storefront. www.logosrx.com | @logosrx"
+    />
   );
 }
 
@@ -543,111 +494,10 @@ function WhiteLabelPage() {
 
 function ShippingPage() {
   return (
-    <PageShell className="bg-gradient-to-b from-white to-sky-light/15">
-      <div className="grid grid-cols-1 gap-10 md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
-        <div className="flex flex-col">
-          <div className="space-y-2">
-            {[
-              ["2-day shipping nationwide", "$15"],
-              ["Standard overnight nationwide", "$25"],
-            ].map(([label, price]) => (
-              <div
-                key={label}
-                className="flex items-center justify-between gap-4 rounded-xl border border-sky/25 bg-white px-4 py-3"
-              >
-                <span className="text-sm font-medium text-navy">{label}</span>
-                <span className="text-base font-bold tabular-nums text-navy">
-                  {price}
-                </span>
-              </div>
-            ))}
-          </div>
-          <Image
-            src="/images/catalog-book/cold-shipment-box.webp"
-            alt="An insulated cold-chain shipping box with a thermal pouch"
-            width={760}
-            height={870}
-            className="mt-8 h-auto w-full max-w-sm self-center object-contain"
-          />
-        </div>
-
-        <div>
-          <h2 className="text-3xl font-bold leading-tight text-navy sm:text-4xl">
-            Shipping &amp; Packaging Options
-          </h2>
-          <p className="mt-2 text-lg font-medium italic text-sky">
-            Precision-Packed. Professionally Delivered.
-          </p>
-          <div className="mt-5 space-y-4 text-sm leading-relaxed text-navy/75">
-            <p>
-              At Logos Rx, every prescription is prepared, packaged, and
-              shipped with uncompromising attention to quality, temperature
-              control, and timeliness. Our logistics process is designed to
-              maintain medication integrity from our pharmacy to your
-              patient&rsquo;s doorstep — anywhere we&rsquo;re licensed to
-              serve.
-            </p>
-            <p>
-              We offer a selection of premium shipping packages to meet your
-              specific product and patient needs:
-            </p>
-          </div>
-
-          <h3 className="mt-6 text-sm font-bold uppercase tracking-wider text-navy">
-            Cold-Chain Shipments
-          </h3>
-          <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-navy/75">
-            <li>
-              <strong className="text-navy">Kangaroo Thermal Bags</strong> —
-              lightweight insulated pouches ideal for short-distance and
-              same-day deliveries.
-            </li>
-            <li>
-              <strong className="text-navy">Cooler Boxes (Styrofoam)</strong> —
-              premium-grade insulated containers engineered for
-              temperature-sensitive compounds and longer transit times.
-            </li>
-            <li>
-              <strong className="text-navy">Refrigerant Gel Packs</strong> —
-              calibrated to maintain controlled temperatures during shipment
-              and prevent thermal fluctuation.
-            </li>
-          </ul>
-
-          <h3 className="mt-6 text-sm font-bold uppercase tracking-wider text-navy">
-            Non-Cold Shipments
-          </h3>
-          <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-navy/75">
-            <li>
-              <strong className="text-navy">Nationwide delivery via FedEx and UPS</strong>{" "}
-              (carrier selection based on destination for optimal speed and
-              reliability).
-            </li>
-            <li>
-              <strong className="text-navy">Next-Day and 2-Day service options</strong>{" "}
-              available for all non-cold orders.
-            </li>
-            <li>
-              <strong className="text-navy">Real-time tracking</strong> ensures
-              visibility at every step, from fulfillment to delivery
-              confirmation.
-            </li>
-          </ul>
-
-          <p className="mt-6 text-sm leading-relaxed text-navy/75">
-            Our fulfillment system automatically selects the most efficient
-            shipping method based on product type, destination, and delivery
-            window — guaranteeing compliance, speed, and cost-effectiveness for
-            every order.
-          </p>
-          <p className="mt-4 text-xs italic leading-relaxed text-navy/60">
-            Note: Shipping available nationwide to all states in which Logos Rx
-            is licensed. Pricing varies depending on shipping options selected
-            by the client/practice.
-          </p>
-        </div>
-      </div>
-    </PageShell>
+    <ArtworkPage
+      src="/images/catalog-book/page-shipping.webp"
+      alt="Shipping & Packaging Options — Precision-Packed. Professionally Delivered. 2-day shipping nationwide $15; standard overnight nationwide $25. Cold-chain shipments use Kangaroo thermal bags, styrofoam cooler boxes, and refrigerant gel packs; non-cold orders ship nationwide via FedEx and UPS with next-day and 2-day options and real-time tracking."
+    />
   );
 }
 
