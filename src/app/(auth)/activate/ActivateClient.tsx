@@ -20,7 +20,20 @@ export default function ActivateClient({
 }) {
   const { isLoaded, signIn, setActive } = useSignIn();
   const { isLoaded: authLoaded, isSignedIn } = useAuth();
-  const [phase, setPhase] = useState<Phase>("activating");
+  const [ticketPhase, setTicketPhase] = useState<Phase>("activating");
+  // The ticket-consumption effect only reports its async outcome via
+  // `ticketPhase`; the synchronous cases (already signed in, missing ticket)
+  // are derived here instead of set in the effect.
+  const phase: Phase =
+    ticketPhase !== "activating"
+      ? ticketPhase
+      : !authLoaded
+        ? "activating"
+        : isSignedIn
+          ? "ready"
+          : ticket
+            ? "activating"
+            : "expired";
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
@@ -34,18 +47,15 @@ export default function ActivateClient({
     if (!authLoaded) return;
 
     // Already signed in (e.g. the ticket was consumed on a previous load and
-    // the page was refreshed): skip re-consuming the single-use ticket and go
-    // straight to the password form.
+    // the page was refreshed): skip re-consuming the single-use ticket. The
+    // "ready" phase is derived from `isSignedIn` below — no setState needed.
     if (isSignedIn) {
       attempted.current = true;
-      setPhase("ready");
       return;
     }
 
-    if (!ticket) {
-      setPhase("expired");
-      return;
-    }
+    // Missing ticket is derived as "expired" below — no setState needed.
+    if (!ticket) return;
     if (!isLoaded || !signIn || !setActive) return;
     attempted.current = true;
 
@@ -54,12 +64,12 @@ export default function ActivateClient({
         const attempt = await signIn.create({ strategy: "ticket", ticket });
         if (attempt.status === "complete" && attempt.createdSessionId) {
           await setActive({ session: attempt.createdSessionId });
-          setPhase("ready");
+          setTicketPhase("ready");
           return;
         }
-        setPhase("expired");
+        setTicketPhase("expired");
       } catch {
-        setPhase("expired");
+        setTicketPhase("expired");
       }
     })();
   }, [ticket, isLoaded, signIn, setActive, authLoaded, isSignedIn]);
