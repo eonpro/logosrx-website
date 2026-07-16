@@ -285,6 +285,71 @@ textarea {
 }
 
 /*
+ * Catalog book (/download/catalog/view) motion. Directional page slides
+ * replay on every flip because the page node toggles display; the stagger
+ * (`.book-rise` + inline animation-delay) does the same for page content.
+ * All neutralized by the reduced-motion stanza below.
+ */
+@keyframes book-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(48px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes book-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-48px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-book-in-right {
+  animation: book-in-right 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-book-in-left {
+  animation: book-in-left 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes book-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.book-rise {
+  animation: book-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes book-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-9px);
+  }
+}
+
+.animate-book-float {
+  animation: book-float 5.5s ease-in-out infinite;
+}
+
+/*
  * Honor the OS-level reduced-motion preference globally. This is the
  * universally recommended "neuter all animations" stanza — animations and
  * transitions still run for one tick (0.01 ms) so JS that relies on

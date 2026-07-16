@@ -14,7 +14,7 @@ export default function BookDosagePage({ article }: BookDosagePageProps) {
   return (
     <div className="min-h-full bg-white px-6 py-10 sm:px-10 sm:py-12 lg:px-14">
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-        <div>
+        <div className="book-rise">
           <p className="inline-flex rounded-lg bg-sky-light/20 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-sky">
             {article.eyebrow}
           </p>
@@ -39,7 +39,10 @@ export default function BookDosagePage({ article }: BookDosagePageProps) {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-beige bg-cream/40 p-5 sm:p-8">
+        <div
+          className="book-rise rounded-2xl border border-beige bg-cream/40 p-5 sm:p-8"
+          style={{ animationDelay: "140ms" }}
+        >
           <DosageChart rows={article.chartRows} />
         </div>
       </div>

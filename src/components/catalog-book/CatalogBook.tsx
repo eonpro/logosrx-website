@@ -30,9 +30,11 @@ interface CatalogBookProps {
 
 /**
  * Client pager shell for the native catalog book. One full-screen page at a
- * time with prev/next buttons, arrow keys, swipe, a table-of-contents drawer,
- * and `#page-id` hash deep links. Page content is server-rendered and passed
- * in as children; only the current page and its neighbors stay mounted.
+ * time with direction-aware slide transitions, a reading progress bar, a
+ * clickable page-dot rail (desktop), prev/next with page-name previews,
+ * arrow keys + Home/End, swipe, a searchable table-of-contents drawer, and
+ * `#page-id` hash deep links. Page content is server-rendered and passed in
+ * as children; only the current page and its neighbors stay mounted.
  */
 export default function CatalogBook({
   pages,
@@ -42,7 +44,9 @@ export default function CatalogBook({
 }: CatalogBookProps) {
   const total = pages.length;
   const [index, setIndex] = useState(0);
+  const [direction, setDirection] = useState<"fwd" | "back">("fwd");
   const [tocOpen, setTocOpen] = useState(false);
+  const [tocQuery, setTocQuery] = useState("");
   const stageRef = useRef<HTMLDivElement>(null);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const hashSynced = useRef(false);
@@ -53,11 +57,23 @@ export default function CatalogBook({
   );
 
   const goTo = useCallback(
-    (i: number) => setIndex((prev) => (clamp(i) === prev ? prev : clamp(i))),
+    (i: number) => {
+      setIndex((prev) => {
+        const nextIndex = clamp(i);
+        if (nextIndex !== prev) setDirection(nextIndex > prev ? "fwd" : "back");
+        return nextIndex;
+      });
+    },
     [clamp],
   );
-  const next = useCallback(() => setIndex((i) => clamp(i + 1)), [clamp]);
-  const prev = useCallback(() => setIndex((i) => clamp(i - 1)), [clamp]);
+  const next = useCallback(() => {
+    setDirection("fwd");
+    setIndex((i) => clamp(i + 1));
+  }, [clamp]);
+  const prev = useCallback(() => {
+    setDirection("back");
+    setIndex((i) => clamp(i - 1));
+  }, [clamp]);
 
   // Open on the deep-linked page when a known #hash is present.
   useEffect(() => {
@@ -84,8 +100,8 @@ export default function CatalogBook({
     stageRef.current?.scrollTo({ top: 0 });
   }, [index, pages]);
 
-  // Arrow-key navigation (disabled while the TOC drawer is open so the list
-  // can be scrolled/tabbed without flipping pages underneath).
+  // Keyboard: arrows flip, Home/End jump, Escape closes the TOC. Disabled
+  // while the TOC drawer is open so its search input can be typed into.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (tocOpen) {
@@ -94,15 +110,19 @@ export default function CatalogBook({
       }
       if (e.key === "ArrowRight") next();
       else if (e.key === "ArrowLeft") prev();
+      else if (e.key === "Home") goTo(0);
+      else if (e.key === "End") goTo(total - 1);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [next, prev, tocOpen]);
+  }, [next, prev, goTo, total, tocOpen]);
 
   const tocGroups = useMemo(() => {
+    const needle = tocQuery.trim().toLowerCase();
     const groups: { group: string; entries: { label: string; index: number }[] }[] = [];
     pages.forEach((page, i) => {
       if (!page.tocLabel) return;
+      if (needle && !page.tocLabel.toLowerCase().includes(needle)) return;
       const groupName = page.tocGroup ?? "Pages";
       let bucket = groups.find((g) => g.group === groupName);
       if (!bucket) {
@@ -112,7 +132,7 @@ export default function CatalogBook({
       bucket.entries.push({ label: page.tocLabel, index: i });
     });
     return groups;
-  }, [pages]);
+  }, [pages, tocQuery]);
 
   const onTouchStart = useCallback((e: React.TouchEvent) => {
     const t = e.touches[0];
@@ -135,6 +155,19 @@ export default function CatalogBook({
     [next, prev],
   );
 
+  // Static pages can embed "flip forward" CTAs (e.g. the cover's Browse
+  // button) by marking any element with data-book-next.
+  const onStageClick = useCallback(
+    (e: React.MouseEvent) => {
+      if ((e.target as HTMLElement).closest("[data-book-next]")) next();
+    },
+    [next],
+  );
+
+  const current = pages[index];
+  const nextLabel = pages[index + 1]?.tocLabel;
+  const prevLabel = pages[index - 1]?.tocLabel;
+
   return (
     <div className="flex h-dvh flex-col bg-navy-deep">
       {/* Top bar */}
@@ -154,14 +187,25 @@ export default function CatalogBook({
           Back
         </Link>
 
-        <span className="hidden text-sm font-semibold uppercase tracking-[0.14em] text-white/90 sm:inline">
-          2026 Catalog
-        </span>
+        {/* Live page title: section + page name */}
+        <div className="hidden min-w-0 text-center sm:block" aria-live="polite">
+          {current?.tocGroup && (
+            <p className="truncate text-[10px] font-semibold uppercase tracking-[0.2em] text-white/45">
+              {current.tocGroup}
+            </p>
+          )}
+          <p className="truncate text-sm font-semibold uppercase tracking-[0.14em] text-white/90">
+            {current?.tocLabel ?? "2026 Catalog"}
+          </p>
+        </div>
 
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setTocOpen(true)}
+            onClick={() => {
+              setTocQuery("");
+              setTocOpen(true);
+            }}
             className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-white/20"
           >
             <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -184,12 +228,21 @@ export default function CatalogBook({
         </div>
       </header>
 
+      {/* Reading progress */}
+      <div className="mx-4 h-0.5 overflow-hidden rounded-full bg-white/10 sm:mx-6">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-sky via-magenta to-purple transition-[width] duration-500 ease-out"
+          style={{ width: `${((index + 1) / total) * 100}%` }}
+        />
+      </div>
+
       {/* Page stage — scrolls vertically when a page is taller than the viewport */}
       <div
         ref={stageRef}
-        className="flex-1 overflow-y-auto px-2 pb-2 sm:px-6"
+        className="relative flex-1 overflow-y-auto px-2 pb-2 pt-2 sm:px-6 sm:pt-3"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
+        onClick={onStageClick}
       >
         <div className="mx-auto flex min-h-full w-full max-w-6xl flex-col">
           {children.map((page, i) => {
@@ -203,7 +256,11 @@ export default function CatalogBook({
                   i === index
                     ? // Flex (not percentage heights) so short pages still fill
                       // the stage; [&>*]:flex-1 stretches the page root.
-                      "animate-fade-in-up flex flex-1 flex-col overflow-hidden rounded-2xl shadow-2xl shadow-black/40 [&>*]:flex-1"
+                      `flex flex-1 flex-col overflow-hidden rounded-2xl shadow-2xl shadow-black/40 [&>*]:flex-1 ${
+                        direction === "fwd"
+                          ? "animate-book-in-right"
+                          : "animate-book-in-left"
+                      }`
                     : undefined
                 }
               >
@@ -212,25 +269,52 @@ export default function CatalogBook({
             );
           })}
         </div>
+
+        {/* Page-dot rail (desktop): one dot per page, click to jump */}
+        <nav
+          aria-label="Pages"
+          className="fixed right-2 top-1/2 hidden -translate-y-1/2 flex-col items-center gap-[5px] lg:flex"
+        >
+          {pages.map((p, i) => (
+            <button
+              key={p.id}
+              type="button"
+              title={p.tocLabel}
+              aria-label={`Go to page ${i + 1}${p.tocLabel ? ` — ${p.tocLabel}` : ""}`}
+              aria-current={i === index ? "page" : undefined}
+              onClick={() => goTo(i)}
+              className={`rounded-full transition-all duration-300 ${
+                i === index
+                  ? "h-5 w-1.5 bg-magenta"
+                  : "h-1.5 w-1.5 bg-white/25 hover:scale-150 hover:bg-white/70"
+              }`}
+            />
+          ))}
+        </nav>
       </div>
 
       {/* Bottom controls */}
-      <footer className="flex items-center justify-center gap-6 px-4 py-3.5">
-        <button
-          type="button"
-          onClick={prev}
-          disabled={index <= 0}
-          aria-label="Previous page"
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-30"
-        >
-          <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path
-              fillRule="evenodd"
-              d="M12.7 4.3a1 1 0 0 1 0 1.4L8.42 10l4.3 4.3a1 1 0 0 1-1.42 1.4l-5-5a1 1 0 0 1 0-1.4l5-5a1 1 0 0 1 1.4 0Z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </button>
+      <footer className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-3.5 sm:px-6">
+        <div className="flex items-center justify-end gap-3">
+          <span className="hidden max-w-[180px] truncate text-right text-xs text-white/45 md:block">
+            {prevLabel}
+          </span>
+          <button
+            type="button"
+            onClick={prev}
+            disabled={index <= 0}
+            aria-label="Previous page"
+            className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-white/10 text-white transition-all hover:bg-white/20 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path
+                fillRule="evenodd"
+                d="M12.7 4.3a1 1 0 0 1 0 1.4L8.42 10l4.3 4.3a1 1 0 0 1-1.42 1.4l-5-5a1 1 0 0 1 0-1.4l5-5a1 1 0 0 1 1.4 0Z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+        </div>
 
         <span
           aria-live="polite"
@@ -239,21 +323,26 @@ export default function CatalogBook({
           {index + 1} / {total}
         </span>
 
-        <button
-          type="button"
-          onClick={next}
-          disabled={index >= total - 1}
-          aria-label="Next page"
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-30"
-        >
-          <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path
-              fillRule="evenodd"
-              d="M7.3 15.7a1 1 0 0 1 0-1.4l4.3-4.3-4.3-4.3a1 1 0 0 1 1.42-1.4l5 5a1 1 0 0 1 0 1.4l-5 5a1 1 0 0 1-1.4 0Z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </button>
+        <div className="flex items-center justify-start gap-3">
+          <button
+            type="button"
+            onClick={next}
+            disabled={index >= total - 1}
+            aria-label="Next page"
+            className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-white/10 text-white transition-all hover:bg-white/20 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path
+                fillRule="evenodd"
+                d="M7.3 15.7a1 1 0 0 1 0-1.4l4.3-4.3-4.3-4.3a1 1 0 0 1 1.42-1.4l5 5a1 1 0 0 1 0 1.4l-5 5a1 1 0 0 1-1.4 0Z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+          <span className="hidden max-w-[180px] truncate text-xs text-white/45 md:block">
+            {nextLabel}
+          </span>
+        </div>
       </footer>
 
       {/* Table of contents drawer */}
@@ -263,7 +352,7 @@ export default function CatalogBook({
             type="button"
             aria-label="Close table of contents"
             onClick={() => setTocOpen(false)}
-            className="absolute inset-0 bg-black/50"
+            className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
           />
           <div className="absolute inset-y-0 right-0 flex w-full max-w-sm flex-col bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-beige px-5 py-4">
@@ -281,7 +370,34 @@ export default function CatalogBook({
                 </svg>
               </button>
             </div>
+
+            {/* Search */}
+            <div className="border-b border-beige px-5 py-3">
+              <div className="flex items-center gap-2 rounded-full bg-cream px-4 py-2">
+                <svg className="h-4 w-4 flex-none text-navy/40" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path
+                    fillRule="evenodd"
+                    d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.45 4.4l3.07 3.08a1 1 0 0 1-1.41 1.41l-3.08-3.07A7 7 0 0 1 2 9Z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <input
+                  type="search"
+                  value={tocQuery}
+                  onChange={(e) => setTocQuery(e.target.value)}
+                  placeholder="Search products…"
+                  autoFocus
+                  className="w-full bg-transparent text-sm text-navy placeholder:text-navy/40 focus:outline-none"
+                />
+              </div>
+            </div>
+
             <nav className="flex-1 overflow-y-auto px-3 py-4">
+              {tocGroups.length === 0 && (
+                <p className="px-2 py-6 text-center text-sm text-navy/50">
+                  No pages match &ldquo;{tocQuery}&rdquo;
+                </p>
+              )}
               {tocGroups.map(({ group, entries }) => (
                 <div key={group} className="mb-5">
                   <p className="px-2 text-[11px] font-bold uppercase tracking-[0.18em] text-navy/50">

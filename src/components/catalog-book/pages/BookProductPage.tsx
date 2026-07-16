@@ -62,7 +62,7 @@ export default function BookProductPage({ product, prices }: BookProductPageProp
     <div className="min-h-full bg-white px-6 py-10 sm:px-10 sm:py-12 lg:px-14">
       {/* Header: copy left, vial right */}
       <div className="grid grid-cols-1 gap-8 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        <div>
+        <div className="book-rise">
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-magenta">
             {product.categoryKey} · {product.category}
           </p>
@@ -99,14 +99,17 @@ export default function BookProductPage({ product, prices }: BookProductPageProp
         </div>
 
         {product.image && (
-          <div className="flex items-start justify-center">
-            <div className="w-full max-w-[280px] rounded-2xl bg-gradient-to-b from-cream to-beige/60 p-6">
+          <div
+            className="book-rise flex items-start justify-center"
+            style={{ animationDelay: "90ms" }}
+          >
+            <div className="group w-full max-w-[280px] rounded-2xl bg-gradient-to-b from-cream to-beige/60 p-6 transition-shadow duration-300 hover:shadow-xl hover:shadow-navy/10">
               <Image
                 src={product.image}
                 alt={product.imageAlt ?? product.name}
                 width={480}
                 height={480}
-                className="h-auto w-full object-contain"
+                className="animate-book-float h-auto w-full object-contain transition-transform duration-500 ease-out group-hover:scale-110"
               />
             </div>
           </div>
@@ -115,7 +118,7 @@ export default function BookProductPage({ product, prices }: BookProductPageProp
 
       {/* Product details */}
       {variantColumns.length > 0 && variants.length > 0 && (
-        <section className="mt-10">
+        <section className="book-rise mt-10" style={{ animationDelay: "180ms" }}>
           <h3 className="text-sm font-bold uppercase tracking-wider text-navy">
             Product Details
           </h3>
@@ -142,7 +145,10 @@ export default function BookProductPage({ product, prices }: BookProductPageProp
                 </thead>
                 <tbody>
                   {variants.map((variant, i) => (
-                    <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-cream/50"}>
+                    <tr
+                      key={i}
+                      className={`transition-colors hover:bg-sky-light/15 ${i % 2 === 0 ? "bg-white" : "bg-cream/50"}`}
+                    >
                       {hasVariantImages && (
                         <td className="px-4 py-2">
                           {variant.image ? (
@@ -182,7 +188,7 @@ export default function BookProductPage({ product, prices }: BookProductPageProp
 
       {/* Suggested retail — live from the catalog DB */}
       {prices.length > 0 && (
-        <section className="mt-8">
+        <section className="book-rise mt-8" style={{ animationDelay: "260ms" }}>
           <h3 className="text-sm font-bold uppercase tracking-wider text-navy">
             Suggested Retail
           </h3>
@@ -190,7 +196,10 @@ export default function BookProductPage({ product, prices }: BookProductPageProp
             <table className="w-full text-left">
               <tbody>
                 {prices.map((item, i) => (
-                  <tr key={item.id} className={i % 2 === 0 ? "bg-white" : "bg-cream/50"}>
+                  <tr
+                    key={item.id}
+                    className={`transition-colors hover:bg-magenta/5 ${i % 2 === 0 ? "bg-white" : "bg-cream/50"}`}
+                  >
                     <td className="px-4 py-3 text-sm font-medium text-navy">
                       {item.name}
                       {(item.strength || item.unit) && (
@@ -224,7 +233,7 @@ export default function BookProductPage({ product, prices }: BookProductPageProp
 
       {/* Dosage & titration */}
       {schedule && schedule.rows.length > 0 && schedule.columns.length > 0 && (
-        <section className="mt-8">
+        <section className="book-rise mt-8" style={{ animationDelay: "340ms" }}>
           <h3 className="text-sm font-bold uppercase tracking-wider text-navy">
             Typical dosage &amp; titration schedule
           </h3>
@@ -248,7 +257,7 @@ export default function BookProductPage({ product, prices }: BookProductPageProp
                   {schedule.rows.map((row, i) => (
                     <tr
                       key={i}
-                      className={`border-b border-beige/60 last:border-b-0 ${
+                      className={`border-b border-beige/60 transition-colors last:border-b-0 hover:bg-sky-light/15 ${
                         i % 2 === 0 ? "bg-white" : "bg-cream/40"
                       }`}
                     >

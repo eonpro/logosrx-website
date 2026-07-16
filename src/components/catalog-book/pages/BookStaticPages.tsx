@@ -46,17 +46,43 @@ function CoverPage() {
         alt="Logos RX"
         width={280}
         height={84}
-        className="h-16 w-auto sm:h-20"
+        className="book-rise h-16 w-auto sm:h-20"
         priority
       />
-      <p className="mt-6 text-sm font-medium text-white/70">
+      <p
+        className="book-rise mt-6 text-sm font-medium text-white/70"
+        style={{ animationDelay: "120ms" }}
+      >
         Trusted by 5000+ providers
       </p>
-      <h2 className="mt-8 text-4xl font-bold text-white sm:text-5xl">
+      <h2
+        className="book-rise mt-8 text-4xl font-bold text-white sm:text-5xl"
+        style={{ animationDelay: "220ms" }}
+      >
         Product Catalog 2026
       </h2>
 
-      <div className="mt-12 flex items-center gap-6">
+      {/* Flips forward via the shell's data-book-next delegation. */}
+      <button
+        type="button"
+        data-book-next
+        className="book-rise mt-10 inline-flex items-center gap-2.5 rounded-full bg-magenta px-7 py-3.5 text-sm font-semibold uppercase tracking-wide text-white transition-all hover:bg-magenta-dark hover:shadow-lg hover:shadow-magenta/30 active:scale-95"
+        style={{ animationDelay: "320ms" }}
+      >
+        Browse the catalog
+        <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path
+            fillRule="evenodd"
+            d="M7.3 15.7a1 1 0 0 1 0-1.4l4.3-4.3-4.3-4.3a1 1 0 0 1 1.42-1.4l5 5a1 1 0 0 1 0 1.4l-5 5a1 1 0 0 1-1.4 0Z"
+            clipRule="evenodd"
+          />
+        </svg>
+      </button>
+
+      <div
+        className="book-rise mt-12 flex items-center gap-6"
+        style={{ animationDelay: "420ms" }}
+      >
         <span className="text-xs uppercase tracking-wider text-white/50">
           Certifications:
         </span>
@@ -71,6 +97,15 @@ function CoverPage() {
           className="h-9 w-auto rounded-lg bg-white/90 p-1.5"
         />
       </div>
+
+      <p
+        className="book-rise mt-10 text-xs text-white/40"
+        style={{ animationDelay: "520ms" }}
+      >
+        Use <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-sans">←</kbd>{" "}
+        <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-sans">→</kbd> or
+        swipe to flip pages
+      </p>
     </div>
   );
 }
