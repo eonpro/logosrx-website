@@ -418,37 +418,53 @@ const COMING_PEPTIDES = [
 
 function PeptidesTeaserPage() {
   return (
-    <div className="relative min-h-full overflow-hidden bg-gradient-to-b from-sky to-sky-light">
-      <div className="grid min-h-full grid-cols-1 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-        <div className="relative flex flex-col justify-center px-6 py-12 sm:px-10 lg:px-14">
-          <ul
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 select-none space-y-1 overflow-hidden px-6 py-6 text-2xl font-semibold text-white/15 sm:px-10"
-          >
-            {COMING_PEPTIDES.map((p) => (
-              <li key={p}>{p}</li>
-            ))}
-          </ul>
-          <h2 className="relative text-4xl font-bold leading-tight text-white sm:text-5xl">
-            Injectable
-            <br />
-            Peptide
-            <br />
-            Therapies
-          </h2>
-          <p className="relative mt-6 inline-flex w-fit rounded-full bg-white/15 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white">
-            Coming July 2026
-          </p>
-        </div>
-        <div className="relative hidden items-end md:flex">
-          <Image
-            src="/images/catalog-book/peptides-model.webp"
-            alt="A woman holding a Logos RX peptide vial"
-            width={700}
-            height={1200}
-            className="h-full max-h-[640px] w-auto object-contain object-bottom"
-          />
-        </div>
+    <div
+      className="relative flex min-h-full items-center overflow-hidden"
+      /* Stops sampled from the model photo's baked-in backdrop so the
+         full-bleed portrait blends seamlessly into the page. */
+      style={{
+        background:
+          "linear-gradient(to bottom, #7fa2b8 0%, #95b6cb 25%, #94b7cd 50%, #859fb4 75%, #9ea9b8 90%, #9ea9b8 100%)",
+      }}
+    >
+      {/* Ghost peptide list filling the page height, as in the print layout */}
+      <ul
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-y-0 left-6 flex select-none flex-col justify-between pb-20 pt-8 text-2xl font-semibold leading-none text-white/30 sm:left-10 sm:text-3xl lg:left-14 lg:text-4xl"
+      >
+        {COMING_PEPTIDES.map((p) => (
+          <li key={p}>{p}</li>
+        ))}
+      </ul>
+
+      {/* Full-height model portrait, flush right */}
+      <Image
+        src="/images/catalog-book/peptides-model.webp"
+        alt="A woman holding a Logos RX peptide vial"
+        width={1400}
+        height={2410}
+        className="absolute inset-y-0 right-0 hidden h-full w-auto object-contain object-right [mask-image:linear-gradient(to_right,transparent,black_18%)] sm:block"
+      />
+
+      <h2 className="relative px-6 pb-16 text-5xl font-bold leading-[1.08] text-white sm:px-10 sm:text-6xl lg:px-14 lg:text-7xl">
+        Injectable
+        <br />
+        Peptide
+        <br />
+        Therapies
+      </h2>
+
+      <div className="absolute bottom-7 left-6 flex items-center gap-4 sm:left-10 lg:left-14">
+        <Image
+          src="/images/logo-white.svg"
+          alt="Logos RX"
+          width={180}
+          height={57}
+          className="h-8 w-auto sm:h-10"
+        />
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white sm:text-sm">
+          Coming July 2026
+        </p>
       </div>
     </div>
   );
