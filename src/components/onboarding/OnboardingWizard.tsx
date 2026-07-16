@@ -115,7 +115,11 @@ export default function OnboardingWizard({
   }
 
   async function advance() {
-    const err = validateStep(stepId, stateRef.current);
+    // Signup is the only flow that creates the Clerk account from the contact
+    // name, so it alone demands a first + last name (mirrors the server).
+    const err = validateStep(stepId, stateRef.current, {
+      requireFullContactName: mode === "signup",
+    });
     if (err) {
       setError(err);
       return;

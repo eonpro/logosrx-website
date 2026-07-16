@@ -133,7 +133,10 @@ export async function createPartnerClerkUser(args: {
   const client = await clerkClient();
   const email = args.email.trim().toLowerCase();
   const [firstName, ...rest] = args.name.trim().split(/\s+/);
-  const lastName = rest.join(" ");
+  // The Clerk instance requires a last name on every user; fall back to
+  // repeating the first name so a single-word contact name never fails
+  // creation with Clerk's raw "data doesn't match user requirements" error.
+  const lastName = rest.join(" ") || firstName;
   const phoneNumber = toE164(args.phone);
   const initialPassword = args.password?.trim() || null;
 

@@ -66,6 +66,30 @@ describe("validateStep", () => {
     expect(validateStep("products", s)).toMatch(/at least one product/i);
   });
 
+  it("requires a full first and last contact name only when asked (signup)", () => {
+    expect(
+      validateStep("contact", { ...validState(), contactName: "" }),
+    ).toMatch(/contact name is required/i);
+    expect(
+      validateStep(
+        "contact",
+        { ...validState(), contactName: "Rizzo" },
+        { requireFullContactName: true },
+      ),
+    ).toMatch(/first and last/i);
+    expect(
+      validateStep(
+        "contact",
+        { ...validState(), contactName: "Jane Doe" },
+        { requireFullContactName: true },
+      ),
+    ).toBeNull();
+    // Existing profiles may hold a single-word contact name; saves must pass.
+    expect(
+      validateStep("contact", { ...validState(), contactName: "Rizzo" }),
+    ).toBeNull();
+  });
+
   it("requires a valid contact email and privacy consent", () => {
     expect(
       validateStep("contact", { ...validState(), contactEmail: "nope" }),

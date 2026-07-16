@@ -323,8 +323,10 @@ export async function createAccountAndComplete(
     });
   }
 
+  // The full first + last contact name is only demanded here: this is the one
+  // path that creates the Clerk account (which requires a last name) from it.
   for (const id of STEP_IDS) {
-    const err = validateStep(id, state);
+    const err = validateStep(id, state, { requireFullContactName: true });
     if (err) return { ok: false, error: err };
   }
 
@@ -338,7 +340,11 @@ export async function createAccountAndComplete(
   }
 
   const [firstName, ...rest] = state.contactName.trim().split(/\s+/);
-  const lastName = rest.join(" ");
+  // The Clerk instance requires a last name on every user. Step validation
+  // demands a two-part contact name, but fall back to repeating the first
+  // name so a single-word name can never fail account creation with Clerk's
+  // raw "data doesn't match user requirements" error.
+  const lastName = rest.join(" ") || firstName;
 
   const client = await clerkClient();
 

@@ -201,6 +201,17 @@ export const INFO_STEPS: ReadonlySet<StepId> = new Set<StepId>([
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+export interface ValidateStepOptions {
+  /**
+   * Require the contact name to have first + last parts. Only the signup path
+   * needs this (Clerk requires a last name when the account is created from
+   * the contact name). Must stay off for existing accounts: profiles saved
+   * before this rule may hold a single-word contact name, and edits unrelated
+   * to the contact must not be blocked by it.
+   */
+  requireFullContactName?: boolean;
+}
+
 /**
  * Validates the data required to advance past `stepId`. Returns an error
  * message string, or null when the step is satisfied.
@@ -208,6 +219,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export function validateStep(
   stepId: StepId,
   s: OnboardingFormState,
+  opts: ValidateStepOptions = {},
 ): string | null {
   switch (stepId) {
     case "products":
@@ -230,6 +242,14 @@ export function validateStep(
       return null;
     case "contact":
       if (!s.contactName.trim()) return "Contact name is required.";
+      // Clerk requires a last name on every account, and the contact name is
+      // split into first/last at account creation — so demand both parts here
+      // instead of failing with a cryptic error at final submission.
+      if (
+        opts.requireFullContactName &&
+        s.contactName.trim().split(/\s+/).length < 2
+      )
+        return "Enter the contact's full name (first and last).";
       if (!s.contactPhone.trim()) return "Contact phone is required.";
       if (!EMAIL_RE.test(s.contactEmail.trim()))
         return "Enter a valid contact email.";
