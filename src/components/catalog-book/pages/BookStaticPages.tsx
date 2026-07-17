@@ -230,8 +230,8 @@ function OurProductsPage() {
         <Image
           src="/images/catalog-book/vial-lineup.webp"
           alt="Logos RX multi-dose vials: Sermorelin, Glutathione, Semaglutide, Tirzepatide, Testosterone Cypionate, and NAD+"
-          width={1400}
-          height={410}
+          width={2810}
+          height={900}
           className="mx-auto h-auto w-full max-w-3xl object-contain"
         />
       </div>
