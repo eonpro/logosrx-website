@@ -73,6 +73,17 @@ const navItems: SidebarNavItem[] = [
     ),
   },
   {
+    label: "Card Updates",
+    section: "Commerce",
+    href: "/admin/card-updates",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <rect x="2" y="4" width="16" height="12" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M2 8h16M5 12.5h4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
     label: "Merchandising",
     section: "Commerce",
     href: "/admin/merchandising",

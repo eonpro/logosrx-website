@@ -4,6 +4,7 @@ import { desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   cardUpdateLinks,
+  clinicPayments,
   clinics,
   type CardUpdateLink,
 } from "@/lib/db/schema";
@@ -81,4 +82,67 @@ export async function getLatestCardUpdateLink(
     .orderBy(desc(cardUpdateLinks.createdAt))
     .limit(1);
   return row ?? null;
+}
+
+export interface CardUpdateLinkSummary {
+  link: CardUpdateLink;
+  clinic: {
+    id: number;
+    clinicName: string | null;
+    practiceLegalName: string | null;
+    contactEmail: string | null;
+  };
+  /** Last 4 of the card currently on file (post-submission this is the new card). */
+  cardLast4: string | null;
+}
+
+/** All card-update links across clinics, newest first — the admin index. */
+export async function listCardUpdateLinks(): Promise<CardUpdateLinkSummary[]> {
+  const rows = await db
+    .select({
+      link: cardUpdateLinks,
+      clinic: {
+        id: clinics.id,
+        clinicName: clinics.clinicName,
+        practiceLegalName: clinics.practiceLegalName,
+        contactEmail: clinics.contactEmail,
+      },
+      cardLast4: clinicPayments.cardLast4,
+    })
+    .from(cardUpdateLinks)
+    .innerJoin(clinics, eq(clinics.id, cardUpdateLinks.clinicId))
+    .leftJoin(
+      clinicPayments,
+      eq(clinicPayments.clerkUserId, clinics.clerkUserId),
+    )
+    .orderBy(desc(cardUpdateLinks.createdAt));
+  return rows;
+}
+
+export interface ClinicOption {
+  id: number;
+  name: string;
+}
+
+/** Completed clinics for the "generate a link" picker, alphabetized. */
+export async function listClinicOptions(): Promise<ClinicOption[]> {
+  const rows = await db
+    .select({
+      id: clinics.id,
+      clinicName: clinics.clinicName,
+      practiceLegalName: clinics.practiceLegalName,
+      contactEmail: clinics.contactEmail,
+    })
+    .from(clinics)
+    .where(eq(clinics.onboardingCompleted, true));
+  return rows
+    .map((c) => ({
+      id: c.id,
+      name:
+        c.clinicName?.trim() ||
+        c.practiceLegalName?.trim() ||
+        c.contactEmail ||
+        `Clinic #${c.id}`,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 }

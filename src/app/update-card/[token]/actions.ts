@@ -142,6 +142,7 @@ export async function submitCardUpdate(
 
   revalidatePath(`/admin/clinics/${clinic.id}`);
   revalidatePath("/admin/clinics");
+  revalidatePath("/admin/card-updates");
 
   return { ok: true };
 }

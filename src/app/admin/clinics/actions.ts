@@ -372,6 +372,7 @@ export async function createCardUpdateLink(
   }, { expiresInDays: days });
 
   revalidatePath(`/admin/clinics/${clinicId}`);
+  revalidatePath("/admin/card-updates");
   return {
     ok: true,
     url: `${SITE_URL}/update-card/${token}`,
@@ -402,6 +403,7 @@ export async function revokeCardUpdateLink(
   });
 
   revalidatePath(`/admin/clinics/${clinicId}`);
+  revalidatePath("/admin/card-updates");
   return { ok: true };
 }
 
