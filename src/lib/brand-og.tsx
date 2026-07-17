@@ -14,6 +14,7 @@ export const OG_SIZE = { width: 1200, height: 630 } as const;
 export const OG_ALT = "Logos RX — Compounding Excellence, Personalized.";
 export const PARTNER_OG_ALT = "Logos RX Partner Program";
 export const CATALOG_OG_ALT = "Logos RX — 2026 Catalog";
+export const PAYMENT_OG_ALT = "Logos RX — Secure Payment Update";
 
 async function logoDataUrl(): Promise<string> {
   const logo = await readFile(
@@ -114,6 +115,175 @@ export async function renderPartnerOg(): Promise<ImageResponse> {
           }}
         >
           Marketing &amp; brand-support partnerships
+        </div>
+      </div>
+    ),
+    {
+      ...OG_SIZE,
+      fonts: [
+        { name: "Inter", data: bold, weight: 700, style: "normal" },
+        { name: "Inter", data: regular, weight: 400, style: "normal" },
+      ],
+    },
+  );
+}
+
+/**
+ * Payment-update Open Graph / Twitter card. Used by the single-use
+ * `/update-card/<token>` links so a link texted or emailed to a clinic
+ * previews as "update your payment card" (with a card illustration) instead
+ * of the generic brand card. Renders live text, so two Inter weights are
+ * embedded (Satori needs an embedded font).
+ */
+export async function renderPaymentUpdateOg(): Promise<ImageResponse> {
+  const [logoSrc, bold, regular] = await Promise.all([
+    logoDataUrl(),
+    readFile(join(process.cwd(), "public/fonts/Inter-Bold.ttf")),
+    readFile(join(process.cwd(), "public/fonts/Inter-Regular.ttf")),
+  ]);
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          width: "100%",
+          height: "100%",
+          padding: "84px",
+          background:
+            "radial-gradient(1100px 700px at 85% -10%, #6E469B 0%, rgba(110,70,155,0) 55%), linear-gradient(135deg, #262262 0%, #1a1750 100%)",
+        }}
+      >
+        {/* Left column: wordmark + message */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            flexGrow: 1,
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={logoSrc} width={320} height={102} alt="Logos RX" />
+
+          <div
+            style={{
+              display: "flex",
+              marginTop: "52px",
+              fontFamily: "Inter",
+              fontWeight: 700,
+              fontSize: "26px",
+              letterSpacing: "8px",
+              color: "#E2637A",
+            }}
+          >
+            SECURE PAYMENT UPDATE
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              marginTop: "16px",
+              fontFamily: "Inter",
+              fontWeight: 700,
+              fontSize: "72px",
+              color: "#ffffff",
+              lineHeight: 1.05,
+            }}
+          >
+            Update your card on file
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              marginTop: "22px",
+              fontFamily: "Inter",
+              fontWeight: 400,
+              fontSize: "30px",
+              color: "rgba(255,255,255,0.72)",
+            }}
+          >
+            Encrypted, single-use link — takes about a minute
+          </div>
+        </div>
+
+        {/* Right column: stylized payment card */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            width: "360px",
+            height: "224px",
+            flexShrink: 0,
+            marginLeft: "56px",
+            padding: "28px",
+            borderRadius: "28px",
+            background: "linear-gradient(135deg, #B02D77 0%, #6E469B 100%)",
+            boxShadow: "0 30px 60px rgba(0,0,0,0.35)",
+            transform: "rotate(-6deg)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            {/* Chip */}
+            <div
+              style={{
+                display: "flex",
+                width: "52px",
+                height: "38px",
+                borderRadius: "8px",
+                background:
+                  "linear-gradient(135deg, #F3D9A4 0%, #D9AE62 100%)",
+              }}
+            />
+            {/* Contactless arcs stand-in */}
+            <div
+              style={{
+                display: "flex",
+                fontFamily: "Inter",
+                fontWeight: 700,
+                fontSize: "22px",
+                color: "rgba(255,255,255,0.85)",
+                letterSpacing: "2px",
+              }}
+            >
+              )))
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              fontFamily: "Inter",
+              fontWeight: 700,
+              fontSize: "30px",
+              letterSpacing: "6px",
+              color: "#ffffff",
+            }}
+          >
+            •••• •••• ••••
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              fontFamily: "Inter",
+              fontWeight: 400,
+              fontSize: "18px",
+              color: "rgba(255,255,255,0.8)",
+            }}
+          >
+            <span>YOUR CLINIC</span>
+            <span>MM/YY</span>
+          </div>
         </div>
       </div>
     ),
