@@ -5,6 +5,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   cardAccessLog,
+  cardUpdateLinks,
   clinicNotes,
   clinicPayments,
   clinicPricing,
@@ -20,6 +21,8 @@ import {
   validatePasswordInput,
 } from "@/lib/auth/clerk-users";
 import { decrypt } from "@/lib/onboarding/encryption";
+import { generateCardUpdateToken } from "@/lib/payment-links/data";
+import { SITE_URL } from "@/lib/constants";
 import { sendClinicApprovedEmail } from "@/lib/notifications/email";
 import { notifyClinicApproved } from "@/lib/notifications/slack";
 import { runAfterResponse } from "@/lib/runtime/after";
@@ -298,6 +301,108 @@ export async function revealCard(
       billingZip: payment.billingZip,
     },
   };
+}
+
+export interface CardUpdateLinkResult {
+  ok: boolean;
+  error?: string;
+  /** Public URL of the newly created link. */
+  url?: string;
+  expiresAt?: string | null;
+}
+
+const CARD_LINK_DEFAULT_DAYS = 7;
+const CARD_LINK_MAX_DAYS = 30;
+
+/**
+ * Generates a shareable, single-use card-update link for a clinic
+ * (`/update-card/<token>`). The clinic opens it — no sign-in required — and
+ * re-enters their full card, exactly like the onboarding payment step. Any
+ * previously active links for the clinic are revoked so only one is ever
+ * live. Full admins only; audited.
+ */
+export async function createCardUpdateLink(
+  clinicId: number,
+  expiresInDays: number = CARD_LINK_DEFAULT_DAYS,
+): Promise<CardUpdateLinkResult> {
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(clinicId, "clinicId");
+
+  const days = Math.max(
+    1,
+    Math.min(CARD_LINK_MAX_DAYS, Math.round(expiresInDays) || CARD_LINK_DEFAULT_DAYS),
+  );
+
+  const [clinic] = await db
+    .select({ id: clinics.id, clerkUserId: clinics.clerkUserId })
+    .from(clinics)
+    .where(eq(clinics.id, clinicId))
+    .limit(1);
+  if (!clinic) return { ok: false, error: "Clinic not found." };
+
+  const token = generateCardUpdateToken();
+  const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  const now = new Date();
+
+  try {
+    // One live link per clinic: retire any still-active predecessors first.
+    await db
+      .update(cardUpdateLinks)
+      .set({ status: "revoked", updatedAt: now })
+      .where(
+        and(
+          eq(cardUpdateLinks.clinicId, clinicId),
+          eq(cardUpdateLinks.status, "active"),
+        ),
+      );
+    await db.insert(cardUpdateLinks).values({
+      token,
+      clinicId,
+      expiresAt,
+      createdBy: ctx.userId,
+      createdByEmail: ctx.email,
+    });
+  } catch {
+    return { ok: false, error: "Could not create the link. Please try again." };
+  }
+
+  await recordAdminAudit(ctx, "clinic.card_update_link_create", {
+    type: "clinic",
+    id: clinicId,
+  }, { expiresInDays: days });
+
+  revalidatePath(`/admin/clinics/${clinicId}`);
+  return {
+    ok: true,
+    url: `${SITE_URL}/update-card/${token}`,
+    expiresAt: expiresAt.toISOString(),
+  };
+}
+
+/** Revokes a clinic's active card-update link(s) so they no longer open. */
+export async function revokeCardUpdateLink(
+  clinicId: number,
+): Promise<{ ok: boolean; error?: string }> {
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(clinicId, "clinicId");
+
+  await db
+    .update(cardUpdateLinks)
+    .set({ status: "revoked", updatedAt: new Date() })
+    .where(
+      and(
+        eq(cardUpdateLinks.clinicId, clinicId),
+        eq(cardUpdateLinks.status, "active"),
+      ),
+    );
+
+  await recordAdminAudit(ctx, "clinic.card_update_link_revoke", {
+    type: "clinic",
+    id: clinicId,
+  });
+
+  revalidatePath(`/admin/clinics/${clinicId}`);
+  return { ok: true };
 }
 
 async function verifyAdminPassword(

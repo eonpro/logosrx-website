@@ -25,6 +25,11 @@ import {
 } from "@/lib/onboarding/steps";
 import { standardCatalogPrice } from "@/data/catalog";
 import { getCatalogProducts } from "@/lib/catalog/store";
+import {
+  getLatestCardUpdateLink,
+  isCardLinkExpired,
+} from "@/lib/payment-links/data";
+import { SITE_URL } from "@/lib/constants";
 import ClinicManager from "./ClinicManager";
 import { Card, PageHeader, btnGhost } from "@/components/ui/portal";
 
@@ -175,6 +180,26 @@ export default async function ClinicDetailPage({
       overrideCents: overrideByProduct.get(p.id) ?? null,
     };
   });
+
+  // Latest card-update link (if any), shaped for the client control. The URL
+  // is only surfaced while the link is still openable.
+  const latestCardLink = await getLatestCardUpdateLink(id);
+  const cardLink = latestCardLink
+    ? {
+        status:
+          latestCardLink.status === "active" && isCardLinkExpired(latestCardLink)
+            ? ("expired" as const)
+            : latestCardLink.status,
+        url:
+          latestCardLink.status === "active" && !isCardLinkExpired(latestCardLink)
+            ? `${SITE_URL}/update-card/${latestCardLink.token}`
+            : null,
+        expiresAt: latestCardLink.expiresAt?.toISOString() ?? null,
+        usedAt: latestCardLink.usedAt?.toISOString() ?? null,
+        viewedAt: latestCardLink.viewedAt?.toISOString() ?? null,
+        createdAt: latestCardLink.createdAt.toISOString(),
+      }
+    : null;
 
   const name = clinic.clinicName || clinic.practiceLegalName || "Clinic";
 
@@ -333,6 +358,7 @@ export default async function ClinicDetailPage({
           canActivate={Boolean(clinic.clerkUserId && clinic.contactEmail)}
           hasCard={Boolean(payment?.cardLast4)}
           cardLast4={payment?.cardLast4 ?? null}
+          cardLink={cardLink}
           pricing={{
             tier: clinic.pricingTier,
             discountPct: clinic.pricingDiscountPct,

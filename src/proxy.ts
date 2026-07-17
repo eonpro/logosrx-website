@@ -37,6 +37,7 @@ const isStrictCspRoute = createRouteMatcher([
   "/partners(.*)",
   "/onboarding(.*)",
   "/quote(.*)",
+  "/update-card(.*)",
   "/sign-in(.*)",
   "/sign-up(.*)",
 ]);

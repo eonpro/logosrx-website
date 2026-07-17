@@ -6,10 +6,12 @@ import SetPasswordControl from "@/components/auth/SetPasswordControl";
 import {
   addClinicNote,
   addPriceItem,
+  createCardUpdateLink,
   deletePriceItem,
   resendClinicActivation,
   resetProductPrice,
   revealCard,
+  revokeCardUpdateLink,
   setClinicPassword,
   setClinicPricing,
   setClinicVerification,
@@ -37,6 +39,16 @@ interface PriceItemView {
   productName: string;
   priceCents: number;
   unit: string | null;
+}
+
+interface CardLinkView {
+  status: "active" | "used" | "revoked" | "expired";
+  /** Public URL — only set while the link is still openable. */
+  url: string | null;
+  expiresAt: string | null;
+  usedAt: string | null;
+  viewedAt: string | null;
+  createdAt: string;
 }
 
 interface CatalogRow {
@@ -93,6 +105,7 @@ export default function ClinicManager({
   canActivate,
   hasCard,
   cardLast4,
+  cardLink,
   pricing,
   catalog,
   customItems,
@@ -104,6 +117,7 @@ export default function ClinicManager({
   canActivate: boolean;
   hasCard: boolean;
   cardLast4: string | null;
+  cardLink: CardLinkView | null;
   pricing: { tier: Tier; discountPct: number; notes: string };
   catalog: CatalogRow[];
   customItems: PriceItemView[];
@@ -122,7 +136,12 @@ export default function ClinicManager({
         run={(fn) => startTransition(fn)}
         refresh={() => router.refresh()}
       />
-      <CardReveal clinicId={clinicId} hasCard={hasCard} cardLast4={cardLast4} />
+      <CardReveal
+        clinicId={clinicId}
+        hasCard={hasCard}
+        cardLast4={cardLast4}
+        cardLink={cardLink}
+      />
       <PricingCard
         clinicId={clinicId}
         pricing={pricing}
@@ -338,10 +357,12 @@ function CardReveal({
   clinicId,
   hasCard,
   cardLast4,
+  cardLink,
 }: {
   clinicId: number;
   hasCard: boolean;
   cardLast4: string | null;
+  cardLink: CardLinkView | null;
 }) {
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState("");
@@ -448,7 +469,161 @@ function CardReveal({
           )}
         </div>
       )}
+      <CardUpdateLinkControl clinicId={clinicId} cardLink={cardLink} />
     </Section>
+  );
+}
+
+/**
+ * Generates / manages the shareable card-update link for this clinic: a
+ * single-use public URL the clinic opens to re-enter their full card (same
+ * fields as onboarding). Only one link is live at a time — generating a new
+ * one revokes its predecessor.
+ */
+function CardUpdateLinkControl({
+  clinicId,
+  cardLink,
+}: {
+  clinicId: number;
+  cardLink: CardLinkView | null;
+}) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+  // Freshly minted URL — shown immediately, before the server props refresh.
+  const [freshUrl, setFreshUrl] = useState<string | null>(null);
+
+  const activeUrl = freshUrl ?? (cardLink?.status === "active" ? cardLink.url : null);
+
+  async function generate() {
+    setBusy(true);
+    setError("");
+    try {
+      const res = await createCardUpdateLink(clinicId);
+      if (res.ok && res.url) {
+        setFreshUrl(res.url);
+        router.refresh();
+      } else {
+        setError(res.error ?? "Could not create the link.");
+      }
+    } catch {
+      setError("Something went wrong.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function revoke() {
+    setBusy(true);
+    setError("");
+    try {
+      await revokeCardUpdateLink(clinicId);
+      setFreshUrl(null);
+      router.refresh();
+    } catch {
+      setError("Something went wrong.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function copy(url: string) {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setError("Could not copy — select and copy the link manually.");
+    }
+  }
+
+  const statusLine = (() => {
+    if (!cardLink || freshUrl) return null;
+    if (cardLink.status === "used") {
+      return `Card submitted through the last link${
+        cardLink.usedAt ? ` on ${fmtDate(cardLink.usedAt)}` : ""
+      }.`;
+    }
+    if (cardLink.status === "expired") return "The last link expired unused.";
+    if (cardLink.status === "revoked") return "The last link was revoked.";
+    return null;
+  })();
+
+  return (
+    <div className="mt-4 border-t border-beige pt-4">
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
+        Card update link
+      </p>
+
+      {activeUrl ? (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <input
+              readOnly
+              value={activeUrl}
+              onFocus={(e) => e.currentTarget.select()}
+              className={`${inputClass} flex-1 font-mono text-xs`}
+            />
+            <button
+              onClick={() => copy(activeUrl)}
+              className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold text-white transition-all active:scale-[0.98] ${
+                copied
+                  ? "bg-emerald-600 hover:bg-emerald-700"
+                  : "bg-plum hover:bg-plum-deep"
+              }`}
+            >
+              {copied ? "Copied ✓" : "Copy"}
+            </button>
+          </div>
+          <p className="text-xs text-navy/55">
+            Single-use link — the clinic opens it (no sign-in) and enters their
+            full new card.
+            {cardLink?.expiresAt && !freshUrl
+              ? ` Expires ${fmtDate(cardLink.expiresAt)}.`
+              : " Expires in 7 days."}
+            {cardLink?.viewedAt && !freshUrl
+              ? ` Opened ${fmtDate(cardLink.viewedAt)}.`
+              : ""}
+          </p>
+          <div className="flex gap-2">
+            <button
+              disabled={busy}
+              onClick={generate}
+              className="rounded-full border border-beige-dark bg-white px-4 py-1.5 text-xs font-semibold text-navy transition-all hover:border-navy/40 disabled:opacity-50"
+            >
+              {busy ? "Working…" : "Generate new link"}
+            </button>
+            <button
+              disabled={busy}
+              onClick={revoke}
+              className="rounded-full border border-red-200 bg-white px-4 py-1.5 text-xs font-semibold text-red-700 transition-all hover:bg-red-50 disabled:opacity-50"
+            >
+              Revoke
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {statusLine && <p className="text-xs text-navy/55">{statusLine}</p>}
+          <div>
+            <button
+              disabled={busy}
+              onClick={generate}
+              className="rounded-full border border-beige-dark bg-white px-4 py-1.5 text-xs font-semibold text-navy transition-all hover:border-navy/40 disabled:opacity-50"
+            >
+              {busy ? "Generating…" : "Generate card update link"}
+            </button>
+          </div>
+          <p className="text-xs text-navy/50">
+            Creates a single-use link (valid 7 days) you can text or email to
+            the clinic so they can securely enter a new card — same form as
+            onboarding. Generating a new link revokes the previous one.
+          </p>
+        </div>
+      )}
+      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+    </div>
   );
 }
 

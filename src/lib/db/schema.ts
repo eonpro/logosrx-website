@@ -731,6 +731,48 @@ export const pricingQuoteItems = pgTable("pricing_quote_items", {
 ]);
 
 /**
+ * Lifecycle of a shareable card-update link:
+ *   - `active`  — live; the clinic can open it and submit a new card.
+ *   - `used`    — the clinic submitted a card through it (single-use).
+ *   - `revoked` — an admin disabled it; it no longer opens.
+ */
+export const cardUpdateLinkStatusEnum = pgEnum("card_update_link_status", [
+  "active",
+  "used",
+  "revoked",
+]);
+
+/**
+ * A single-use, admin-generated link (`/update-card/<token>`) a clinic opens
+ * to re-enter their full payment card — the same fields collected during
+ * onboarding. No sign-in required: the unguessable token is the credential,
+ * so links are short-lived (expiry stamped at creation) and one-shot. The
+ * submitted card lands in `clinic_payments` (encrypted) exactly like the
+ * onboarding write path. At most one `active` link per clinic by convention:
+ * generating a new one revokes its predecessors (enforced in the action).
+ */
+export const cardUpdateLinks = pgTable("card_update_links", {
+  id: serial("id").primaryKey(),
+  // Unguessable public slug used in the URL. base32, ~24 chars.
+  token: varchar("token", { length: 32 }).notNull().unique(),
+  clinicId: integer("clinic_id")
+    .notNull()
+    .references(() => clinics.id, { onDelete: "cascade" }),
+  status: cardUpdateLinkStatusEnum("status").default("active").notNull(),
+  expiresAt: timestamp("expires_at"),
+  // Admin who generated the link.
+  createdBy: varchar("created_by", { length: 64 }).notNull(),
+  createdByEmail: varchar("created_by_email", { length: 255 }),
+  viewedAt: timestamp("viewed_at"),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (t) => [
+  // Admin clinic detail loads the latest link for one clinic.
+  index("card_update_links_clinic_idx").on(t.clinicId, t.createdAt),
+]);
+
+/**
  * Audit trail for sensitive card reveals. Written every time an admin decrypts
  * and views a clinic's full card details (gated by password re-verification).
  */
@@ -1228,6 +1270,8 @@ export type NewClinicNote = typeof clinicNotes.$inferInsert;
 export type ClinicPriceItem = typeof clinicPricing.$inferSelect;
 export type NewClinicPriceItem = typeof clinicPricing.$inferInsert;
 export type CardAccessLogEntry = typeof cardAccessLog.$inferSelect;
+export type CardUpdateLink = typeof cardUpdateLinks.$inferSelect;
+export type NewCardUpdateLink = typeof cardUpdateLinks.$inferInsert;
 export type AuditEvent = typeof auditEvents.$inferSelect;
 export type NewAuditEvent = typeof auditEvents.$inferInsert;
 export type ClinicPayment = typeof clinicPayments.$inferSelect;
