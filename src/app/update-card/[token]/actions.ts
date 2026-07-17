@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
@@ -169,11 +168,12 @@ export async function submitCardUpdate(
     metadata: { linkId: link.id, cardLast4: number.slice(-4) },
   });
 
-  if (clinic) {
-    revalidatePath(`/admin/clinics/${clinic.id}`);
-    revalidatePath("/admin/clinics");
-  }
-  revalidatePath("/admin/card-updates");
+  // NOTE: deliberately no revalidatePath() here. A server action that
+  // revalidates also re-renders the CURRENT route in the same response — by
+  // then the link is `used`, so the recipient would see the "already been
+  // used" screen instead of the success confirmation. The admin views that
+  // display this data are all force-dynamic and re-query on every load, so
+  // they don't need cache invalidation.
 
   return { ok: true };
 }
