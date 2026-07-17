@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { cardUpdateLinks } from "@/lib/db/schema";
 import {
+  cardLinkRecipientName,
   getCardUpdateLinkByToken,
   isCardLinkExpired,
 } from "@/lib/payment-links/data";
@@ -53,7 +54,7 @@ export default async function UpdateCardPage({ params }: PageProps) {
     );
   }
 
-  const { link, clinic } = data;
+  const { link } = data;
 
   if (link.status === "used") {
     return (
@@ -92,8 +93,7 @@ export default async function UpdateCardPage({ params }: PageProps) {
     }
   }
 
-  const clinicName =
-    clinic.clinicName || clinic.practiceLegalName || "your clinic";
+  const clinicName = cardLinkRecipientName(data);
 
   return (
     <AuthShell subtitle="Payment Update">

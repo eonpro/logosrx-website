@@ -38,16 +38,17 @@ export function isCardLinkOpenable(link: CardUpdateLink): boolean {
 
 export interface CardLinkWithClinic {
   link: CardUpdateLink;
+  /** Null for external (non-portal) links. */
   clinic: {
     id: number;
     clerkUserId: string;
     clinicName: string | null;
     practiceLegalName: string | null;
     contactName: string | null;
-  };
+  } | null;
 }
 
-/** Loads a card-update link and its clinic by public token. */
+/** Loads a card-update link (and its clinic, when it has one) by public token. */
 export async function getCardUpdateLinkByToken(
   token: string,
 ): Promise<CardLinkWithClinic | null> {
@@ -65,10 +66,20 @@ export async function getCardUpdateLinkByToken(
       },
     })
     .from(cardUpdateLinks)
-    .innerJoin(clinics, eq(clinics.id, cardUpdateLinks.clinicId))
+    .leftJoin(clinics, eq(clinics.id, cardUpdateLinks.clinicId))
     .where(eq(cardUpdateLinks.token, clean))
     .limit(1);
   return row ?? null;
+}
+
+/** The recipient name shown on the public page and in the admin index. */
+export function cardLinkRecipientName(row: CardLinkWithClinic): string {
+  return (
+    row.link.clinicName?.trim() ||
+    row.clinic?.clinicName?.trim() ||
+    row.clinic?.practiceLegalName?.trim() ||
+    "your clinic"
+  );
 }
 
 /** Latest link for a clinic (any status) — for the admin clinic detail view. */
@@ -86,17 +97,18 @@ export async function getLatestCardUpdateLink(
 
 export interface CardUpdateLinkSummary {
   link: CardUpdateLink;
+  /** Null for external (non-portal) links. */
   clinic: {
     id: number;
     clinicName: string | null;
     practiceLegalName: string | null;
     contactEmail: string | null;
-  };
+  } | null;
   /** Last 4 of the card currently on file (post-submission this is the new card). */
   cardLast4: string | null;
 }
 
-/** All card-update links across clinics, newest first — the admin index. */
+/** All card-update links (portal + external), newest first — the admin index. */
 export async function listCardUpdateLinks(): Promise<CardUpdateLinkSummary[]> {
   const rows = await db
     .select({
@@ -110,13 +122,17 @@ export async function listCardUpdateLinks(): Promise<CardUpdateLinkSummary[]> {
       cardLast4: clinicPayments.cardLast4,
     })
     .from(cardUpdateLinks)
-    .innerJoin(clinics, eq(clinics.id, cardUpdateLinks.clinicId))
+    .leftJoin(clinics, eq(clinics.id, cardUpdateLinks.clinicId))
     .leftJoin(
       clinicPayments,
       eq(clinicPayments.clerkUserId, clinics.clerkUserId),
     )
     .orderBy(desc(cardUpdateLinks.createdAt));
-  return rows;
+  // External submissions store their card on the link row itself.
+  return rows.map((r) => ({
+    ...r,
+    cardLast4: r.clinic ? r.cardLast4 : r.link.cardLast4,
+  }));
 }
 
 export interface ClinicOption {

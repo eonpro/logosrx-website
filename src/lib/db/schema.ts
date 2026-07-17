@@ -746,18 +746,31 @@ export const cardUpdateLinkStatusEnum = pgEnum("card_update_link_status", [
  * A single-use, admin-generated link (`/update-card/<token>`) a clinic opens
  * to re-enter their full payment card — the same fields collected during
  * onboarding. No sign-in required: the unguessable token is the credential,
- * so links are short-lived (expiry stamped at creation) and one-shot. The
- * submitted card lands in `clinic_payments` (encrypted) exactly like the
- * onboarding write path. At most one `active` link per clinic by convention:
- * generating a new one revokes its predecessors (enforced in the action).
+ * so links are short-lived (expiry stamped at creation) and one-shot.
+ *
+ * Two kinds of recipient:
+ *   - Portal clinic (`clinicId` set): the submitted card lands in
+ *     `clinic_payments` (encrypted) exactly like the onboarding write path.
+ *     At most one `active` link per clinic by convention: generating a new
+ *     one revokes its predecessors (enforced in the action).
+ *   - External clinic (`clinicId` NULL): a clinic that isn't on the portal.
+ *     The admin names the recipient (`clinicName`) and the submitted card is
+ *     stored ON THIS ROW (the `card*`/`billing*` columns below, sensitive
+ *     values AES-256-GCM encrypted like `clinic_payments`). Admins reveal it
+ *     from `/admin/card-updates` behind the same step-up password gate.
  */
 export const cardUpdateLinks = pgTable("card_update_links", {
   id: serial("id").primaryKey(),
   // Unguessable public slug used in the URL. base32, ~24 chars.
   token: varchar("token", { length: 32 }).notNull().unique(),
-  clinicId: integer("clinic_id")
-    .notNull()
-    .references(() => clinics.id, { onDelete: "cascade" }),
+  // Null for external (non-portal) links.
+  clinicId: integer("clinic_id").references(() => clinics.id, {
+    onDelete: "cascade",
+  }),
+  // Recipient display name — required for external links; a convenience
+  // snapshot otherwise.
+  clinicName: varchar("clinic_name", { length: 200 }),
+  contactEmail: varchar("contact_email", { length: 255 }),
   status: cardUpdateLinkStatusEnum("status").default("active").notNull(),
   expiresAt: timestamp("expires_at"),
   // Admin who generated the link.
@@ -765,6 +778,20 @@ export const cardUpdateLinks = pgTable("card_update_links", {
   createdByEmail: varchar("created_by_email", { length: 255 }),
   viewedAt: timestamp("viewed_at"),
   usedAt: timestamp("used_at"),
+
+  // --- External submission (clinicId NULL only; otherwise always NULL) ---
+  // Mirrors `clinic_payments`: card number + CVV are AES-256-GCM ciphertext.
+  cardholderName: varchar("cardholder_name", { length: 200 }),
+  cardNumberEnc: text("card_number_enc"),
+  cardLast4: varchar("card_last4", { length: 4 }),
+  cardType: varchar("card_type", { length: 30 }),
+  expiration: varchar("expiration", { length: 10 }),
+  cvvEnc: text("cvv_enc"),
+  billingAddress: varchar("billing_address", { length: 255 }),
+  billingZip: varchar("billing_zip", { length: 20 }),
+  // Payment-authorization signature (base64 data-URL from the signature pad).
+  paymentSignature: text("payment_signature"),
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (t) => [

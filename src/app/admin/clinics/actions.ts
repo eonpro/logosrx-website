@@ -13,7 +13,7 @@ import {
 } from "@/lib/db/schema";
 import { ADMIN_ROLE, requireAdmin } from "@/lib/auth/admin";
 import { recordAdminAudit } from "@/lib/audit/log";
-import { fetchWithTimeout } from "@/lib/http/fetch";
+import { verifyAdminPassword } from "@/lib/auth/step-up";
 import {
   buildActivateUrl,
   clerkErrorMessage,
@@ -405,32 +405,6 @@ export async function revokeCardUpdateLink(
   revalidatePath(`/admin/clinics/${clinicId}`);
   revalidatePath("/admin/card-updates");
   return { ok: true };
-}
-
-async function verifyAdminPassword(
-  userId: string,
-  password: string,
-): Promise<boolean> {
-  const key = process.env.CLERK_SECRET_KEY;
-  if (!key) return false;
-  try {
-    const res = await fetchWithTimeout(
-      `https://api.clerk.com/v1/users/${userId}/verify_password`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${key.trim()}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ password }),
-      },
-    );
-    if (!res.ok) return false;
-    const data = (await res.json()) as { verified?: boolean };
-    return data.verified === true;
-  } catch {
-    return false;
-  }
 }
 
 /** Appends a CRM note to a clinic's timeline. */

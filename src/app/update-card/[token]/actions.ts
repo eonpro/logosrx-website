@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   cardUpdateLinks,
@@ -74,8 +74,7 @@ export async function submitCardUpdate(
   const cvv = form.payment.cvv.trim();
   const now = new Date();
 
-  const paymentValues = {
-    clerkUserId: clinic.clerkUserId,
+  const cardFields = {
     cardholderName: form.payment.cardholderName.trim() || null,
     cardType: form.payment.cardType || null,
     expiration: form.payment.expiration.trim() || null,
@@ -84,46 +83,76 @@ export async function submitCardUpdate(
     cardNumberEnc: encrypt(number),
     cardLast4: number.slice(-4),
     cvvEnc: encrypt(cvv),
-    updatedAt: now,
   };
 
   try {
-    await db.transaction(async (tx) => {
-      // Guard against a concurrent double-submit: only one transaction can
-      // flip the link from `active` to `used`; the loser writes nothing.
-      const [claimed] = await tx
+    if (clinic) {
+      // Portal clinic: the card lands in clinic_payments like onboarding.
+      const paymentValues = {
+        clerkUserId: clinic.clerkUserId,
+        ...cardFields,
+        updatedAt: now,
+      };
+      await db.transaction(async (tx) => {
+        // Guard against a concurrent double-submit: only one transaction can
+        // flip the link from `active` to `used`; the loser writes nothing.
+        const [claimed] = await tx
+          .update(cardUpdateLinks)
+          .set({ status: "used", usedAt: now, updatedAt: now })
+          .where(eq(cardUpdateLinks.token, clean))
+          .returning({ status: cardUpdateLinks.status });
+        if (!claimed) throw new Error("link vanished");
+
+        const { clerkUserId: _target, ...set } = paymentValues;
+        void _target;
+        await tx
+          .insert(clinicPayments)
+          .values(paymentValues)
+          .onConflictDoUpdate({ target: clinicPayments.clerkUserId, set });
+
+        // Refresh the payment authorization signature only — the shipping and
+        // provider-agreement signatures on file are untouched.
+        await tx
+          .insert(clinicSignatures)
+          .values({
+            clerkUserId: clinic.clerkUserId,
+            paymentSignature: form.paymentSignature,
+            updatedAt: now,
+          })
+          .onConflictDoUpdate({
+            target: clinicSignatures.clerkUserId,
+            set: { paymentSignature: form.paymentSignature, updatedAt: now },
+          });
+
+        await tx
+          .update(clinics)
+          .set({ paymentAuthAccepted: true, updatedAt: now })
+          .where(eq(clinics.id, clinic.id));
+      });
+    } else {
+      // External (non-portal) clinic: the card is stored on the link row
+      // itself, encrypted the same way. The single UPDATE is also the
+      // single-use claim (status must still be `active`).
+      const [claimed] = await db
         .update(cardUpdateLinks)
-        .set({ status: "used", usedAt: now, updatedAt: now })
-        .where(eq(cardUpdateLinks.token, clean))
-        .returning({ status: cardUpdateLinks.status });
-      if (!claimed) throw new Error("link vanished");
-
-      const { clerkUserId: _target, ...set } = paymentValues;
-      void _target;
-      await tx
-        .insert(clinicPayments)
-        .values(paymentValues)
-        .onConflictDoUpdate({ target: clinicPayments.clerkUserId, set });
-
-      // Refresh the payment authorization signature only — the shipping and
-      // provider-agreement signatures on file are untouched.
-      await tx
-        .insert(clinicSignatures)
-        .values({
-          clerkUserId: clinic.clerkUserId,
-          paymentSignature: form.paymentSignature,
+        .set({
+          status: "used",
+          usedAt: now,
           updatedAt: now,
+          ...cardFields,
+          paymentSignature: form.paymentSignature,
         })
-        .onConflictDoUpdate({
-          target: clinicSignatures.clerkUserId,
-          set: { paymentSignature: form.paymentSignature, updatedAt: now },
-        });
-
-      await tx
-        .update(clinics)
-        .set({ paymentAuthAccepted: true, updatedAt: now })
-        .where(eq(clinics.id, clinic.id));
-    });
+        .where(
+          and(
+            eq(cardUpdateLinks.token, clean),
+            eq(cardUpdateLinks.status, "active"),
+          ),
+        )
+        .returning({ id: cardUpdateLinks.id });
+      if (!claimed) {
+        return { ok: false, error: GENERIC_UNAVAILABLE };
+      }
+    }
   } catch (error) {
     log.error("card update link submit failed", { error, linkId: link.id });
     return {
@@ -135,13 +164,15 @@ export async function submitCardUpdate(
   await recordAudit({
     actorType: "system",
     action: "clinic.card_update_link_used",
-    targetType: "clinic",
-    targetId: clinic.id,
+    targetType: clinic ? "clinic" : "card_update_link",
+    targetId: clinic ? clinic.id : link.id,
     metadata: { linkId: link.id, cardLast4: number.slice(-4) },
   });
 
-  revalidatePath(`/admin/clinics/${clinic.id}`);
-  revalidatePath("/admin/clinics");
+  if (clinic) {
+    revalidatePath(`/admin/clinics/${clinic.id}`);
+    revalidatePath("/admin/clinics");
+  }
   revalidatePath("/admin/card-updates");
 
   return { ok: true };

@@ -21,12 +21,14 @@ export default async function CardUpdatesPage() {
 
   const rows: CardLinkRow[] = links.map(({ link, clinic, cardLast4 }) => ({
     id: link.id,
-    clinicId: clinic.id,
+    clinicId: clinic?.id ?? null,
+    external: !clinic,
     clinicName:
-      clinic.clinicName?.trim() ||
-      clinic.practiceLegalName?.trim() ||
-      `Clinic #${clinic.id}`,
-    contactEmail: clinic.contactEmail,
+      link.clinicName?.trim() ||
+      clinic?.clinicName?.trim() ||
+      clinic?.practiceLegalName?.trim() ||
+      (clinic ? `Clinic #${clinic.id}` : "Clinic"),
+    contactEmail: clinic?.contactEmail ?? link.contactEmail,
     status:
       link.status === "active" && isCardLinkExpired(link)
         ? "expired"
@@ -48,7 +50,7 @@ export default async function CardUpdatesPage() {
       <PageHeader
         eyebrow="Admin"
         title="Card Update Links"
-        description="Single-use links you send a clinic so they can securely re-enter their payment card — same form as onboarding. Submitted cards appear on the clinic's page under Payment card."
+        description="Single-use links you send a clinic so they can securely enter their payment card — same form as onboarding. Works for portal clinics and outside clinics alike; submitted cards are viewable here or on the clinic's page."
       />
       <CardLinksManager
         rows={rows}
