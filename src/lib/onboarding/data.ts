@@ -142,6 +142,8 @@ export interface ClinicGate {
   verificationStatus: VerificationStatus;
   pricingTier: "standard" | "preferred" | "vip";
   discountPct: number;
+  /** True when the clinic can place prescription orders in-app. */
+  orderingEnabled: boolean;
 }
 
 export async function getClinicGate(clerkUserId: string): Promise<ClinicGate> {
@@ -153,6 +155,7 @@ export async function getClinicGate(clerkUserId: string): Promise<ClinicGate> {
         verificationStatus: clinics.verificationStatus,
         pricingTier: clinics.pricingTier,
         pricingDiscountPct: clinics.pricingDiscountPct,
+        lifefileOrderingEnabled: clinics.lifefileOrderingEnabled,
       })
       .from(clinics)
       .where(eq(clinics.clerkUserId, clerkUserId))
@@ -166,6 +169,7 @@ export async function getClinicGate(clerkUserId: string): Promise<ClinicGate> {
       verificationStatus: "pending",
       pricingTier: "standard",
       discountPct: 0,
+      orderingEnabled: false,
     };
   }
 
@@ -175,6 +179,7 @@ export async function getClinicGate(clerkUserId: string): Promise<ClinicGate> {
     verificationStatus: row.verificationStatus,
     pricingTier: row.pricingTier,
     discountPct: row.pricingDiscountPct,
+    orderingEnabled: row.lifefileOrderingEnabled,
   };
 }
 

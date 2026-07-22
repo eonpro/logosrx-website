@@ -4,15 +4,70 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import {
+  clinics,
   orders,
   orderRxs,
   patients,
+  type ClinicProvider,
   type Order,
   type OrderRx,
   type Patient,
 } from "@/lib/db/schema";
 import { log } from "@/lib/observability/logger";
 import { firstZodIssue, patientInputSchema } from "./validation";
+
+/**
+ * Everything the ordering surfaces need to know about the signed-in clinic,
+ * resolved server-side from the Clerk user id. `null` when the user has no
+ * clinic profile.
+ */
+export interface ClinicOrderingContext {
+  clinicId: number;
+  clinicName: string;
+  onboardingCompleted: boolean;
+  verified: boolean;
+  orderingEnabled: boolean;
+  defaultServiceId: number | null;
+  providers: ClinicProvider[];
+  practiceAddress1: string | null;
+  pricingTier: "standard" | "preferred" | "vip";
+  discountPct: number;
+}
+
+export async function getClinicOrderingContext(
+  clerkUserId: string,
+): Promise<ClinicOrderingContext | null> {
+  const [row] = await db
+    .select({
+      id: clinics.id,
+      clinicName: clinics.clinicName,
+      onboardingCompleted: clinics.onboardingCompleted,
+      verificationStatus: clinics.verificationStatus,
+      lifefileOrderingEnabled: clinics.lifefileOrderingEnabled,
+      lifefileDefaultServiceId: clinics.lifefileDefaultServiceId,
+      providers: clinics.providers,
+      addressLine1: clinics.addressLine1,
+      pricingTier: clinics.pricingTier,
+      pricingDiscountPct: clinics.pricingDiscountPct,
+    })
+    .from(clinics)
+    .where(eq(clinics.clerkUserId, clerkUserId))
+    .limit(1);
+
+  if (!row) return null;
+  return {
+    clinicId: row.id,
+    clinicName: row.clinicName ?? "",
+    onboardingCompleted: row.onboardingCompleted,
+    verified: row.verificationStatus === "verified",
+    orderingEnabled: row.lifefileOrderingEnabled,
+    defaultServiceId: row.lifefileDefaultServiceId,
+    providers: row.providers ?? [],
+    practiceAddress1: row.addressLine1,
+    pricingTier: row.pricingTier,
+    discountPct: row.pricingDiscountPct,
+  };
+}
 
 /**
  * Clinic-scoped reads and patient CRUD for in-app prescribing.
