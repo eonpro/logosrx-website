@@ -162,6 +162,15 @@ const RULES: EnvRule[] = [
 /** Format-only checks for optional configuration (validated iff present). */
 const OPTIONAL_RULES: OptionalRule[] = [
   { name: "DATABASE_URL", validate: postgresUrl },
+  { name: "LIFEFILE_API_BASE_URL", validate: httpsUrl },
+  { name: "LIFEFILE_VENDOR_ID", validate: numeric },
+  { name: "LIFEFILE_LOCATION_ID", validate: numeric },
+  { name: "LIFEFILE_NETWORK_ID", validate: numeric },
+  {
+    name: "LIFEFILE_MODE",
+    validate: (v) =>
+      ["stub", "live"].includes(v) ? null : "must be `stub` or `live`",
+  },
   { name: "NEXT_PUBLIC_SITE_URL", validate: httpUrl },
   { name: "KV_REST_API_URL", validate: httpsUrl },
   { name: "UPSTASH_REDIS_REST_URL", validate: httpsUrl },
@@ -204,6 +213,21 @@ const COMPANIONS: EnvCompanion[] = [
     requires: "SES_ACCESS_KEY_ID",
     hint: "SES needs both the access key id and secret.",
   },
+  {
+    trigger: "LIFEFILE_API_USERNAME",
+    requires: "LIFEFILE_API_PASSWORD",
+    hint: "LifeFile API needs both the username and password.",
+  },
+  {
+    trigger: "LIFEFILE_API_PASSWORD",
+    requires: "LIFEFILE_API_USERNAME",
+    hint: "LifeFile API needs both the username and password.",
+  },
+  {
+    trigger: "LIFEFILE_API_BASE_URL",
+    requires: "LIFEFILE_API_USERNAME",
+    hint: "A LifeFile base URL is useless without API credentials.",
+  },
 ];
 
 const WARNINGS: EnvWarning[] = [
@@ -243,6 +267,14 @@ const WARNINGS: EnvWarning[] = [
     message:
       "SES credentials not set — transactional email (clinic approvals, " +
       "partner invites) is disabled in production.",
+  },
+  {
+    anyOf: ["LIFEFILE_API_BASE_URL", "LIFEFILE_MODE"],
+    prodOnly: true,
+    message:
+      "LifeFile API credentials not set — in-app prescribing will refuse " +
+      "orders in production (set LIFEFILE_API_BASE_URL / _USERNAME / " +
+      "_PASSWORD / _VENDOR_ID / _LOCATION_ID / _NETWORK_ID).",
   },
 ];
 
