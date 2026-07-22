@@ -156,7 +156,12 @@ export default async function QuoteDetailPage({ params }: PageProps) {
         <div className="mb-4 break-all rounded-2xl bg-cream/80 px-4 py-3 font-mono text-xs text-navy/70 ring-1 ring-beige/80">
           {url}
         </div>
-        <QuoteDetailActions id={quote.id} url={url} status={quote.status} />
+        <QuoteDetailActions
+          id={quote.id}
+          url={url}
+          pdfUrl={`/quote/${quote.token}/pdf`}
+          status={quote.status}
+        />
       </section>
 
       <section className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">

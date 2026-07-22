@@ -13,10 +13,12 @@ import {
 export default function PartnerQuoteActions({
   id,
   url,
+  pdfUrl,
   status,
 }: {
   id: number;
   url: string;
+  pdfUrl: string;
   status: "active" | "accepted" | "claimed" | "revoked";
 }) {
   const router = useRouter();
@@ -78,6 +80,9 @@ export default function PartnerQuoteActions({
         <button type="button" onClick={copyLink} className={btnPrimary}>
           {copied ? "Link copied" : "Copy link"}
         </button>
+        <a href={pdfUrl} className={btnSecondary}>
+          Download PDF
+        </a>
         {!claimed && (
           <button
             type="button"

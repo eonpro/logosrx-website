@@ -86,7 +86,12 @@ export default async function PartnerQuoteDetailPage({ params }: PageProps) {
             the link, but it&apos;s managed by Logos RX.
           </p>
         ) : (
-          <PartnerQuoteActions id={quote.id} url={url} status={quote.status} />
+          <PartnerQuoteActions
+            id={quote.id}
+            url={url}
+            pdfUrl={`/quote/${quote.token}/pdf`}
+            status={quote.status}
+          />
         )}
       </section>
 
