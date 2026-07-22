@@ -12,7 +12,6 @@ import {
   type Clinic,
   type ClinicProvider,
   type Order,
-  type Patient,
 } from "@/lib/db/schema";
 import { getLifeFileClient } from "@/lib/lifefile/client";
 import { isControlledSchedule } from "@/lib/lifefile/constants";
@@ -108,13 +107,16 @@ function findPrescriber(
   return clinic.providers.find((p) => p.npi.replace(/\D/g, "") === npi) ?? null;
 }
 
-/** Postgres unique-violation (the idempotency index firing on a retry). */
-function isUniqueViolation(err: unknown): boolean {
-  return (
-    typeof err === "object" &&
-    err !== null &&
-    (err as { code?: string }).code === "23505"
-  );
+/**
+ * Postgres unique-violation (the idempotency index firing on a retry).
+ * Walks the `cause` chain because drizzle wraps driver errors in
+ * `DrizzleQueryError` with the original pg error as `cause`.
+ */
+function isUniqueViolation(err: unknown, depth = 0): boolean {
+  if (typeof err !== "object" || err === null || depth > 5) return false;
+  const candidate = err as { code?: unknown; cause?: unknown };
+  if (candidate.code === "23505") return true;
+  return isUniqueViolation(candidate.cause, depth + 1);
 }
 
 export async function submitClinicOrder(

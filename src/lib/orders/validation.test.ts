@@ -129,8 +129,9 @@ describe("shippingInputSchema", () => {
   });
 
   it("requires the core address fields", () => {
-    const { addressLine1: _omitted, ...rest } = validShipping();
-    expect(shippingInputSchema.safeParse(rest).success).toBe(false);
+    const shipping: Record<string, unknown> = { ...validShipping() };
+    delete shipping.addressLine1;
+    expect(shippingInputSchema.safeParse(shipping).success).toBe(false);
   });
 });
 

@@ -11,14 +11,7 @@
 import { z } from "zod";
 import { isIsoDate, normalizePhone } from "@/lib/lifefile/normalize";
 
-/** A phone that must normalize to a real 10-digit US/Canadian number. */
-const phoneSchema = z
-  .string()
-  .trim()
-  .refine((v) => normalizePhone(v) !== null, {
-    message: "must be a valid US phone number, e.g. (212) 867-5309",
-  });
-
+/** An optional phone that must normalize to a real 10-digit US number. */
 const optionalPhoneSchema = z
   .string()
   .trim()
