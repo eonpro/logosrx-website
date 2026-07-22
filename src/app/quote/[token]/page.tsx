@@ -7,9 +7,7 @@ import {
   isQuoteOpenable,
 } from "@/lib/quotes/data";
 import { QUOTE_ACCESS_COOKIE, verifyQuoteAccess } from "@/lib/quotes/crypto";
-import { resolveDetailSlug, standardCatalogPrice } from "@/data/catalog";
-import { getCatalogProducts } from "@/lib/catalog/store";
-import { products } from "@/data/products";
+import { buildCatalogLookups } from "@/lib/quotes/lookups";
 import { SITE } from "@/lib/constants";
 import AuthShell from "@/components/auth/AuthShell";
 import QuoteGate from "./QuoteGate";
@@ -25,35 +23,6 @@ export const metadata: Metadata = {
 
 interface PageProps {
   params: Promise<{ token: string }>;
-}
-
-// Resolve each catalog SKU to its marketing product image (same mapping the
-// clinic storefront uses), so quote line items can show the product photo.
-const detailSlugs = products.map((p) => p.slug);
-const productBySlug = new Map(products.map((p) => [p.slug, p]));
-
-/** Per-request lookups for standard price + product image, keyed by SKU id. */
-async function buildCatalogLookups() {
-  const catalogProducts = await getCatalogProducts();
-  const standardCentsById = new Map<string, number | null>(
-    catalogProducts.map((p) => {
-      const dollars = standardCatalogPrice(p);
-      return [p.id, dollars === null ? null : Math.round(dollars * 100)];
-    }),
-  );
-  const imageById = new Map<string, { url: string; alt: string } | null>(
-    catalogProducts.map((p) => {
-      const slug = resolveDetailSlug(p.id, detailSlugs);
-      const prod = slug ? productBySlug.get(slug) : undefined;
-      return [
-        p.id,
-        prod?.image
-          ? { url: prod.image, alt: prod.imageAlt ?? prod.name }
-          : null,
-      ];
-    }),
-  );
-  return { standardCentsById, imageById };
 }
 
 function Closed({ title, body }: { title: string; body: string }) {

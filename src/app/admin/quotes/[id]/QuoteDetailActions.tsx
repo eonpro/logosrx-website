@@ -14,10 +14,12 @@ import { btnDanger, btnPrimary, btnSecondary } from "@/components/ui/portal";
 export default function QuoteDetailActions({
   id,
   url,
+  pdfUrl,
   status,
 }: {
   id: number;
   url: string;
+  pdfUrl: string;
   status: "active" | "accepted" | "claimed" | "revoked";
 }) {
   const router = useRouter();
@@ -72,6 +74,9 @@ export default function QuoteDetailActions({
         >
           {copied ? "Link copied" : "Copy link"}
         </button>
+        <a href={pdfUrl} className={btnSecondary}>
+          Download PDF
+        </a>
         {!claimed && (
           <button
             type="button"

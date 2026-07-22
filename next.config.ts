@@ -64,6 +64,18 @@ const nextConfig: NextConfig = {
   devIndicators: false,
   poweredByHeader: false,
   reactStrictMode: true,
+  /*
+   * The quote-PDF route reads brand/product images from /public at runtime
+   * (rasterized with sharp for @react-pdf/renderer). Public files aren't
+   * traced into serverless bundles automatically, so include them explicitly.
+   */
+  outputFileTracingIncludes: {
+    "/quote/\\[token\\]/pdf": [
+      "./public/images/logo.svg",
+      "./public/images/products/**/*",
+    ],
+  },
+  serverExternalPackages: ["@react-pdf/renderer"],
   images: {
     formats: ["image/avif", "image/webp"],
     // Reduce default device-pixel-ratio fallback set to keep optimized cache
