@@ -419,74 +419,12 @@ function PeptidesTeaserPage() {
   );
 }
 
-const WHITE_LABEL_HIGHLIGHTS = [
-  ["Custom Label Design", "Incorporate your logo, color palette, and brand elements."],
-  ["Branded Patient Inserts", "Add instructions, educational material, or promotional messaging tailored to your practice."],
-  ["Clinic-Specific Packaging", "Choose from premium containers, foams, and mailers to match your brand aesthetic."],
-  ["Nationwide Fulfillment", "Seamless integration with our pharmacy network for fast, compliant delivery to your patients."],
-] as const;
-
 function WhiteLabelPage() {
   return (
-    <PageShell className="bg-white">
-      <div className="grid grid-cols-1 gap-10 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-        <div>
-          <h2 className="text-3xl font-bold leading-tight text-navy sm:text-4xl">
-            Exclusive White-Label Packaging &amp; Inserts
-          </h2>
-          <p className="mt-2 text-lg font-medium italic text-purple">
-            Personalized. Professional. Practice-Ready.
-          </p>
-          <div className="mt-5 space-y-4 text-sm leading-relaxed text-navy/75 sm:text-[15px]">
-            <p>
-              At Logos Rx, we understand that presentation matters as much as
-              performance. That&rsquo;s why we offer exclusive white-label
-              packaging and custom printed inserts designed specifically for
-              telehealth providers, clinics, and medical brands who want to
-              deliver a premium, unified patient experience.
-            </p>
-            <p>
-              Our design and fulfillment team works closely with each partner
-              to create branded labels, instruction cards, and product
-              literature that reflect your clinic&rsquo;s identity—without
-              compromising compliance or regulatory standards. Whether
-              you&rsquo;re shipping compounded formulations nationwide or
-              distributing medications in-office, our white-label solutions
-              help your brand stand out while maintaining pharmacy-grade
-              precision.
-            </p>
-          </div>
-
-          <h3 className="mt-7 text-sm font-bold uppercase tracking-wider text-navy">
-            Program Highlights
-          </h3>
-          <ul className="mt-4 space-y-3">
-            {WHITE_LABEL_HIGHLIGHTS.map(([title, description]) => (
-              <li key={title} className="flex gap-3 text-sm leading-relaxed">
-                <span aria-hidden="true" className="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-magenta" />
-                <p className="text-navy/75">
-                  <strong className="text-navy">{title}</strong> — {description}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="overflow-hidden rounded-[2rem] border border-beige">
-          <Image
-            src="/images/catalog-book/white-label-grid.webp"
-            alt="Examples of white-label mailers and branded packaging"
-            width={700}
-            height={1270}
-            className="h-full max-h-[620px] w-full object-cover"
-          />
-        </div>
-      </div>
-      <p className="mt-8 text-xs italic leading-relaxed text-navy/60">
-        Disclosure: White-label packaging and printed inserts are available as
-        an optional add-on service and incur an additional cost and about 45
-        days to fulfill.
-      </p>
-    </PageShell>
+    <ArtworkPage
+      src="/images/catalog-book/page-white-label.webp"
+      alt="Exclusive White-Label Packaging & Inserts — Personalized. Professional. Practice-Ready. Custom label design, branded patient inserts, clinic-specific packaging, and nationwide fulfillment for telehealth providers, clinics, and medical brands. White-label packaging and printed inserts are an optional add-on service with an additional cost and about 45 days to fulfill."
+    />
   );
 }
 
@@ -571,45 +509,10 @@ function StatesPage() {
 
 function VialFillPage() {
   return (
-    <div className="min-h-full bg-navy-deep px-6 py-10 sm:px-10 sm:py-12 lg:px-14">
-      <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-        <div>
-          <h2 className="text-3xl font-bold leading-tight text-white sm:text-4xl">
-            Clarifying Injectable Vial Fill Amounts
-          </h2>
-          <p className="mt-4 inline-flex rounded-lg bg-sky-light/25 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-sky-light">
-            Learning
-          </p>
-          <p className="mt-6 max-w-xl text-sm leading-relaxed text-white/80 sm:text-base">
-            The exact volume of medication (measured in mL) is listed on the
-            vial&rsquo;s label. A small amount of extra liquid—called
-            overfill—is intentionally included to ensure the full stated dose
-            is available, even if minor loss occurs during preparation or
-            administration.
-          </p>
-          <p className="mt-8 text-xs font-medium uppercase tracking-wider text-white/60">
-            The product label indicates the total liquid volume contained in
-            the vial.
-          </p>
-          <Image
-            src="/images/catalog-book/vial-label-card.webp"
-            alt="A Logos RX Semaglutide 2 mL multi-dose vial label"
-            width={960}
-            height={435}
-            className="mt-4 h-auto w-full max-w-xl rounded-xl"
-          />
-        </div>
-        <div className="hidden justify-center md:flex">
-          <Image
-            src="/images/catalog-book/fill-volume-vial.webp"
-            alt="A multi-dose vial marked with 1–5 mL fill volumes"
-            width={520}
-            height={1075}
-            className="h-auto max-h-[560px] w-auto object-contain"
-          />
-        </div>
-      </div>
-    </div>
+    <ArtworkPage
+      src="/images/catalog-book/page-vial-fill.webp"
+      alt="Clarifying Injectable Vial Fill Amounts — the exact volume of medication (in mL) is listed on the vial's label. A small amount of extra liquid, called overfill, is intentionally included to ensure the full stated dose is available even if minor loss occurs during preparation or administration. Shown: a Logos RX Semaglutide 2 mL multi-dose vial label and a multi-dose vial marked with 1–5 mL fill volumes."
+    />
   );
 }
 
