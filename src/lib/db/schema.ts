@@ -396,6 +396,18 @@ export const clinics = pgTable("clinics", {
   pricingDiscountPct: integer("pricing_discount_pct").default(0).notNull(),
   pricingNotes: text("pricing_notes"),
 
+  // --- LifeFile ordering (in-app prescribing) ---
+  // Admin-controlled gate: verified clinics can place orders through the
+  // dashboard only when this is on.
+  lifefileOrderingEnabled: boolean("lifefile_ordering_enabled")
+    .default(false)
+    .notNull(),
+  // LifeFile practice id for order attribution (`order.practice.id`).
+  // Optional — orders forward without it until LifeFile assigns one.
+  lifefilePracticeId: integer("lifefile_practice_id"),
+  // Default LifeFile shipping-service code preselected in the order wizard.
+  lifefileDefaultServiceId: integer("lifefile_default_service_id"),
+
   // --- Affiliate attribution ---
   // Stamped once at signup when the visitor arrived via a partner referral
   // link (`/join/<code>`). Never overwritten by later profile edits.
@@ -575,6 +587,18 @@ export const catalogProducts = pgTable(
     badge: varchar("badge", { length: 60 }),
     sortOrder: integer("sort_order").default(0).notNull(),
     active: boolean("active").default(true).notNull(),
+
+    // --- LifeFile mapping (in-app prescribing) ---
+    // LifeFile product id. NULL = not orderable in-app (storefront falls back
+    // to the external LifeFile portal link for this SKU).
+    lfProductId: integer("lf_product_id"),
+    // DEA schedule: 2-5, or L (legend) / O (OTC). Schedules 2-5 are blocked
+    // from in-app ordering (LifeFile requires a signed PDF for those).
+    scheduleCode: varchar("schedule_code", { length: 1 }),
+    // Dispensing units forwarded on each Rx (e.g. "each", "ml").
+    quantityUnits: varchar("quantity_units", { length: 45 }),
+    // Prefilled quantity in the order wizard (editable per Rx).
+    defaultQuantity: varchar("default_quantity", { length: 45 }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -1268,6 +1292,164 @@ export const partnerAgreements = pgTable("partner_agreements", {
   ),
 ]);
 
+/**
+ * Lifecycle of a prescription order submitted to LifeFile:
+ *   - `submitted`         — row persisted; forward to LifeFile in flight (or
+ *     crashed mid-flight; support can retry from the raw request).
+ *   - `accepted`          — LifeFile acknowledged the order (`lfOrderId` set).
+ *   - `pharmacy_rejected` — LifeFile returned a business error (`type: "error"`).
+ *   - `failed`            — transport/config failure before LifeFile accepted.
+ */
+export const lifefileOrderStatusEnum = pgEnum("lifefile_order_status", [
+  "submitted",
+  "accepted",
+  "pharmacy_rejected",
+  "failed",
+]);
+
+/**
+ * A clinic's saved patients for in-app prescribing. Clinic-scoped: every read
+ * and write is filtered by `clinicId` (a clinic can never see another
+ * clinic's patients). Allergies/conditions are free-text arrays rendered on
+ * the prescription the pharmacy receives.
+ */
+export const patients = pgTable(
+  "patients",
+  {
+    id: serial("id").primaryKey(),
+    clinicId: integer("clinic_id")
+      .notNull()
+      .references(() => clinics.id, { onDelete: "cascade" }),
+    firstName: varchar("first_name", { length: 30 }).notNull(),
+    lastName: varchar("last_name", { length: 30 }).notNull(),
+    middleName: varchar("middle_name", { length: 20 }),
+    // LifeFile gender codes: m | f | a (animal) | u (unknown).
+    gender: varchar("gender", { length: 1 }).notNull(),
+    // yyyy-mm-dd (kept as text; LifeFile wire format, no TZ ambiguity).
+    dateOfBirth: varchar("date_of_birth", { length: 10 }).notNull(),
+    address1: varchar("address1", { length: 60 }),
+    address2: varchar("address2", { length: 60 }),
+    city: varchar("city", { length: 100 }),
+    state: varchar("state", { length: 2 }),
+    zip: varchar("zip", { length: 10 }),
+    phoneHome: varchar("phone_home", { length: 16 }),
+    phoneMobile: varchar("phone_mobile", { length: 16 }),
+    phoneWork: varchar("phone_work", { length: 16 }),
+    email: varchar("email", { length: 100 }),
+    allergies: jsonb("allergies").$type<string[]>().default([]).notNull(),
+    conditions: jsonb("conditions").$type<string[]>().default([]).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [index("patients_clinic_id_idx").on(t.clinicId, t.lastName)],
+);
+
+/** Prescriber details snapshotted onto an order at submission time. */
+export interface OrderPrescriber {
+  npi: string;
+  firstName: string;
+  lastName: string;
+  licenseState?: string;
+  licenseNumber?: string;
+  phone?: string;
+  email?: string;
+}
+
+/** Shipping destination snapshotted onto an order at submission time. */
+export interface OrderShipping {
+  recipientType: "clinic" | "patient";
+  recipientFirstName: string;
+  recipientLastName: string;
+  recipientPhone?: string;
+  recipientEmail?: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  zipCode: string;
+}
+
+/**
+ * A prescription order placed through the LogosRx dashboard and forwarded to
+ * LifeFile. Clinic-scoped (hard isolation): every read filters on `clinicId`.
+ *
+ * Idempotency: `referenceId` (our generated `LGS-...` id) is unique per
+ * clinic; retries of the same submission return the stored row instead of
+ * double-submitting to the pharmacy.
+ *
+ * `rawRequest` / `rawResponse` hold the exact LifeFile payloads for support
+ * and audit. They are never echoed to the clinic UI.
+ */
+export const orders = pgTable(
+  "orders",
+  {
+    id: serial("id").primaryKey(),
+    clinicId: integer("clinic_id")
+      .notNull()
+      .references(() => clinics.id, { onDelete: "restrict" }),
+    patientId: integer("patient_id")
+      .notNull()
+      .references(() => patients.id, { onDelete: "restrict" }),
+    // Our foreign-system order id (LGS-...). Unique per clinic (idempotency).
+    referenceId: varchar("reference_id", { length: 64 }).notNull(),
+    // LifeFile's order id, set once accepted.
+    lfOrderId: varchar("lf_order_id", { length: 32 }),
+    // message.id sent to LifeFile (unique integer; we use the order row id).
+    messageId: integer("message_id"),
+    status: lifefileOrderStatusEnum("status").default("submitted").notNull(),
+    prescriber: jsonb("prescriber").$type<OrderPrescriber>().notNull(),
+    shipping: jsonb("shipping").$type<OrderShipping>().notNull(),
+    // LifeFile shipping-service code (see src/lib/lifefile/constants.ts).
+    serviceId: integer("service_id"),
+    // Who pays: "doc" (clinic account, default) or "pat" (patient).
+    payorType: varchar("payor_type", { length: 3 }).default("doc").notNull(),
+    memo: varchar("memo", { length: 120 }),
+    // Short human-readable failure reason (safe to surface to the clinic).
+    errorMessage: varchar("error_message", { length: 500 }),
+    rawRequest: jsonb("raw_request"),
+    rawResponse: jsonb("raw_response"),
+    submittedBy: varchar("submitted_by", { length: 64 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("orders_clinic_reference_uniq").on(t.clinicId, t.referenceId),
+    index("orders_clinic_created_idx").on(t.clinicId, t.createdAt),
+    index("orders_lf_order_id_idx").on(t.lfOrderId),
+    index("orders_status_idx").on(t.status),
+  ],
+);
+
+/**
+ * One prescription line on an order. Drug fields are snapshotted from
+ * `catalog_products` at submission time so later catalog edits never mutate
+ * the record of what was prescribed.
+ */
+export const orderRxs = pgTable(
+  "order_rxs",
+  {
+    id: serial("id").primaryKey(),
+    orderId: integer("order_id")
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    catalogProductId: varchar("catalog_product_id", { length: 120 }),
+    lfProductId: integer("lf_product_id").notNull(),
+    drugName: varchar("drug_name", { length: 254 }).notNull(),
+    drugStrength: varchar("drug_strength", { length: 254 }),
+    drugForm: varchar("drug_form", { length: 255 }),
+    directions: text("directions").notNull(),
+    quantity: varchar("quantity", { length: 45 }),
+    quantityUnits: varchar("quantity_units", { length: 45 }),
+    daysSupply: integer("days_supply"),
+    refills: integer("refills").default(0).notNull(),
+    // yyyy-mm-dd.
+    dateWritten: varchar("date_written", { length: 10 }).notNull(),
+    clinicalDifferenceStatement: text("clinical_difference_statement"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [index("order_rxs_order_id_idx").on(t.orderId)],
+);
+
 export interface ProviderLicense {
   license: string;
   state: string;
@@ -1343,4 +1525,10 @@ export type PartnerWebhookDelivery =
 export type NewPartnerWebhookDelivery =
   typeof partnerWebhookDeliveries.$inferInsert;
 export type PartnerAgreement = typeof partnerAgreements.$inferSelect;
+export type Patient = typeof patients.$inferSelect;
+export type NewPatient = typeof patients.$inferInsert;
+export type Order = typeof orders.$inferSelect;
+export type NewOrder = typeof orders.$inferInsert;
+export type OrderRx = typeof orderRxs.$inferSelect;
+export type NewOrderRx = typeof orderRxs.$inferInsert;
 export type NewPartnerAgreement = typeof partnerAgreements.$inferInsert;
