@@ -16,7 +16,7 @@ const FULL_ENV = {
   LIFEFILE_VENDOR_ID: "11596",
   LIFEFILE_LOCATION_ID: "110396",
   LIFEFILE_NETWORK_ID: "1949",
-} as NodeJS.ProcessEnv;
+} as unknown as NodeJS.ProcessEnv;
 
 function samplePayload() {
   const input: BuildOrderInput = {
@@ -58,12 +58,12 @@ afterEach(() => {
 
 describe("readLifeFileConfig", () => {
   it("returns null when any credential is missing", () => {
-    expect(readLifeFileConfig({} as NodeJS.ProcessEnv)).toBeNull();
+    expect(readLifeFileConfig({} as unknown as NodeJS.ProcessEnv)).toBeNull();
     expect(
       readLifeFileConfig({
         ...FULL_ENV,
         LIFEFILE_API_PASSWORD: undefined,
-      } as NodeJS.ProcessEnv),
+      } as unknown as NodeJS.ProcessEnv),
     ).toBeNull();
   });
 
@@ -78,19 +78,19 @@ describe("readLifeFileConfig", () => {
 
 describe("isLifeFileStubMode", () => {
   it("honors explicit LIFEFILE_MODE", () => {
-    expect(isLifeFileStubMode({ LIFEFILE_MODE: "stub" } as NodeJS.ProcessEnv)).toBe(true);
+    expect(isLifeFileStubMode({ LIFEFILE_MODE: "stub" } as unknown as NodeJS.ProcessEnv)).toBe(true);
     expect(
-      isLifeFileStubMode({ ...FULL_ENV, LIFEFILE_MODE: "live" } as NodeJS.ProcessEnv),
+      isLifeFileStubMode({ ...FULL_ENV, LIFEFILE_MODE: "live" } as unknown as NodeJS.ProcessEnv),
     ).toBe(false);
   });
 
   it("defaults to stub when credentials are missing outside production", () => {
-    expect(isLifeFileStubMode({} as NodeJS.ProcessEnv)).toBe(true);
+    expect(isLifeFileStubMode({} as unknown as NodeJS.ProcessEnv)).toBe(true);
   });
 
   it("does not silently stub in production when credentials are missing", () => {
     expect(
-      isLifeFileStubMode({ VERCEL_ENV: "production" } as NodeJS.ProcessEnv),
+      isLifeFileStubMode({ VERCEL_ENV: "production" } as unknown as NodeJS.ProcessEnv),
     ).toBe(false);
   });
 
@@ -121,7 +121,7 @@ describe("extractLfOrderId", () => {
 
 describe("stub client", () => {
   it("accepts orders and returns a deterministic fake id", async () => {
-    const client = getLifeFileClient({ LIFEFILE_MODE: "stub" } as NodeJS.ProcessEnv);
+    const client = getLifeFileClient({ LIFEFILE_MODE: "stub" } as unknown as NodeJS.ProcessEnv);
     const result = await client.submitOrder(samplePayload());
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -136,7 +136,7 @@ describe("unconfigured client", () => {
     vi.stubGlobal("fetch", fetchSpy);
     const client = getLifeFileClient({
       LIFEFILE_MODE: "live",
-    } as NodeJS.ProcessEnv);
+    } as unknown as NodeJS.ProcessEnv);
     const result = await client.submitOrder(samplePayload());
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.kind).toBe("config");
