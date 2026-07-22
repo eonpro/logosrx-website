@@ -364,6 +364,11 @@ export default async function ClinicDetailPage({
             discountPct: clinic.pricingDiscountPct,
             notes: clinic.pricingNotes ?? "",
           }}
+          lifefile={{
+            enabled: clinic.lifefileOrderingEnabled,
+            practiceId: clinic.lifefilePracticeId,
+            defaultServiceId: clinic.lifefileDefaultServiceId,
+          }}
           catalog={catalog}
           customItems={customItems}
           notes={notes.map((n) => ({

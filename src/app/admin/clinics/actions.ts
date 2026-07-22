@@ -132,6 +132,71 @@ export async function setClinicVerification(
   revalidatePath("/admin");
 }
 
+export interface LifeFileSettingsInput {
+  enabled: boolean;
+  /** LifeFile practice id for order attribution; null until assigned. */
+  practiceId: number | null;
+  /** Default LifeFile shipping-service code for the order wizard. */
+  defaultServiceId: number | null;
+}
+
+export interface LifeFileSettingsResult {
+  ok: boolean;
+  error?: string;
+}
+
+/**
+ * Configures a clinic's in-app LifeFile ordering: the enable gate, the
+ * LifeFile practice id stamped on forwarded orders, and the default shipping
+ * service preselected in the wizard. Full admins only; audited.
+ */
+export async function setClinicLifeFile(
+  id: number,
+  input: LifeFileSettingsInput,
+): Promise<LifeFileSettingsResult> {
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(id);
+
+  const practiceId =
+    input.practiceId == null || Number.isNaN(input.practiceId)
+      ? null
+      : Math.trunc(input.practiceId);
+  if (practiceId !== null && practiceId <= 0) {
+    return { ok: false, error: "Practice ID must be a positive number." };
+  }
+  const defaultServiceId =
+    input.defaultServiceId == null || Number.isNaN(input.defaultServiceId)
+      ? null
+      : Math.trunc(input.defaultServiceId);
+
+  const res = await db
+    .update(clinics)
+    .set({
+      lifefileOrderingEnabled: Boolean(input.enabled),
+      lifefilePracticeId: practiceId,
+      lifefileDefaultServiceId: defaultServiceId,
+      updatedAt: new Date(),
+    })
+    .where(eq(clinics.id, id))
+    .returning({ id: clinics.id });
+  if (!res.length) return { ok: false, error: "Clinic not found." };
+
+  await recordAdminAudit(
+    ctx,
+    "clinic.lifefile_settings",
+    { type: "clinic", id },
+    {
+      enabled: Boolean(input.enabled),
+      practiceId,
+      defaultServiceId,
+    },
+  );
+
+  revalidatePath(`/admin/clinics/${id}`);
+  revalidatePath("/dashboard");
+  return { ok: true };
+}
+
 export interface ResendActivationResult {
   ok: boolean;
   error?: string;

@@ -12,12 +12,14 @@ import {
   resetProductPrice,
   revealCard,
   revokeCardUpdateLink,
+  setClinicLifeFile,
   setClinicPassword,
   setClinicPricing,
   setClinicVerification,
   setProductPrice,
   type RevealCardResult,
 } from "../actions";
+import { LIFEFILE_SHIPPING_SERVICES } from "@/lib/lifefile/constants";
 import {
   cardClass,
   inputClass,
@@ -59,6 +61,12 @@ interface CatalogRow {
   family: string;
   standardCents: number | null;
   overrideCents: number | null;
+}
+
+interface LifeFileView {
+  enabled: boolean;
+  practiceId: number | null;
+  defaultServiceId: number | null;
 }
 
 const STATUS_OPTIONS: Status[] = ["verified", "rejected", "pending"];
@@ -107,6 +115,7 @@ export default function ClinicManager({
   cardLast4,
   cardLink,
   pricing,
+  lifefile,
   catalog,
   customItems,
   notes,
@@ -119,6 +128,7 @@ export default function ClinicManager({
   cardLast4: string | null;
   cardLink: CardLinkView | null;
   pricing: { tier: Tier; discountPct: number; notes: string };
+  lifefile: LifeFileView;
   catalog: CatalogRow[];
   customItems: PriceItemView[];
   notes: NoteView[];
@@ -142,6 +152,7 @@ export default function ClinicManager({
         cardLast4={cardLast4}
         cardLink={cardLink}
       />
+      <LifeFileCard clinicId={clinicId} lifefile={lifefile} />
       <PricingCard
         clinicId={clinicId}
         pricing={pricing}
@@ -643,6 +654,127 @@ function Detail({
       </p>
       <p className={`text-navy ${mono ? "font-mono" : ""}`}>{value || "—"}</p>
     </div>
+  );
+}
+
+/**
+ * In-app LifeFile ordering config: enable gate, LifeFile practice id
+ * (attribution on forwarded orders), and the wizard's default shipping
+ * service. Saved together; the enable toggle is safe to flip before the
+ * practice id exists (orders forward without attribution until it's set).
+ */
+function LifeFileCard({
+  clinicId,
+  lifefile,
+}: {
+  clinicId: number;
+  lifefile: LifeFileView;
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [enabled, setEnabled] = useState(lifefile.enabled);
+  const [practiceId, setPracticeId] = useState(
+    lifefile.practiceId ? String(lifefile.practiceId) : "",
+  );
+  const [serviceId, setServiceId] = useState(
+    lifefile.defaultServiceId ? String(lifefile.defaultServiceId) : "",
+  );
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  function save() {
+    setError(null);
+    setSaved(false);
+    startTransition(async () => {
+      const result = await setClinicLifeFile(clinicId, {
+        enabled,
+        practiceId: practiceId.trim() ? Number(practiceId) : null,
+        defaultServiceId: serviceId ? Number(serviceId) : null,
+      });
+      if (!result.ok) {
+        setError(result.error ?? "Could not save.");
+        return;
+      }
+      setSaved(true);
+      router.refresh();
+    });
+  }
+
+  return (
+    <Section title="In-app ordering (LifeFile)">
+      <label className="flex cursor-pointer items-center justify-between rounded-2xl border border-beige bg-cream/50 px-5 py-4">
+        <span>
+          <span className="block text-sm font-semibold text-navy">
+            Online prescribing enabled
+          </span>
+          <span className="mt-0.5 block text-[13px] text-navy/55">
+            Lets this clinic place prescription orders from their dashboard —
+            we forward them to LifeFile.
+          </span>
+        </span>
+        <input
+          type="checkbox"
+          checked={enabled}
+          onChange={(e) => setEnabled(e.target.checked)}
+          className="h-5 w-5 shrink-0 accent-plum"
+        />
+      </label>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
+            LifeFile practice ID
+          </span>
+          <input
+            type="number"
+            min={1}
+            value={practiceId}
+            onChange={(e) => setPracticeId(e.target.value)}
+            placeholder="Not assigned yet"
+            className={inputClass}
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
+            Default shipping service
+          </span>
+          <select
+            value={serviceId}
+            onChange={(e) => setServiceId(e.target.value)}
+            className={selectClass}
+          >
+            <option value="">Account default</option>
+            {LIFEFILE_SHIPPING_SERVICES.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      {!practiceId.trim() && enabled && (
+        <p className="mt-3 rounded-xl bg-amber-50 px-4 py-2.5 text-[13px] text-amber-800 ring-1 ring-inset ring-amber-600/20">
+          No practice ID yet — orders will forward without practice
+          attribution until LifeFile assigns one.
+        </p>
+      )}
+      {error && (
+        <p className="mt-3 rounded-xl bg-red-50 px-4 py-2.5 text-[13px] text-red-700 ring-1 ring-inset ring-red-600/15">
+          {error}
+        </p>
+      )}
+
+      <div className="mt-4 flex items-center gap-3">
+        <button
+          disabled={pending}
+          onClick={save}
+          className="rounded-full bg-plum px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-plum-deep disabled:opacity-50"
+        >
+          {pending ? "Saving…" : saved ? "Saved" : "Save ordering settings"}
+        </button>
+      </div>
+    </Section>
   );
 }
 
