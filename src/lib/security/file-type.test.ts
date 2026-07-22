@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectResumeMime } from "./file-type";
+import { detectPdfMime, detectResumeMime } from "./file-type";
 
 function makeFile(bytes: number[], name: string, type: string): File {
   // happy-dom's File honors the type string passed in, which mimics the
@@ -99,5 +99,39 @@ describe("detectResumeMime", () => {
   it("handles tiny files smaller than the magic-byte window", async () => {
     const file = makeFile([0x25], "tiny.pdf", "application/pdf");
     await expect(detectResumeMime(file)).resolves.toBeNull();
+  });
+});
+
+describe("detectPdfMime", () => {
+  it("accepts a real PDF regardless of the declared MIME", async () => {
+    const file = makeFile(
+      [0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37],
+      "invoice.pdf",
+      "application/octet-stream",
+    );
+    await expect(detectPdfMime(file)).resolves.toBe("application/pdf");
+  });
+
+  it("rejects a DOCX even though resumes would accept it", async () => {
+    const zipMagic = [0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x06, 0x00];
+    const entries = Array.from("[Content_Types].xml ... word/document.xml").map(
+      (c) => c.charCodeAt(0),
+    );
+    const docx = makeFile([...zipMagic, ...entries], "invoice.docx", "");
+    await expect(detectPdfMime(docx)).resolves.toBeNull();
+  });
+
+  it("rejects a renamed executable (.exe with .pdf extension)", async () => {
+    const file = makeFile(
+      [0x4d, 0x5a, 0x90, 0x00, 0x03, 0x00, 0x00, 0x00],
+      "invoice.pdf",
+      "application/pdf",
+    );
+    await expect(detectPdfMime(file)).resolves.toBeNull();
+  });
+
+  it("handles tiny files smaller than the magic-byte window", async () => {
+    const file = makeFile([0x25], "tiny.pdf", "application/pdf");
+    await expect(detectPdfMime(file)).resolves.toBeNull();
   });
 });
