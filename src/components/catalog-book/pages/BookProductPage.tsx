@@ -103,13 +103,13 @@ export default function BookProductPage({ product, prices }: BookProductPageProp
             className="book-rise flex items-start justify-center"
             style={{ animationDelay: "90ms" }}
           >
-            <div className="group w-full max-w-[280px] rounded-2xl bg-gradient-to-b from-cream to-beige/60 p-6 transition-shadow duration-300 hover:shadow-xl hover:shadow-navy/10">
+            <div className="group w-full max-w-[280px] overflow-hidden rounded-2xl bg-gradient-to-b from-cream to-beige/60 p-6 transition-shadow duration-300 hover:shadow-xl hover:shadow-navy/10">
               <Image
                 src={product.image}
                 alt={product.imageAlt ?? product.name}
                 width={480}
                 height={480}
-                className="animate-book-float h-auto w-full object-contain transition-transform duration-500 ease-out group-hover:scale-110"
+                className="animate-book-float h-auto w-full rounded-xl object-contain transition-transform duration-500 ease-out group-hover:scale-110"
               />
             </div>
           </div>

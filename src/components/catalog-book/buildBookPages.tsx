@@ -44,7 +44,11 @@ export function buildBookPages(
         node = (
           <BookProductPage
             key={page.id}
-            product={product}
+            product={
+              page.image
+                ? { ...product, image: page.image, imageAlt: page.imageAlt }
+                : product
+            }
             prices={resolveBookPrices(page.skuIds, priceIndex)}
           />
         );

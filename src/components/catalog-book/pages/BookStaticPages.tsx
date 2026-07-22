@@ -3,8 +3,6 @@ import type { ComponentType } from "react";
 import type { StaticPageId } from "@/data/catalog-book";
 import { STATE_LICENSES } from "@/data/licenses";
 import USLicenseMap from "@/components/USLicenseMap";
-import { CONTACT, HOURS, SITE } from "@/lib/constants";
-
 /**
  * The one-off (non-product) pages of the native catalog book: cover, intro
  * spreads, LifeFile, coming-soon teaser, and back matter. Copy is transcribed
@@ -617,58 +615,10 @@ function VialFillPage() {
 
 function BackCoverPage() {
   return (
-    <PageShell className="flex flex-col justify-center bg-white">
-      <Image
-        src="/images/logo.svg"
-        alt="Logos RX"
-        width={220}
-        height={66}
-        className="h-14 w-auto"
-      />
-      <h2 className="mt-8 text-4xl font-bold leading-tight text-navy sm:text-5xl">
-        Logos RX
-        <br />
-        Pharmacy
-      </h2>
-      <p className="mt-4 text-sm font-semibold uppercase tracking-wider text-navy/80">
-        admin@logosrx.com
-        <br />
-        logosrx.com
-        <br />
-        Tampa, FL
-      </p>
-
-      <div className="mt-10 grid max-w-2xl grid-cols-1 gap-8 sm:grid-cols-2">
-        <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-navy">
-            Headquarters
-          </h3>
-          <p className="mt-2 text-sm leading-relaxed text-navy/75">
-            {CONTACT.address.street}
-            <br />
-            {CONTACT.address.city}, {CONTACT.address.state} {CONTACT.address.zip}
-            <br />
-            P: 813-886-2800
-            <br />
-            F: {CONTACT.fax}
-            <br />
-            {CONTACT.email}
-          </p>
-        </div>
-        <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-navy">
-            Hours of Operation
-          </h3>
-          <p className="mt-2 text-sm leading-relaxed text-navy/75">
-            Retail: {HOURS.retail}
-            <br />
-            Online: {HOURS.online}
-            <br />
-            Chat support: {SITE.url.replace("https://", "")} {HOURS.chat}
-          </p>
-        </div>
-      </div>
-    </PageShell>
+    <ArtworkPage
+      src="/images/catalog-book/page-back-cover.webp"
+      alt="Logos RX Pharmacy — admin@logosrx.com, logosrx.com, Tampa, FL. Headquarters: 7543 W. Waters Ave, Tampa, FL 33615. P: 813-886-2800, F: 813-886-2822, support@logosrx.com. Hours: Retail Mon–Fri 9:00am–5:00pm, Online Mon–Sat 8:00am–7:00pm EST, chat support at www.logosrx.com 24/7."
+    />
   );
 }
 

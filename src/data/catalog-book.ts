@@ -3,7 +3,7 @@
  *
  * This file is the single source of truth for the order and content of the
  * online 2026 catalog at `/download/catalog/view`. It mirrors the printed
- * 32-page book (plus Tesamorelin, which never made the print run), but every
+ * 32-page book, but every
  * page is real HTML composed from `products.ts` / `learning.ts` — not a page
  * scan. To add, remove, or reorder pages, edit `CATALOG_BOOK_PAGES`.
  *
@@ -68,6 +68,12 @@ export interface ProductBookPage extends BookPageBase {
    * in the page's "Suggested Retail" block. Empty → block hidden.
    */
   skuIds: readonly string[];
+  /**
+   * Book-only hero image override (e.g. the print catalog's photography)
+   * when the sitewide product image doesn't read well on the page.
+   */
+  image?: string;
+  imageAlt?: string;
 }
 
 export interface DosageBookPage extends BookPageBase {
@@ -158,6 +164,10 @@ export const CATALOG_BOOK_PAGES: readonly BookPage[] = [
     tocLabel: "Metformin",
     tocGroup: ORALS,
     skuIds: ["metformin-500mg", "metformin-850mg", "metformin-1000mg"],
+    // The white-on-white pill render is illegible on the page; use the print
+    // catalog's photograph instead.
+    image: "/images/catalog-book/metformin-hand.webp",
+    imageAlt: "A hand holding a Metformin oral tablet",
   },
   { kind: "product", id: "finasteride", slug: "finasteride", tocLabel: "Finasteride", tocGroup: ORALS, skuIds: ["finasteride-1mg"] },
   { kind: "product", id: "minoxidil", slug: "minoxidil", tocLabel: "Minoxidil", tocGroup: ORALS, skuIds: ["minoxidil-2.5mg"] },
@@ -172,8 +182,18 @@ export const CATALOG_BOOK_PAGES: readonly BookPage[] = [
 
   { kind: "static", id: "peptides", staticId: "peptides-teaser", tocLabel: "Peptide Therapies (Coming Soon)", tocGroup: INJECTABLES },
   { kind: "product", id: "cyanocobalamin-b12", slug: "cyanocobalamin-b12", tocLabel: "Cyanocobalamin (B12)", tocGroup: INJECTABLES, skuIds: ["cyanocobalamin-b12-10000mcg"] },
-  { kind: "product", id: "tadalafil", slug: "tadalafil", tocLabel: "Tadalafil", tocGroup: ORALS, skuIds: [] },
-  { kind: "product", id: "tesamorelin", slug: "tesamorelin", tocLabel: "Tesamorelin", tocGroup: INJECTABLES, skuIds: ["tesamorelin-5mg-4ml"] },
+  {
+    kind: "product",
+    id: "tadalafil",
+    slug: "tadalafil",
+    tocLabel: "Tadalafil",
+    tocGroup: ORALS,
+    skuIds: [],
+    // The framed screenshot-style asset reads badly on the page; use the
+    // print catalog's capsule photograph.
+    image: "/images/catalog-book/tadalafil-capsule.webp",
+    imageAlt: "A Logos RX Tadalafil 5mg capsule",
+  },
 
   { kind: "static", id: "white-label", staticId: "white-label", tocLabel: "White-Label Packaging", tocGroup: RESOURCES },
   { kind: "static", id: "shipping", staticId: "shipping", tocLabel: "Shipping & Packaging", tocGroup: RESOURCES },
