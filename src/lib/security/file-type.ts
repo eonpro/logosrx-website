@@ -97,3 +97,15 @@ export async function detectResumeMime(
 
   return null;
 }
+
+/**
+ * Strict PDF-only check (invoice uploads). Returns the canonical MIME type
+ * when the bytes carry the `%PDF-` signature, `null` otherwise. The
+ * client-declared MIME is never consulted.
+ */
+export async function detectPdfMime(
+  file: File,
+): Promise<"application/pdf" | null> {
+  const headerBuf = new Uint8Array(await file.slice(0, 8).arrayBuffer());
+  return startsWith(headerBuf, PDF_MAGIC) ? "application/pdf" : null;
+}

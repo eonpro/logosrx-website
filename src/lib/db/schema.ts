@@ -231,6 +231,8 @@ export const transactionSourceEnum = pgEnum("transaction_source", [
   "manual",
   "csv",
   "lifefile",
+  // Recorded from an uploaded pharmacy invoice PDF (see invoice_* columns).
+  "invoice",
 ]);
 
 /**
@@ -1003,6 +1005,11 @@ export const partnerTransactions = pgTable("partner_transactions", {
   // far (0..revenueCents). Drives the reversal ledger entries.
   refundedCents: integer("refunded_cents").default(0).notNull(),
   source: transactionSourceEnum("source").default("manual").notNull(),
+  // Uploaded invoice PDF (source = "invoice"): pathname inside the private
+  // @vercel/blob store, plus the sanitized original filename for downloads.
+  // Null for rows recorded without a document.
+  invoicePathname: text("invoice_pathname"),
+  invoiceFilename: varchar("invoice_filename", { length: 255 }),
   // Clerk user id of the admin who recorded the row.
   createdBy: varchar("created_by", { length: 64 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

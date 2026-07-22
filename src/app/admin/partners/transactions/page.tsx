@@ -12,6 +12,7 @@ import {
 import { requireAdmin } from "@/lib/auth/admin";
 import { formatCents } from "@/lib/partners/commission";
 import TransactionEntry from "./TransactionEntry";
+import InvoiceUpload from "./InvoiceUpload";
 import RefundButton from "./RefundButton";
 import {
   EmptyState,
@@ -38,6 +39,7 @@ export default async function AdminPartnerTransactionsPage() {
         revenueCents: partnerTransactions.revenueCents,
         refundedCents: partnerTransactions.refundedCents,
         source: partnerTransactions.source,
+        invoicePathname: partnerTransactions.invoicePathname,
         commissionCents:
           sql<number>`coalesce(sum(${commissionEntries.amountCents}), 0)`.mapWith(
             Number,
@@ -85,6 +87,15 @@ export default async function AdminPartnerTransactionsPage() {
         title="Partner Transactions"
         description="Record revenue for attributed clinics — commission ledger entries are generated automatically at the org’s and rep’s current rates."
       />
+
+      <div className="mb-6">
+        <InvoiceUpload
+          clinics={attributedClinics.map((c) => ({
+            id: c.id,
+            label: `${c.clinicName || c.practiceLegalName || `Clinic #${c.id}`} — ${c.orgName}`,
+          }))}
+        />
+      </div>
 
       <TransactionEntry
         clinics={attributedClinics.map((c) => ({
@@ -143,6 +154,14 @@ export default async function AdminPartnerTransactionsPage() {
                   <td className="px-5 py-3">{tx.orgName ?? "—"}</td>
                   <td className="px-5 py-3 font-mono text-xs">
                     {tx.reference ?? "—"}
+                    {tx.invoicePathname && (
+                      <a
+                        href={`/api/admin/invoices/${tx.id}`}
+                        className="mt-0.5 block font-sans text-xs font-semibold text-plum underline underline-offset-2 hover:text-plum-deep"
+                      >
+                        Invoice PDF
+                      </a>
+                    )}
                   </td>
                   <td className="px-5 py-3 uppercase text-xs">{tx.source}</td>
                   <td className="px-5 py-3 text-right tabular-nums">

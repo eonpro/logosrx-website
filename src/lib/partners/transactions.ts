@@ -48,7 +48,11 @@ export interface CreateTransactionInput {
   costCents?: number | null;
   description: string | null;
   reference: string | null;
-  source: "manual" | "csv" | "lifefile";
+  source: "manual" | "csv" | "lifefile" | "invoice";
+  /** Private-blob pathname of an attached invoice PDF (source = "invoice"). */
+  invoicePathname?: string | null;
+  /** Sanitized original filename of the attached invoice PDF. */
+  invoiceFilename?: string | null;
   createdBy: string;
 }
 
@@ -163,6 +167,8 @@ export async function createTransactionWithCommission(
           revenueCents: input.revenueCents,
           costCents,
           source: input.source,
+          invoicePathname: input.invoicePathname ?? null,
+          invoiceFilename: input.invoiceFilename ?? null,
           createdBy: input.createdBy,
         })
         .returning({ id: partnerTransactions.id });
