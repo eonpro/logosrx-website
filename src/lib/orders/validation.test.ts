@@ -37,7 +37,7 @@ function validSubmission() {
         refills: "0",
       },
     ],
-    submissionKey: "wiz_1a2b3c4d5e6f",
+    submissionKey: "test-submission-key-0001",
   };
 }
 
