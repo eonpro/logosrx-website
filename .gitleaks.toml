@@ -35,9 +35,14 @@ regexes = [
   # (idempotency-token fixture). Both live in git history; exact literals only.
   '''wiz_1a2b3c4d5e6f''',
   '''test-submission-key-0001''',
+  # Deterministic clinic API key fixture in tests/api/clinic-orders-api.test.ts
+  # (and its history on open PR branches). Not a real credential.
+  '''lxck_testkey123''',
 ]
 
 paths = [
   # Lockfile integrity hashes are not secrets and produce noise.
   '''package-lock\.json''',
+  # Next.js build output (local/CI workspaces); not source of truth.
+  '''^\.next/''',
 ]
