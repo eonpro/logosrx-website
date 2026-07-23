@@ -22,6 +22,9 @@ regexes = [
   '''sk_(test|live)_\.\.\.''',
   # Non-secret deterministic dev fallback string (see src/lib/security/secret.ts).
   '''logos-dev-fallback-key''',
+  # Fake placeholder submission key (sequential hex) used as test fixture data
+  # in src/lib/orders/validation.test.ts — not a real credential.
+  '''wiz_1a2b3c4d5e6f''',
   # Character-set constants used to GENERATE random quote tokens/passwords in
   # src/lib/quotes/crypto.ts (TOKEN_ALPHABET / PASSWORD_ALPHABET). High entropy
   # trips the generic-api-key rule, but these are public alphabets, not secrets.
