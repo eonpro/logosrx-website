@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // CommonJS preload shims for Node scripts (must use require).
+    "scripts/shim-*.cjs",
   ]),
 ]);
 

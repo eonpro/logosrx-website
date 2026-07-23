@@ -14,12 +14,17 @@ import {
   type Order,
 } from "@/lib/db/schema";
 import { getLifeFileClient } from "@/lib/lifefile/client";
-import { isControlledSchedule } from "@/lib/lifefile/constants";
+import {
+  isControlledSchedule,
+  shippingServiceName,
+} from "@/lib/lifefile/constants";
 import {
   buildLifeFileOrderPayload,
+  redactPayloadForStorage,
   type BuildOrderInput,
   type BuildRxInput,
 } from "@/lib/lifefile/payload";
+import { renderPrescriptionPdf } from "@/lib/lifefile/prescription-pdf";
 import { log } from "@/lib/observability/logger";
 import { recordAudit } from "@/lib/audit/log";
 import { notifyOrderProblem } from "@/lib/notifications/slack";
@@ -324,6 +329,95 @@ export async function submitClinicOrder(
   };
   const payload = buildLifeFileOrderPayload(buildInput);
 
+  // Every LifeFile order carries `order.document.pdfBase64` — a printable
+  // script for the pharmacy. Fail closed: never forward without the PDF.
+  let pdfBase64: string;
+  try {
+    const pdf = await renderPrescriptionPdf({
+      practiceName:
+        clinic.clinicName || clinic.practiceLegalName || "LogosRx clinic",
+      referenceId,
+      createdAtIso: new Date().toISOString(),
+      prescriber: {
+        name: `${prescriber.firstName} ${prescriber.lastName}`.trim(),
+        npi: submission.prescriberNpi,
+        licenseNumber: prescriber.medicalLicense,
+        licenseState: prescriber.licenseState,
+        phone: clinic.practicePhone,
+      },
+      patient: {
+        name: `${patient.firstName} ${patient.lastName}`,
+        dateOfBirth: patient.dateOfBirth,
+        gender: patient.gender,
+        address: [
+          patient.address1,
+          patient.address2,
+          [patient.city, patient.state, patient.zip].filter(Boolean).join(", "),
+        ]
+          .filter(Boolean)
+          .join(", "),
+        phone: patient.phoneMobile || patient.phoneHome || patient.phoneWork,
+        allergies: patient.allergies,
+        conditions: patient.conditions,
+      },
+      shipping: {
+        recipient: `${submission.shipping.recipientFirstName} ${submission.shipping.recipientLastName} (${submission.shipping.recipientType})`,
+        address: [
+          submission.shipping.addressLine1,
+          submission.shipping.addressLine2,
+          `${submission.shipping.city}, ${submission.shipping.state} ${submission.shipping.zipCode}`,
+        ]
+          .filter(Boolean)
+          .join(", "),
+        service: shippingServiceName(
+          submission.shipping.serviceId ?? clinic.lifefileDefaultServiceId,
+        ),
+      },
+      rxs: hydrated.rxs.map((rx) => ({
+        drugName: rx.drugName,
+        drugStrength: rx.drugStrength,
+        drugForm: rx.drugForm,
+        directions: rx.directions,
+        quantity: rx.quantity,
+        quantityUnits: rx.quantityUnits,
+        daysSupply: rx.daysSupply,
+        refills: rx.refills ?? 0,
+        dateWritten: rx.dateWritten,
+        clinicalDifferenceStatement: rx.clinicalDifferenceStatement,
+      })),
+    });
+    pdfBase64 = pdf.toString("base64");
+  } catch (err) {
+    log.error("prescription pdf render failed; not forwarding to LifeFile", {
+      orderId: orderRow.id,
+      error: err,
+    });
+    await db
+      .update(orders)
+      .set({
+        status: "failed",
+        errorMessage: "Could not generate the prescription PDF.",
+        updatedAt: new Date(),
+      })
+      .where(eq(orders.id, orderRow.id));
+    runAfterResponse(
+      notifyOrderProblem({
+        clinicName: clinic.clinicName || `Clinic #${clinic.id}`,
+        orderId: orderRow.id,
+        referenceId,
+        status: "failed",
+        reason: "prescription PDF render failed",
+      }),
+    );
+    return {
+      ok: false,
+      error:
+        "Could not generate the prescription document. Please try again, " +
+        "or contact us if this keeps happening.",
+    };
+  }
+  payload.order.document = { pdfBase64 };
+
   const client = getLifeFileClient();
   const result = await client.submitOrder(payload);
 
@@ -341,7 +435,8 @@ export async function submitClinicOrder(
       lfOrderId: result.ok && result.lfOrderId ? result.lfOrderId : null,
       messageId: orderRow.id,
       errorMessage: result.ok ? null : result.message.slice(0, 500),
-      rawRequest: payload,
+      // PDF redacted: it's bulky and re-renderable from the order data.
+      rawRequest: redactPayloadForStorage(payload),
       rawResponse: result.ok ? result.raw : (result.raw ?? null),
       updatedAt: new Date(),
     })

@@ -165,6 +165,26 @@ function compact<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
+/**
+ * Copy of the payload safe for DB persistence: the prescription PDF is
+ * replaced with a short marker so `orders.raw_request` stays small (the PDF
+ * is ~50-200 KB of base64 and can always be re-rendered from the order data).
+ */
+export function redactPayloadForStorage(
+  payload: LifeFileOrderPayload,
+): LifeFileOrderPayload {
+  if (!payload.order.document) return payload;
+  return {
+    ...payload,
+    order: {
+      ...payload.order,
+      document: {
+        pdfBase64: `<omitted: ${payload.order.document.pdfBase64.length} base64 chars>`,
+      },
+    },
+  };
+}
+
 export function buildLifeFileOrderPayload(
   input: BuildOrderInput,
 ): LifeFileOrderPayload {

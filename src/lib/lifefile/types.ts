@@ -88,6 +88,12 @@ export interface LifeFileOrderPayload {
       memo?: string;
       referenceId?: string;
     };
+    /**
+     * Human-readable prescription PDF (base64). LifeFile requires it for
+     * controlled substances; we attach it to every order so the pharmacy
+     * always has a printable script.
+     */
+    document?: { pdfBase64: string };
     prescriber: LifeFilePrescriber;
     practice?: { id: number };
     patient: LifeFilePatient;
