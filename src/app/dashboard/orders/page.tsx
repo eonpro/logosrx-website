@@ -133,7 +133,9 @@ export default async function OrdersPage() {
                       {o.drugs.join(", ") || "—"}
                     </td>
                     <td className="px-5 py-4">
-                      <Badge tone={ui.tone}>{ui.label}</Badge>
+                      <span title={ui.description}>
+                        <Badge tone={ui.tone}>{ui.label}</Badge>
+                      </span>
                     </td>
                     <td className="hidden px-5 py-4 tabular-nums text-navy/60 sm:table-cell">
                       {dateFmt.format(o.createdAt)}

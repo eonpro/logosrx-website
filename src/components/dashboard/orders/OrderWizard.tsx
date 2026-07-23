@@ -1,52 +1,49 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 import {
   createPatientAction,
   submitOrderAction,
 } from "@/app/dashboard/orders/actions";
-import { fieldClass, SelectField, TextField } from "@/components/onboarding/primitives";
-import { Badge, Card, btnSecondary } from "@/components/ui/portal";
+import { fieldClass } from "@/components/onboarding/primitives";
+import { Badge, Card, btnAccent, btnSecondary } from "@/components/ui/portal";
 import { formatCents } from "@/lib/portal/pricing";
+import { normalizePhone } from "@/lib/lifefile/normalize";
 import type { OrderableProduct } from "@/lib/orders/products";
 import type { LifeFileShippingService } from "@/lib/lifefile/constants";
 import type { Patient, ClinicProvider } from "@/lib/db/schema";
+import {
+  DRAFT_STORAGE_KEY,
+  estimateTotalCents,
+  parseDraft,
+  patientFieldErrors,
+  rxFieldErrors,
+  serializeDraft,
+  shippingFieldErrors,
+  sigPresetsFor,
+  type FieldErrors,
+  type PatientDraft,
+  type RxDraft,
+  type ShippingDraft,
+} from "./wizard-helpers";
 
 /**
  * The "New prescription" wizard: Patient -> Prescriber & medications ->
- * Shipping -> Review. Client state only; the single source of truth for
- * validation and isolation is the server pipeline (`submitClinicOrder`).
- * Errors render as inline banners per portal convention.
+ * Shipping -> Review -> Sent.
+ *
+ * UX principles baked in:
+ *  - Visible labels on every field (placeholders are examples, not labels).
+ *  - Validate per field, inline, when the user tries to continue — never
+ *    a dead-end generic banner for a fixable field problem.
+ *  - Never lose work: state autosaves to sessionStorage (tab-scoped, cleared
+ *    on success/close — deliberately NOT localStorage, this is PHI).
+ *  - The server pipeline stays the source of truth; anything it rejects is
+ *    surfaced verbatim in the banner as a last line of defense.
  */
 
 const STEPS = ["Patient", "Medications", "Shipping", "Review"] as const;
-
-interface RxDraft {
-  productId: string;
-  directions: string;
-  quantity: string;
-  daysSupply: string;
-  refills: string;
-}
-
-interface PatientDraft {
-  firstName: string;
-  lastName: string;
-  gender: string;
-  dateOfBirth: string;
-  address1: string;
-  address2: string;
-  city: string;
-  state: string;
-  zip: string;
-  phoneMobile: string;
-  email: string;
-  allergies: string;
-  conditions: string;
-}
 
 const EMPTY_PATIENT: PatientDraft = {
   firstName: "",
@@ -70,7 +67,198 @@ function newSubmissionKey(): string {
     : `${Date.now()}${Math.random().toString(36).slice(2, 12)}`;
 }
 
+function splitList(value: string): string[] {
+  return value
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+/* ------------------------------ small components ------------------------- */
+
+function Labeled({
+  label,
+  required,
+  error,
+  hint,
+  children,
+  className = "",
+}: {
+  label: string;
+  required?: boolean;
+  error?: string;
+  hint?: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={className}>
+      <label className="block">
+        <span className="mb-1.5 block text-[13px] font-semibold text-navy/70">
+          {label}
+          {required && <span className="text-magenta"> *</span>}
+        </span>
+        {children}
+      </label>
+      {error ? (
+        <p className="mt-1 text-[13px] font-medium text-red-600">{error}</p>
+      ) : hint ? (
+        <p className="mt-1 text-[13px] text-navy/45">{hint}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function inputCls(hasError: boolean | undefined): string {
+  return hasError
+    ? `${fieldClass} border-red-300 focus:border-red-400 focus:ring-red-100`
+    : fieldClass;
+}
+
+function SelectableCard({
+  selected,
+  onClick,
+  title,
+  subtitle,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  title: React.ReactNode;
+  subtitle?: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      onClick={onClick}
+      className={`flex w-full items-center justify-between rounded-2xl border-2 px-5 py-4 text-left transition-all ${
+        selected
+          ? "border-plum bg-plum/[0.04] shadow-soft"
+          : "border-beige bg-white hover:border-navy/30"
+      }`}
+    >
+      <span className="min-w-0">
+        <span className="block truncate text-[15px] font-semibold text-navy">
+          {title}
+        </span>
+        {subtitle && (
+          <span className="mt-0.5 block text-[13px] text-navy/50">{subtitle}</span>
+        )}
+      </span>
+      <span
+        className={`ml-4 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
+          selected ? "border-plum bg-plum text-white" : "border-navy/20 bg-white"
+        }`}
+      >
+        {selected && (
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path
+              d="M2.5 6.5L5 9l4.5-5"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
+      </span>
+    </button>
+  );
+}
+
+function PillToggle<T extends string>({
+  value,
+  options,
+  onChange,
+  ariaLabel,
+}: {
+  value: T;
+  options: readonly (readonly [T, string])[];
+  onChange: (v: T) => void;
+  ariaLabel: string;
+}) {
+  return (
+    <div className="flex gap-2" role="radiogroup" aria-label={ariaLabel}>
+      {options.map(([v, label]) => (
+        <button
+          key={v}
+          type="button"
+          role="radio"
+          aria-checked={value === v}
+          onClick={() => onChange(v)}
+          className={`flex-1 rounded-full px-4 py-2.5 text-sm font-semibold transition-all ${
+            value === v
+              ? "bg-plum text-white shadow-soft"
+              : "border border-beige bg-white text-navy/60 hover:border-navy/30"
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function WizardNav({
+  onBack,
+  onNext,
+  nextLabel = "Continue",
+  showBack = true,
+  busy = false,
+}: {
+  onBack?: () => void;
+  onNext: () => void;
+  nextLabel?: string;
+  showBack?: boolean;
+  busy?: boolean;
+}) {
+  return (
+    <div className="mt-8 flex items-center gap-3">
+      {showBack && (
+        <button
+          type="button"
+          onClick={onBack}
+          aria-label="Go back"
+          disabled={busy}
+          className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border border-beige-dark bg-white text-navy transition-all hover:border-navy/40 active:scale-95 disabled:opacity-50"
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path
+              d="M11 4L6 9l5 5"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={onNext}
+        disabled={busy}
+        className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-plum text-[15px] font-semibold text-white transition-all hover:bg-plum-deep active:scale-[0.99] disabled:opacity-60"
+      >
+        {nextLabel}
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path
+            d="M3 8h10M8 3l5 5-5 5"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+/* --------------------------------- wizard -------------------------------- */
+
 export default function OrderWizard({
+  clinicKey,
   patients: initialPatients,
   providers,
   products,
@@ -78,6 +266,8 @@ export default function OrderWizard({
   defaultServiceId,
   preselectedProductId,
 }: {
+  /** Stable per-clinic key for scoping the autosaved draft. */
+  clinicKey: string;
   patients: Patient[];
   providers: ClinicProvider[];
   products: OrderableProduct[];
@@ -85,45 +275,48 @@ export default function OrderWizard({
   defaultServiceId: number | null;
   preselectedProductId: string | null;
 }) {
-  const router = useRouter();
   const errorRef = useRef<HTMLDivElement>(null);
-  const submissionKey = useRef(newSubmissionKey());
 
-  const orderable = useMemo(
-    () => products.filter((p) => p.orderable),
-    [products],
+  const orderable = useMemo(() => products.filter((p) => p.orderable), [products]);
+  const prescribers = useMemo(
+    () => providers.filter((p) => /^\d{10}$/.test(p.npi.replace(/\D/g, ""))),
+    [providers],
   );
 
   const [step, setStep] = useState(0);
-  const [error, setError] = useState<string | null>(null);
+  const [banner, setBanner] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showErrors, setShowErrors] = useState(false);
+  const [restoredDraft, setRestoredDraft] = useState(false);
+  const [success, setSuccess] = useState<{
+    orderId: number;
+    lfOrderId: string | null;
+  } | null>(null);
 
   // Step 1 — patient
   const [patients, setPatients] = useState(initialPatients);
-  const [patientId, setPatientId] = useState<number | null>(null);
-  const [showNewPatient, setShowNewPatient] = useState(
-    initialPatients.length === 0,
+  const [patientId, setPatientId] = useState<number | null>(
+    initialPatients.length === 1 ? initialPatients[0].id : null,
   );
+  const [patientQuery, setPatientQuery] = useState("");
+  const [showNewPatient, setShowNewPatient] = useState(initialPatients.length === 0);
   const [patientDraft, setPatientDraft] = useState<PatientDraft>(EMPTY_PATIENT);
+  const [patientErrors, setPatientErrors] = useState<FieldErrors>({});
 
   // Step 2 — prescriber + medications
   const [prescriberNpi, setPrescriberNpi] = useState(
-    providers.length === 1 ? providers[0].npi : "",
+    prescribers.length === 1 ? prescribers[0].npi.replace(/\D/g, "") : "",
   );
   const [productQuery, setProductQuery] = useState("");
+  const [rxErrors, setRxErrors] = useState<Record<number, string>>({});
   const [rxs, setRxs] = useState<RxDraft[]>(() => {
-    const pre =
-      preselectedProductId &&
-      orderableIds(products).has(preselectedProductId)
-        ? preselectedProductId
-        : null;
+    const pre = orderable.find((p) => p.id === preselectedProductId);
     return pre
       ? [
           {
-            productId: pre,
+            productId: pre.id,
             directions: "",
-            quantity:
-              products.find((p) => p.id === pre)?.defaultQuantity ?? "",
+            quantity: pre.defaultQuantity ?? "1",
             daysSupply: "",
             refills: "0",
           },
@@ -132,8 +325,8 @@ export default function OrderWizard({
   });
 
   // Step 3 — shipping
-  const [shipping, setShipping] = useState({
-    recipientType: "patient" as "patient" | "clinic",
+  const [shipping, setShipping] = useState<ShippingDraft>({
+    recipientType: "patient",
     recipientFirstName: "",
     recipientLastName: "",
     recipientPhone: "",
@@ -145,146 +338,231 @@ export default function OrderWizard({
     zipCode: "",
     serviceId: defaultServiceId ? String(defaultServiceId) : "",
   });
+  const [shippingErrors, setShippingErrors] = useState<FieldErrors>({});
   const [payorType, setPayorType] = useState<"doc" | "pat">("doc");
   const [memo, setMemo] = useState("");
 
+  const submissionKey = useRef(newSubmissionKey());
+
   const selectedPatient = patients.find((p) => p.id === patientId) ?? null;
   const selectedPrescriber =
-    providers.find((p) => p.npi === prescriberNpi) ?? null;
+    prescribers.find((p) => p.npi.replace(/\D/g, "") === prescriberNpi) ?? null;
 
-  function showError(message: string) {
-    setError(message);
+  /* ------------------------- draft restore + autosave -------------------- */
+
+  useEffect(() => {
+    // Restore once on mount. A storefront "Prescribe" click (preselected
+    // product) intentionally starts fresh — that's an explicit new intent.
+    if (preselectedProductId) return;
+    const draft = parseDraft(sessionStorage.getItem(DRAFT_STORAGE_KEY), clinicKey);
+    if (!draft) return;
+    setStep(Math.min(draft.step, STEPS.length - 1));
+    setPatientId(draft.patientId);
+    setPrescriberNpi(draft.prescriberNpi);
+    setRxs(draft.rxs);
+    setShipping(draft.shipping);
+    setPayorType(draft.payorType);
+    setMemo(draft.memo);
+    submissionKey.current = draft.submissionKey;
+    setRestoredDraft(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (success) return;
+    const handle = setTimeout(() => {
+      try {
+        sessionStorage.setItem(
+          DRAFT_STORAGE_KEY,
+          serializeDraft({
+            clinicKey,
+            step,
+            patientId,
+            prescriberNpi,
+            rxs,
+            shipping,
+            payorType,
+            memo,
+            submissionKey: submissionKey.current,
+          }),
+        );
+      } catch {
+        // Storage full/blocked — autosave is best-effort.
+      }
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [clinicKey, step, patientId, prescriberNpi, rxs, shipping, payorType, memo, success]);
+
+  function clearDraft() {
+    try {
+      sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+  }
+
+  /* ------------------------------ navigation ----------------------------- */
+
+  function showBanner(message: string) {
+    setBanner(message);
     requestAnimationFrame(() =>
       errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
     );
   }
 
-  function next() {
-    setError(null);
-    setStep((s) => Math.min(s + 1, STEPS.length - 1));
+  function goTo(next: number) {
+    setBanner(null);
+    setShowErrors(false);
+    setStep(next);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function back() {
-    setError(null);
-    setStep((s) => Math.max(s - 1, 0));
-  }
+  /* ---------------------------- step 1: patient -------------------------- */
 
-  // --- Step 1 handlers ---
+  const filteredPatients = useMemo(() => {
+    const needle = patientQuery.trim().toLowerCase();
+    if (!needle) return patients;
+    return patients.filter((p) =>
+      `${p.firstName} ${p.lastName}`.toLowerCase().includes(needle),
+    );
+  }, [patients, patientQuery]);
 
   async function saveNewPatient() {
+    const errors = patientFieldErrors(patientDraft);
+    setPatientErrors(errors);
+    setShowErrors(true);
+    if (Object.keys(errors).length > 0) {
+      showBanner("A few patient fields need attention — see below.");
+      return;
+    }
     setBusy(true);
-    setError(null);
+    setBanner(null);
     const result = await createPatientAction({
       ...patientDraft,
+      state: patientDraft.state.trim().toUpperCase(),
       allergies: splitList(patientDraft.allergies),
       conditions: splitList(patientDraft.conditions),
     });
     setBusy(false);
     if (!result.ok) {
-      showError(result.error);
+      showBanner(result.error);
       return;
     }
     setPatients((prev) => [...prev, result.patient]);
     setPatientId(result.patient.id);
     setShowNewPatient(false);
+    setShowErrors(false);
     setPatientDraft(EMPTY_PATIENT);
   }
 
   function continueFromPatient() {
     if (!patientId) {
-      showError("Select a patient or add a new one.");
+      showBanner(
+        patients.length === 0
+          ? "Add your first patient to continue."
+          : "Select a patient or add a new one.",
+      );
       return;
     }
-    next();
+    goTo(1);
   }
 
-  // --- Step 2 handlers ---
+  /* -------------------------- step 2: medications ------------------------ */
 
-  function addRx(productId: string) {
-    const product = products.find((p) => p.id === productId);
+  const rxCountByProduct = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const rx of rxs) counts.set(rx.productId, (counts.get(rx.productId) ?? 0) + 1);
+    return counts;
+  }, [rxs]);
+
+  function addRx(product: OrderableProduct) {
     setRxs((prev) => [
       ...prev,
       {
-        productId,
+        productId: product.id,
         directions: "",
-        quantity: product?.defaultQuantity ?? "",
+        quantity: product.defaultQuantity ?? "1",
         daysSupply: "",
         refills: "0",
       },
     ]);
     setProductQuery("");
+    setRxErrors({});
   }
 
   function updateRx(index: number, patch: Partial<RxDraft>) {
-    setRxs((prev) =>
-      prev.map((rx, i) => (i === index ? { ...rx, ...patch } : rx)),
-    );
+    setRxs((prev) => prev.map((rx, i) => (i === index ? { ...rx, ...patch } : rx)));
   }
 
   function removeRx(index: number) {
     setRxs((prev) => prev.filter((_, i) => i !== index));
+    setRxErrors({});
   }
 
   function continueFromMeds() {
     if (!prescriberNpi) {
-      showError("Select the prescribing provider.");
+      showBanner("Select the prescribing provider.");
       return;
     }
     if (rxs.length === 0) {
-      showError("Add at least one medication.");
+      showBanner("Add at least one medication from the catalog below.");
       return;
     }
-    for (const [i, rx] of rxs.entries()) {
-      if (rx.directions.trim().length < 3) {
-        const name = products.find((p) => p.id === rx.productId)?.name;
-        showError(`Add directions (sig) for ${name ?? `medication ${i + 1}`}.`);
-        return;
-      }
+    const errors = rxFieldErrors(rxs, products);
+    setRxErrors(errors);
+    setShowErrors(true);
+    if (Object.keys(errors).length > 0) {
+      showBanner("Each medication needs directions — see highlights below.");
+      return;
     }
     // Prefill shipping from the patient the first time we reach step 3.
     if (selectedPatient && !shipping.recipientFirstName) {
-      setShipping((s) => ({
-        ...s,
-        recipientFirstName: selectedPatient.firstName,
-        recipientLastName: selectedPatient.lastName,
-        recipientPhone: selectedPatient.phoneMobile ?? "",
-        recipientEmail: selectedPatient.email ?? "",
-        addressLine1: selectedPatient.address1 ?? "",
-        addressLine2: selectedPatient.address2 ?? "",
-        city: selectedPatient.city ?? "",
-        state: selectedPatient.state ?? "",
-        zipCode: selectedPatient.zip ?? "",
-      }));
+      applyPatientAddress();
     }
-    next();
+    goTo(2);
   }
 
-  // --- Step 3 handlers ---
+  /* ---------------------------- step 3: shipping -------------------------- */
+
+  function applyPatientAddress() {
+    if (!selectedPatient) return;
+    setShipping((s) => ({
+      ...s,
+      recipientType: "patient",
+      recipientFirstName: selectedPatient.firstName,
+      recipientLastName: selectedPatient.lastName,
+      recipientPhone: selectedPatient.phoneMobile ?? "",
+      recipientEmail: selectedPatient.email ?? "",
+      addressLine1: selectedPatient.address1 ?? "",
+      addressLine2: selectedPatient.address2 ?? "",
+      city: selectedPatient.city ?? "",
+      state: selectedPatient.state ?? "",
+      zipCode: selectedPatient.zip ?? "",
+    }));
+    setShippingErrors({});
+  }
+
+  function formatPhoneOnBlur(key: "recipientPhone") {
+    const normalized = normalizePhone(shipping[key]);
+    if (normalized) setShipping((s) => ({ ...s, [key]: normalized }));
+  }
 
   function continueFromShipping() {
-    const required: [string, string][] = [
-      [shipping.recipientFirstName, "recipient first name"],
-      [shipping.recipientLastName, "recipient last name"],
-      [shipping.addressLine1, "address"],
-      [shipping.city, "city"],
-      [shipping.state, "state"],
-      [shipping.zipCode, "ZIP code"],
-    ];
-    for (const [value, label] of required) {
-      if (!value.trim()) {
-        showError(`Enter the ${label}.`);
-        return;
-      }
+    const errors = shippingFieldErrors(shipping);
+    setShippingErrors(errors);
+    setShowErrors(true);
+    if (Object.keys(errors).length > 0) {
+      showBanner("A few shipping fields need attention — see below.");
+      return;
     }
-    next();
+    goTo(3);
   }
 
-  // --- Submit ---
+  /* -------------------------------- submit ------------------------------- */
 
   async function submit() {
     setBusy(true);
-    setError(null);
+    setBanner(null);
     const result = await submitOrderAction({
       patientId,
       prescriberNpi,
@@ -292,6 +570,7 @@ export default function OrderWizard({
       memo: memo || undefined,
       shipping: {
         ...shipping,
+        state: shipping.state.trim().toUpperCase(),
         serviceId: shipping.serviceId || undefined,
       },
       rxs: rxs.map((rx) => ({
@@ -305,22 +584,72 @@ export default function OrderWizard({
     });
     setBusy(false);
     if (!result.ok) {
-      showError(result.error);
+      showBanner(result.error);
       return;
     }
-    router.push(`/dashboard/orders/${result.orderId}`);
+    clearDraft();
+    setSuccess({ orderId: result.orderId, lfOrderId: result.lfOrderId });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  const estimatedTotal = estimateTotalCents(rxs, products);
+
+  /* ------------------------------- rendering ------------------------------ */
+
+  if (success) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <div className="rounded-3xl border border-emerald-200 bg-emerald-50/60 px-8 py-12 text-center">
+          <span className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-600 text-white">
+            <svg width="28" height="28" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <path d="M3.5 9.5L7 13l7.5-8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+          <h2 className="font-display text-3xl font-medium text-navy">
+            Order sent to the pharmacy
+          </h2>
+          <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-navy/60">
+            {success.lfOrderId ? (
+              <>
+                Pharmacy order number{" "}
+                <span className="font-semibold text-navy">#{success.lfOrderId}</span>. 
+              </>
+            ) : null}{" "}
+            We&rsquo;ll flag it in your Orders tab if anything needs attention.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <Link href={`/dashboard/orders/${success.orderId}`} className={btnAccent}>
+              View order
+            </Link>
+            <Link href="/dashboard/orders/new" className={btnSecondary}>
+              Place another order
+            </Link>
+            <Link
+              href="/dashboard/orders"
+              className="text-sm font-medium text-navy/50 hover:text-navy"
+            >
+              All orders
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="mx-auto max-w-2xl">
-      {/* Step indicator */}
+      {/* Step indicator (clickable for completed steps) */}
       <ol className="mb-8 flex items-center gap-2" aria-label="Progress">
         {STEPS.map((label, i) => (
           <li key={label} className="flex flex-1 flex-col gap-1.5">
-            <span
-              className={`h-1 rounded-full ${
+            <button
+              type="button"
+              disabled={i >= step}
+              onClick={() => goTo(i)}
+              aria-label={`Go to step: ${label}`}
+              className={`h-1.5 w-full rounded-full transition-colors ${
                 i <= step ? "bg-plum" : "bg-beige"
-              }`}
+              } ${i < step ? "cursor-pointer hover:bg-plum-deep" : ""}`}
             />
             <span
               className={`text-[11px] font-semibold uppercase tracking-wide ${
@@ -333,195 +662,263 @@ export default function OrderWizard({
         ))}
       </ol>
 
-      {error && (
+      {restoredDraft && (
+        <div className="mb-6 flex items-center justify-between gap-3 rounded-2xl border border-beige bg-cream/70 px-5 py-3.5 text-sm text-navy/70">
+          <span>Welcome back — we saved where you left off.</span>
+          <button
+            type="button"
+            onClick={() => {
+              clearDraft();
+              window.location.reload();
+            }}
+            className="shrink-0 text-sm font-semibold text-magenta hover:underline"
+          >
+            Start over
+          </button>
+        </div>
+      )}
+
+      {banner && (
         <div
           ref={errorRef}
           role="alert"
           className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700"
         >
-          {error}
+          {banner}
         </div>
       )}
 
+      {/* ------------------------------ step 1 ------------------------------ */}
       {step === 0 && (
         <section aria-label="Patient">
-          <h2 className="mb-4 font-display text-2xl font-medium text-navy">
+          <h2 className="mb-1 font-display text-2xl font-medium text-navy">
             Who is this prescription for?
           </h2>
+          <p className="mb-5 text-[15px] text-navy/55">
+            Pick a saved patient or add a new one — we keep them on file for
+            repeat orders.
+          </p>
 
           {patients.length > 0 && !showNewPatient && (
-            <div className="flex flex-col gap-3">
-              {patients.map((p) => {
-                const selected = p.id === patientId;
-                return (
-                  <button
+            <>
+              {patients.length > 5 && (
+                <input
+                  type="search"
+                  value={patientQuery}
+                  onChange={(e) => setPatientQuery(e.target.value)}
+                  placeholder="Search patients…"
+                  aria-label="Search patients"
+                  className={`${fieldClass} mb-3`}
+                />
+              )}
+              <div className="flex max-h-96 flex-col gap-3 overflow-y-auto pr-1">
+                {filteredPatients.map((p) => (
+                  <SelectableCard
                     key={p.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={selected}
+                    selected={p.id === patientId}
                     onClick={() => setPatientId(p.id)}
-                    className={`flex w-full items-center justify-between rounded-2xl border-2 px-5 py-4 text-left transition-all ${
-                      selected
-                        ? "border-plum bg-plum/[0.04] shadow-soft"
-                        : "border-beige bg-white hover:border-navy/30"
-                    }`}
-                  >
-                    <span>
-                      <span className="block text-[15px] font-semibold text-navy">
-                        {p.firstName} {p.lastName}
-                      </span>
-                      <span className="mt-0.5 block text-[13px] text-navy/50">
+                    title={`${p.firstName} ${p.lastName}`}
+                    subtitle={
+                      <>
                         DOB {p.dateOfBirth}
                         {p.city ? ` · ${p.city}, ${p.state ?? ""}` : ""}
-                      </span>
-                    </span>
-                    <span
-                      className={`ml-4 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
-                        selected
-                          ? "border-plum bg-plum text-white"
-                          : "border-navy/20 bg-white"
-                      }`}
-                    >
-                      {selected && (
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                          <path
-                            d="M2.5 6.5L5 9l4.5-5"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      )}
-                    </span>
-                  </button>
-                );
-              })}
+                      </>
+                    }
+                  />
+                ))}
+                {filteredPatients.length === 0 && (
+                  <p className="rounded-2xl border border-dashed border-beige-dark px-5 py-6 text-center text-sm text-navy/50">
+                    No patients match &ldquo;{patientQuery}&rdquo;.
+                  </p>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => setShowNewPatient(true)}
-                className="rounded-2xl border-2 border-dashed border-beige-dark bg-white px-5 py-4 text-left text-[15px] font-semibold text-navy/60 transition-all hover:border-navy/40 hover:text-navy"
+                className="mt-3 w-full rounded-2xl border-2 border-dashed border-beige-dark bg-white px-5 py-4 text-left text-[15px] font-semibold text-navy/60 transition-all hover:border-navy/40 hover:text-navy"
               >
                 + Add a new patient
               </button>
-            </div>
+            </>
           )}
 
           {showNewPatient && (
             <Card>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <TextField
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Labeled
                   label="First name"
-                  placeholder="First name *"
-                  value={patientDraft.firstName}
-                  onChange={(e) =>
-                    setPatientDraft({ ...patientDraft, firstName: e.target.value })
-                  }
-                />
-                <TextField
+                  required
+                  error={showErrors ? patientErrors.firstName : undefined}
+                >
+                  <input
+                    className={inputCls(showErrors && !!patientErrors.firstName)}
+                    autoComplete="off"
+                    value={patientDraft.firstName}
+                    onChange={(e) =>
+                      setPatientDraft({ ...patientDraft, firstName: e.target.value })
+                    }
+                  />
+                </Labeled>
+                <Labeled
                   label="Last name"
-                  placeholder="Last name *"
-                  value={patientDraft.lastName}
-                  onChange={(e) =>
-                    setPatientDraft({ ...patientDraft, lastName: e.target.value })
-                  }
-                />
-                <SelectField
+                  required
+                  error={showErrors ? patientErrors.lastName : undefined}
+                >
+                  <input
+                    className={inputCls(showErrors && !!patientErrors.lastName)}
+                    autoComplete="off"
+                    value={patientDraft.lastName}
+                    onChange={(e) =>
+                      setPatientDraft({ ...patientDraft, lastName: e.target.value })
+                    }
+                  />
+                </Labeled>
+                <Labeled
                   label="Sex"
-                  placeholder="Sex *"
-                  value={patientDraft.gender}
-                  options={[
-                    { value: "m", label: "Male" },
-                    { value: "f", label: "Female" },
-                    { value: "u", label: "Unspecified" },
-                  ]}
-                  onChange={(e) =>
-                    setPatientDraft({ ...patientDraft, gender: e.target.value })
-                  }
-                />
-                <TextField
+                  required
+                  error={showErrors ? patientErrors.gender : undefined}
+                >
+                  <select
+                    className={`${inputCls(showErrors && !!patientErrors.gender)} appearance-none`}
+                    value={patientDraft.gender}
+                    onChange={(e) =>
+                      setPatientDraft({ ...patientDraft, gender: e.target.value })
+                    }
+                  >
+                    <option value="" disabled>
+                      Select…
+                    </option>
+                    <option value="m">Male</option>
+                    <option value="f">Female</option>
+                    <option value="u">Unspecified</option>
+                  </select>
+                </Labeled>
+                <Labeled
                   label="Date of birth"
-                  type="date"
-                  placeholder="Date of birth *"
-                  value={patientDraft.dateOfBirth}
-                  onChange={(e) =>
-                    setPatientDraft({ ...patientDraft, dateOfBirth: e.target.value })
-                  }
-                />
-                <TextField
+                  required
+                  error={showErrors ? patientErrors.dateOfBirth : undefined}
+                >
+                  <input
+                    type="date"
+                    max={new Date().toISOString().slice(0, 10)}
+                    className={inputCls(showErrors && !!patientErrors.dateOfBirth)}
+                    value={patientDraft.dateOfBirth}
+                    onChange={(e) =>
+                      setPatientDraft({ ...patientDraft, dateOfBirth: e.target.value })
+                    }
+                  />
+                </Labeled>
+                <Labeled
                   label="Mobile phone"
-                  placeholder="Mobile phone"
-                  value={patientDraft.phoneMobile}
-                  onChange={(e) =>
-                    setPatientDraft({ ...patientDraft, phoneMobile: e.target.value })
-                  }
-                />
-                <TextField
+                  hint="Used by the pharmacy for delivery questions."
+                  error={showErrors ? patientErrors.phoneMobile : undefined}
+                >
+                  <input
+                    inputMode="tel"
+                    placeholder="(305) 555-0100"
+                    className={inputCls(showErrors && !!patientErrors.phoneMobile)}
+                    value={patientDraft.phoneMobile}
+                    onChange={(e) =>
+                      setPatientDraft({ ...patientDraft, phoneMobile: e.target.value })
+                    }
+                    onBlur={() => {
+                      const n = normalizePhone(patientDraft.phoneMobile);
+                      if (n) setPatientDraft((d) => ({ ...d, phoneMobile: n }));
+                    }}
+                  />
+                </Labeled>
+                <Labeled
                   label="Email"
-                  type="email"
-                  placeholder="Email"
-                  value={patientDraft.email}
-                  onChange={(e) =>
-                    setPatientDraft({ ...patientDraft, email: e.target.value })
-                  }
-                />
-                <div className="sm:col-span-2">
-                  <TextField
-                    label="Street address"
-                    placeholder="Street address"
+                  error={showErrors ? patientErrors.email : undefined}
+                >
+                  <input
+                    type="email"
+                    placeholder="patient@email.com"
+                    className={inputCls(showErrors && !!patientErrors.email)}
+                    value={patientDraft.email}
+                    onChange={(e) =>
+                      setPatientDraft({ ...patientDraft, email: e.target.value })
+                    }
+                  />
+                </Labeled>
+                <Labeled label="Street address" className="sm:col-span-2">
+                  <input
+                    autoComplete="off"
+                    placeholder="100 Main St"
+                    className={fieldClass}
                     value={patientDraft.address1}
                     onChange={(e) =>
                       setPatientDraft({ ...patientDraft, address1: e.target.value })
                     }
                   />
-                </div>
-                <TextField
-                  label="City"
-                  placeholder="City"
-                  value={patientDraft.city}
-                  onChange={(e) =>
-                    setPatientDraft({ ...patientDraft, city: e.target.value })
-                  }
-                />
-                <div className="grid grid-cols-2 gap-3">
-                  <TextField
+                </Labeled>
+                <Labeled label="City">
+                  <input
+                    className={fieldClass}
+                    value={patientDraft.city}
+                    onChange={(e) =>
+                      setPatientDraft({ ...patientDraft, city: e.target.value })
+                    }
+                  />
+                </Labeled>
+                <div className="grid grid-cols-2 gap-4">
+                  <Labeled
                     label="State"
-                    placeholder="State"
-                    maxLength={2}
-                    value={patientDraft.state}
-                    onChange={(e) =>
-                      setPatientDraft({ ...patientDraft, state: e.target.value })
-                    }
-                  />
-                  <TextField
+                    error={showErrors ? patientErrors.state : undefined}
+                  >
+                    <input
+                      maxLength={2}
+                      placeholder="FL"
+                      className={`${inputCls(showErrors && !!patientErrors.state)} uppercase`}
+                      value={patientDraft.state}
+                      onChange={(e) =>
+                        setPatientDraft({ ...patientDraft, state: e.target.value })
+                      }
+                    />
+                  </Labeled>
+                  <Labeled
                     label="ZIP"
-                    placeholder="ZIP"
-                    value={patientDraft.zip}
-                    onChange={(e) =>
-                      setPatientDraft({ ...patientDraft, zip: e.target.value })
-                    }
-                  />
+                    error={showErrors ? patientErrors.zip : undefined}
+                  >
+                    <input
+                      inputMode="numeric"
+                      placeholder="33101"
+                      className={inputCls(showErrors && !!patientErrors.zip)}
+                      value={patientDraft.zip}
+                      onChange={(e) =>
+                        setPatientDraft({ ...patientDraft, zip: e.target.value })
+                      }
+                    />
+                  </Labeled>
                 </div>
-                <div className="sm:col-span-2">
-                  <TextField
-                    label="Allergies"
-                    placeholder="Allergies (comma-separated, e.g. penicillin, sulfa)"
+                <Labeled
+                  label="Allergies"
+                  hint="Comma-separated; shown to the pharmacist. Leave blank for none."
+                  className="sm:col-span-2"
+                >
+                  <input
+                    placeholder="penicillin, sulfa"
+                    className={fieldClass}
                     value={patientDraft.allergies}
                     onChange={(e) =>
                       setPatientDraft({ ...patientDraft, allergies: e.target.value })
                     }
                   />
-                </div>
-                <div className="sm:col-span-2">
-                  <TextField
-                    label="Conditions"
-                    placeholder="Conditions (comma-separated, e.g. type 2 diabetes)"
+                </Labeled>
+                <Labeled
+                  label="Conditions"
+                  hint="Comma-separated; shown to the pharmacist."
+                  className="sm:col-span-2"
+                >
+                  <input
+                    placeholder="type 2 diabetes"
+                    className={fieldClass}
                     value={patientDraft.conditions}
                     onChange={(e) =>
                       setPatientDraft({ ...patientDraft, conditions: e.target.value })
                     }
                   />
-                </div>
+                </Labeled>
               </div>
               <div className="mt-5 flex items-center gap-3">
                 <button
@@ -535,7 +932,10 @@ export default function OrderWizard({
                 {patients.length > 0 && (
                   <button
                     type="button"
-                    onClick={() => setShowNewPatient(false)}
+                    onClick={() => {
+                      setShowNewPatient(false);
+                      setShowErrors(false);
+                    }}
                     className={btnSecondary}
                   >
                     Cancel
@@ -551,283 +951,417 @@ export default function OrderWizard({
         </section>
       )}
 
+      {/* ------------------------------ step 2 ------------------------------ */}
       {step === 1 && (
         <section aria-label="Medications">
-          <h2 className="mb-4 font-display text-2xl font-medium text-navy">
+          <h2 className="mb-1 font-display text-2xl font-medium text-navy">
             Prescriber &amp; medications
           </h2>
+          <p className="mb-5 text-[15px] text-navy/55">
+            Prescribing for{" "}
+            <span className="font-semibold text-navy">
+              {selectedPatient
+                ? `${selectedPatient.firstName} ${selectedPatient.lastName}`
+                : "—"}
+            </span>
+            .
+          </p>
 
-          <div className="mb-6">
-            <p className="mb-2 text-[13px] font-semibold text-navy/60">
-              Prescribing provider
-            </p>
-            <SelectField
-              label="Prescribing provider"
-              placeholder="Select provider *"
-              value={prescriberNpi}
-              options={providers.map((p) => ({
-                value: p.npi,
-                label: `${p.firstName} ${p.lastName} — NPI ${p.npi}`,
-              }))}
-              onChange={(e) => setPrescriberNpi(e.target.value)}
-            />
-          </div>
-
-          {rxs.map((rx, i) => {
-            const product = products.find((p) => p.id === rx.productId);
-            return (
-              <Card key={`${rx.productId}-${i}`} className="mb-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-[15px] font-semibold text-navy">
-                      {product?.name ?? rx.productId}
-                    </p>
-                    <p className="mt-0.5 text-xs text-navy/55">
-                      {[product?.strength, product?.form]
-                        .filter(Boolean)
-                        .join(" · ")}
-                      {product?.priceCents != null &&
-                        ` · ${formatCents(product.priceCents)}`}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeRx(i)}
-                    aria-label={`Remove ${product?.name ?? "medication"}`}
-                    className="text-sm font-semibold text-navy/40 hover:text-red-600"
-                  >
-                    Remove
-                  </button>
-                </div>
-                <div className="mt-4 grid gap-3">
-                  <textarea
-                    aria-label="Directions (sig)"
-                    placeholder="Directions / sig — e.g. Inject 10 units (0.10 mL) subcutaneously once weekly *"
-                    rows={2}
-                    className={fieldClass}
-                    value={rx.directions}
-                    onChange={(e) => updateRx(i, { directions: e.target.value })}
-                  />
-                  <div className="grid grid-cols-3 gap-3">
-                    <TextField
-                      label="Quantity"
-                      placeholder={`Qty${product?.quantityUnits ? ` (${product.quantityUnits})` : ""}`}
-                      value={rx.quantity}
-                      onChange={(e) => updateRx(i, { quantity: e.target.value })}
-                    />
-                    <TextField
-                      label="Days supply"
-                      type="number"
-                      min={1}
-                      placeholder="Days supply"
-                      value={rx.daysSupply}
-                      onChange={(e) => updateRx(i, { daysSupply: e.target.value })}
-                    />
-                    <TextField
-                      label="Refills"
-                      type="number"
-                      min={0}
-                      max={11}
-                      placeholder="Refills"
-                      value={rx.refills}
-                      onChange={(e) => updateRx(i, { refills: e.target.value })}
-                    />
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-
-          <div className="mb-2">
-            <p className="mb-2 text-[13px] font-semibold text-navy/60">
-              Add a medication
-            </p>
-            <input
-              type="search"
-              value={productQuery}
-              onChange={(e) => setProductQuery(e.target.value)}
-              placeholder="Search the catalog…"
-              aria-label="Search medications"
-              className={fieldClass}
-            />
-            <div className="mt-2 max-h-64 overflow-y-auto rounded-2xl border border-beige bg-white">
-              {orderable
-                .filter((p) => {
-                  const needle = productQuery.trim().toLowerCase();
-                  if (!needle) return true;
-                  return `${p.name} ${p.strength ?? ""} ${p.form}`
-                    .toLowerCase()
-                    .includes(needle);
-                })
-                .slice(0, 30)
-                .map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => addRx(p.id)}
-                    className="flex w-full items-center justify-between border-b border-beige/60 px-4 py-3 text-left transition-colors last:border-0 hover:bg-cream/60"
-                  >
-                    <span>
-                      <span className="block text-sm font-semibold text-navy">
-                        {p.name}
-                      </span>
-                      <span className="block text-xs text-navy/50">
-                        {[p.strength, p.form].filter(Boolean).join(" · ")}
-                      </span>
-                    </span>
-                    <span className="text-sm font-semibold tabular-nums text-navy/70">
-                      {formatCents(p.priceCents)}
-                    </span>
-                  </button>
-                ))}
-              {orderable.length === 0 && (
-                <p className="px-4 py-6 text-center text-sm text-navy/50">
-                  No medications are enabled for online ordering yet.
-                </p>
-              )}
+          {prescribers.length === 0 ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-8 text-center">
+              <p className="text-[15px] font-semibold text-amber-900">
+                No prescriber on your profile yet
+              </p>
+              <p className="mx-auto mt-1 max-w-md text-sm text-amber-800/80">
+                Add at least one provider with their 10-digit NPI to your
+                account, then come back — it takes a minute.
+              </p>
+              <Link href="/dashboard/account" className={`mt-4 ${btnSecondary}`}>
+                Add a provider
+              </Link>
             </div>
-          </div>
+          ) : (
+            <>
+              <div className="mb-6">
+                <Labeled label="Prescribing provider" required>
+                  <select
+                    className={`${fieldClass} appearance-none`}
+                    value={prescriberNpi}
+                    onChange={(e) => setPrescriberNpi(e.target.value)}
+                  >
+                    <option value="" disabled>
+                      Select provider…
+                    </option>
+                    {prescribers.map((p) => (
+                      <option key={p.npi} value={p.npi.replace(/\D/g, "")}>
+                        {p.firstName} {p.lastName} — NPI {p.npi}
+                      </option>
+                    ))}
+                  </select>
+                </Labeled>
+              </div>
 
-          <WizardNav onBack={back} onNext={continueFromMeds} />
+              {rxs.map((rx, i) => {
+                const product = products.find((p) => p.id === rx.productId);
+                const presets = sigPresetsFor(product?.form);
+                const rxError = showErrors ? rxErrors[i] : undefined;
+                return (
+                  <Card
+                    key={`${rx.productId}-${i}`}
+                    className={`mb-4 ${rxError ? "ring-2 ring-red-200" : ""}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[15px] font-semibold text-navy">
+                          {product?.name ?? rx.productId}
+                        </p>
+                        <p className="mt-0.5 text-xs text-navy/55">
+                          {[product?.strength, product?.form].filter(Boolean).join(" · ")}
+                          {product?.priceCents != null &&
+                            ` · ${formatCents(product.priceCents)}`}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeRx(i)}
+                        aria-label={`Remove ${product?.name ?? "medication"}`}
+                        className="text-sm font-semibold text-navy/40 transition-colors hover:text-red-600"
+                      >
+                        Remove
+                      </button>
+                    </div>
+
+                    {rxError && (
+                      <p className="mt-3 rounded-xl bg-red-50 px-4 py-2.5 text-[13px] font-medium text-red-700">
+                        {rxError}
+                      </p>
+                    )}
+
+                    <div className="mt-4 grid gap-4">
+                      <Labeled label="Directions (sig)" required>
+                        <textarea
+                          aria-label="Directions (sig)"
+                          placeholder="e.g. Inject 10 units (0.10 mL) subcutaneously once weekly"
+                          rows={2}
+                          className={inputCls(!!rxError)}
+                          value={rx.directions}
+                          onChange={(e) => updateRx(i, { directions: e.target.value })}
+                        />
+                      </Labeled>
+                      {presets.length > 0 && rx.directions.trim() === "" && (
+                        <div className="-mt-2 flex flex-wrap gap-2">
+                          {presets.map((preset) => (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() => updateRx(i, { directions: preset })}
+                              className="rounded-full border border-beige bg-cream/60 px-3 py-1.5 text-xs font-medium text-navy/70 transition-colors hover:border-navy/30 hover:text-navy"
+                            >
+                              {preset.length > 52 ? `${preset.slice(0, 52)}…` : preset}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      <div className="grid grid-cols-3 gap-3">
+                        <Labeled
+                          label={`Quantity${product?.quantityUnits ? ` (${product.quantityUnits})` : ""}`}
+                        >
+                          <input
+                            inputMode="decimal"
+                            className={fieldClass}
+                            value={rx.quantity}
+                            onChange={(e) => updateRx(i, { quantity: e.target.value })}
+                          />
+                        </Labeled>
+                        <Labeled label="Days supply">
+                          <input
+                            type="number"
+                            min={1}
+                            placeholder="28"
+                            className={fieldClass}
+                            value={rx.daysSupply}
+                            onChange={(e) => updateRx(i, { daysSupply: e.target.value })}
+                          />
+                        </Labeled>
+                        <Labeled label="Refills">
+                          <input
+                            type="number"
+                            min={0}
+                            max={11}
+                            className={fieldClass}
+                            value={rx.refills}
+                            onChange={(e) => updateRx(i, { refills: e.target.value })}
+                          />
+                        </Labeled>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+
+              <div className="mb-2">
+                <p className="mb-2 text-[13px] font-semibold text-navy/70">
+                  {rxs.length === 0 ? "Add a medication" : "Add another medication"}
+                </p>
+                <input
+                  type="search"
+                  value={productQuery}
+                  onChange={(e) => setProductQuery(e.target.value)}
+                  placeholder="Search your catalog…"
+                  aria-label="Search medications"
+                  className={fieldClass}
+                />
+                <div className="mt-2 max-h-64 overflow-y-auto rounded-2xl border border-beige bg-white">
+                  {orderable
+                    .filter((p) => {
+                      const needle = productQuery.trim().toLowerCase();
+                      if (!needle) return true;
+                      return `${p.name} ${p.strength ?? ""} ${p.form}`
+                        .toLowerCase()
+                        .includes(needle);
+                    })
+                    .map((p) => {
+                      const added = rxCountByProduct.get(p.id) ?? 0;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => addRx(p)}
+                          className="flex w-full items-center justify-between gap-3 border-b border-beige/60 px-4 py-3 text-left transition-colors last:border-0 hover:bg-cream/60"
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-semibold text-navy">
+                              {p.name}
+                              {added > 0 && (
+                                <span className="ml-2 inline-flex items-center rounded-full bg-plum/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-plum">
+                                  Added{added > 1 ? ` ×${added}` : ""}
+                                </span>
+                              )}
+                            </span>
+                            <span className="block text-xs text-navy/50">
+                              {[p.strength, p.form].filter(Boolean).join(" · ")}
+                            </span>
+                          </span>
+                          <span className="flex shrink-0 items-center gap-2">
+                            <span className="text-sm font-semibold tabular-nums text-navy/70">
+                              {formatCents(p.priceCents)}
+                            </span>
+                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-plum/10 text-plum">
+                              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M6 2v8M2 6h8" strokeLinecap="round" />
+                              </svg>
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  {orderable.length === 0 && (
+                    <p className="px-4 py-6 text-center text-sm text-navy/50">
+                      No medications are enabled for online ordering yet —
+                      contact us to get your catalog set up.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <WizardNav onBack={() => goTo(0)} onNext={continueFromMeds} />
+            </>
+          )}
         </section>
       )}
 
+      {/* ------------------------------ step 3 ------------------------------ */}
       {step === 2 && (
         <section aria-label="Shipping">
-          <h2 className="mb-4 font-display text-2xl font-medium text-navy">
-            Shipping
+          <h2 className="mb-1 font-display text-2xl font-medium text-navy">
+            Where should it ship?
           </h2>
+          <p className="mb-5 text-[15px] text-navy/55">
+            The pharmacy ships directly — nothing goes through us.
+          </p>
 
-          <div className="mb-5 flex gap-2" role="radiogroup" aria-label="Ship to">
-            {(
-              [
+          <div className="mb-4">
+            <PillToggle
+              ariaLabel="Ship to"
+              value={shipping.recipientType}
+              options={[
                 ["patient", "Ship to patient"],
                 ["clinic", "Ship to clinic"],
-              ] as const
-            ).map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                role="radio"
-                aria-checked={shipping.recipientType === value}
-                onClick={() =>
-                  setShipping((s) => ({ ...s, recipientType: value }))
-                }
-                className={`flex-1 rounded-full px-4 py-2.5 text-sm font-semibold transition-all ${
-                  shipping.recipientType === value
-                    ? "bg-plum text-white shadow-soft"
-                    : "border border-beige bg-white text-navy/60 hover:border-navy/30"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+              ]}
+              onChange={(value) =>
+                setShipping((s) => ({ ...s, recipientType: value }))
+              }
+            />
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <TextField
+          {selectedPatient?.address1 && (
+            <button
+              type="button"
+              onClick={applyPatientAddress}
+              className="mb-5 inline-flex items-center gap-1.5 text-sm font-semibold text-magenta hover:underline"
+            >
+              Use {selectedPatient.firstName}&rsquo;s address on file
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M2 6h8M7 3l3 3-3 3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          )}
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Labeled
               label="Recipient first name"
-              placeholder="Recipient first name *"
-              value={shipping.recipientFirstName}
-              onChange={(e) =>
-                setShipping({ ...shipping, recipientFirstName: e.target.value })
-              }
-            />
-            <TextField
+              required
+              error={showErrors ? shippingErrors.recipientFirstName : undefined}
+            >
+              <input
+                className={inputCls(showErrors && !!shippingErrors.recipientFirstName)}
+                value={shipping.recipientFirstName}
+                onChange={(e) =>
+                  setShipping({ ...shipping, recipientFirstName: e.target.value })
+                }
+              />
+            </Labeled>
+            <Labeled
               label="Recipient last name"
-              placeholder="Recipient last name *"
-              value={shipping.recipientLastName}
-              onChange={(e) =>
-                setShipping({ ...shipping, recipientLastName: e.target.value })
-              }
-            />
-            <TextField
+              required
+              error={showErrors ? shippingErrors.recipientLastName : undefined}
+            >
+              <input
+                className={inputCls(showErrors && !!shippingErrors.recipientLastName)}
+                value={shipping.recipientLastName}
+                onChange={(e) =>
+                  setShipping({ ...shipping, recipientLastName: e.target.value })
+                }
+              />
+            </Labeled>
+            <Labeled
               label="Phone"
-              placeholder="Phone"
-              value={shipping.recipientPhone}
-              onChange={(e) =>
-                setShipping({ ...shipping, recipientPhone: e.target.value })
-              }
-            />
-            <TextField
+              hint="For delivery updates from the carrier."
+              error={showErrors ? shippingErrors.recipientPhone : undefined}
+            >
+              <input
+                inputMode="tel"
+                placeholder="(305) 555-0100"
+                className={inputCls(showErrors && !!shippingErrors.recipientPhone)}
+                value={shipping.recipientPhone}
+                onChange={(e) =>
+                  setShipping({ ...shipping, recipientPhone: e.target.value })
+                }
+                onBlur={() => formatPhoneOnBlur("recipientPhone")}
+              />
+            </Labeled>
+            <Labeled
               label="Email"
-              type="email"
-              placeholder="Email"
-              value={shipping.recipientEmail}
-              onChange={(e) =>
-                setShipping({ ...shipping, recipientEmail: e.target.value })
-              }
-            />
-            <div className="sm:col-span-2">
-              <TextField
-                label="Street address"
-                placeholder="Street address *"
+              error={showErrors ? shippingErrors.recipientEmail : undefined}
+            >
+              <input
+                type="email"
+                className={inputCls(showErrors && !!shippingErrors.recipientEmail)}
+                value={shipping.recipientEmail}
+                onChange={(e) =>
+                  setShipping({ ...shipping, recipientEmail: e.target.value })
+                }
+              />
+            </Labeled>
+            <Labeled
+              label="Street address"
+              required
+              className="sm:col-span-2"
+              error={showErrors ? shippingErrors.addressLine1 : undefined}
+            >
+              <input
+                className={inputCls(showErrors && !!shippingErrors.addressLine1)}
                 value={shipping.addressLine1}
                 onChange={(e) =>
                   setShipping({ ...shipping, addressLine1: e.target.value })
                 }
               />
-            </div>
-            <div className="sm:col-span-2">
-              <TextField
-                label="Suite / unit"
-                placeholder="Suite / unit"
+            </Labeled>
+            <Labeled label="Suite / unit" className="sm:col-span-2">
+              <input
+                className={fieldClass}
                 value={shipping.addressLine2}
                 onChange={(e) =>
                   setShipping({ ...shipping, addressLine2: e.target.value })
                 }
               />
-            </div>
-            <TextField
+            </Labeled>
+            <Labeled
               label="City"
-              placeholder="City *"
-              value={shipping.city}
-              onChange={(e) => setShipping({ ...shipping, city: e.target.value })}
-            />
-            <div className="grid grid-cols-2 gap-3">
-              <TextField
+              required
+              error={showErrors ? shippingErrors.city : undefined}
+            >
+              <input
+                className={inputCls(showErrors && !!shippingErrors.city)}
+                value={shipping.city}
+                onChange={(e) => setShipping({ ...shipping, city: e.target.value })}
+              />
+            </Labeled>
+            <div className="grid grid-cols-2 gap-4">
+              <Labeled
                 label="State"
-                placeholder="State *"
-                maxLength={2}
-                value={shipping.state}
-                onChange={(e) =>
-                  setShipping({ ...shipping, state: e.target.value })
-                }
-              />
-              <TextField
+                required
+                error={showErrors ? shippingErrors.state : undefined}
+              >
+                <input
+                  maxLength={2}
+                  placeholder="FL"
+                  className={`${inputCls(showErrors && !!shippingErrors.state)} uppercase`}
+                  value={shipping.state}
+                  onChange={(e) => setShipping({ ...shipping, state: e.target.value })}
+                />
+              </Labeled>
+              <Labeled
                 label="ZIP"
-                placeholder="ZIP *"
-                value={shipping.zipCode}
-                onChange={(e) =>
-                  setShipping({ ...shipping, zipCode: e.target.value })
-                }
-              />
+                required
+                error={showErrors ? shippingErrors.zipCode : undefined}
+              >
+                <input
+                  inputMode="numeric"
+                  placeholder="33101"
+                  className={inputCls(showErrors && !!shippingErrors.zipCode)}
+                  value={shipping.zipCode}
+                  onChange={(e) =>
+                    setShipping({ ...shipping, zipCode: e.target.value })
+                  }
+                />
+              </Labeled>
             </div>
-            <div className="sm:col-span-2">
-              <SelectField
-                label="Shipping method"
-                placeholder="Shipping method (account default)"
+            <Labeled
+              label="Shipping speed"
+              hint="Leave on account default unless this order needs something specific."
+              className="sm:col-span-2"
+            >
+              <select
+                className={`${fieldClass} appearance-none`}
                 value={shipping.serviceId}
-                options={services.map((s) => ({
-                  value: String(s.id),
-                  label: s.name,
-                }))}
                 onChange={(e) =>
                   setShipping({ ...shipping, serviceId: e.target.value })
                 }
-              />
-            </div>
+              >
+                <option value="">Account default</option>
+                {services.map((s) => (
+                  <option key={s.id} value={String(s.id)}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </Labeled>
           </div>
 
-          <WizardNav onBack={back} onNext={continueFromShipping} />
+          <WizardNav onBack={() => goTo(1)} onNext={continueFromShipping} />
         </section>
       )}
 
+      {/* ------------------------------ step 4 ------------------------------ */}
       {step === 3 && (
         <section aria-label="Review">
-          <h2 className="mb-4 font-display text-2xl font-medium text-navy">
+          <h2 className="mb-1 font-display text-2xl font-medium text-navy">
             Review &amp; submit
           </h2>
+          <p className="mb-5 text-[15px] text-navy/55">
+            One last look — then it goes straight to the pharmacy.
+          </p>
 
           <div className="grid gap-4">
             <Card>
@@ -837,7 +1371,7 @@ export default function OrderWizard({
                 </h3>
                 <button
                   type="button"
-                  onClick={() => setStep(0)}
+                  onClick={() => goTo(0)}
                   className="text-sm font-semibold text-magenta hover:underline"
                 >
                   Edit
@@ -860,7 +1394,7 @@ export default function OrderWizard({
                 </h3>
                 <button
                   type="button"
-                  onClick={() => setStep(1)}
+                  onClick={() => goTo(1)}
                   className="text-sm font-semibold text-magenta hover:underline"
                 >
                   Edit
@@ -884,16 +1418,36 @@ export default function OrderWizard({
                         {product?.priceCents != null && (
                           <span className="text-sm font-semibold tabular-nums text-navy/70">
                             {formatCents(product.priceCents)}
+                            {rx.quantity && Number(rx.quantity) > 1
+                              ? ` × ${rx.quantity}`
+                              : ""}
                           </span>
                         )}
                       </div>
-                      <p className="mt-0.5 text-sm text-navy/60">
-                        {rx.directions}
+                      <p className="mt-0.5 text-sm text-navy/60">{rx.directions}</p>
+                      <p className="mt-1 text-xs text-navy/45">
+                        {[
+                          rx.quantity ? `Qty ${rx.quantity}` : null,
+                          rx.daysSupply ? `${rx.daysSupply}-day supply` : null,
+                          `${rx.refills || 0} refill${rx.refills === "1" ? "" : "s"}`,
+                        ]
+                          .filter(Boolean)
+                          .join("  ·  ")}
                       </p>
                     </div>
                   );
                 })}
               </div>
+              {estimatedTotal !== null && (
+                <div className="mt-3 flex items-center justify-between border-t border-beige pt-3">
+                  <span className="text-sm font-semibold text-navy/60">
+                    Estimated total
+                  </span>
+                  <span className="text-base font-bold tabular-nums text-navy">
+                    {formatCents(estimatedTotal)}
+                  </span>
+                </div>
+              )}
             </Card>
 
             <Card>
@@ -903,7 +1457,7 @@ export default function OrderWizard({
                 </h3>
                 <button
                   type="button"
-                  onClick={() => setStep(2)}
+                  onClick={() => goTo(2)}
                   className="text-sm font-semibold text-magenta hover:underline"
                 >
                   Edit
@@ -917,14 +1471,14 @@ export default function OrderWizard({
                 {[
                   shipping.addressLine1,
                   shipping.addressLine2,
-                  `${shipping.city}, ${shipping.state} ${shipping.zipCode}`,
+                  `${shipping.city}, ${shipping.state.toUpperCase()} ${shipping.zipCode}`,
                 ]
                   .filter(Boolean)
                   .join(", ")}
               </p>
               <p className="mt-1 text-sm text-navy/60">
-                {services.find((s) => String(s.id) === shipping.serviceId)
-                  ?.name ?? "Account default shipping"}
+                {services.find((s) => String(s.id) === shipping.serviceId)?.name ??
+                  "Account default shipping"}
               </p>
             </Card>
 
@@ -932,43 +1486,32 @@ export default function OrderWizard({
               <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-navy/50">
                 Billing &amp; notes
               </h3>
-              <div className="mb-3 flex gap-2" role="radiogroup" aria-label="Billing">
-                {(
-                  [
-                    ["doc", "Bill my clinic"],
-                    ["pat", "Bill the patient"],
-                  ] as const
-                ).map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    role="radio"
-                    aria-checked={payorType === value}
-                    onClick={() => setPayorType(value)}
-                    className={`flex-1 rounded-full px-4 py-2.5 text-sm font-semibold transition-all ${
-                      payorType === value
-                        ? "bg-plum text-white shadow-soft"
-                        : "border border-beige bg-white text-navy/60 hover:border-navy/30"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-              <TextField
-                label="Memo"
-                placeholder="Memo for the pharmacy (optional)"
-                maxLength={120}
-                value={memo}
-                onChange={(e) => setMemo(e.target.value)}
+              <PillToggle
+                ariaLabel="Billing"
+                value={payorType}
+                options={[
+                  ["doc", "Bill my clinic"],
+                  ["pat", "Bill the patient"],
+                ]}
+                onChange={setPayorType}
               />
+              <div className="mt-3">
+                <Labeled label="Memo for the pharmacy" hint="Optional, max 120 characters.">
+                  <input
+                    maxLength={120}
+                    className={fieldClass}
+                    value={memo}
+                    onChange={(e) => setMemo(e.target.value)}
+                  />
+                </Labeled>
+              </div>
             </Card>
           </div>
 
           <div className="mt-8 flex items-center gap-3">
             <button
               type="button"
-              onClick={back}
+              onClick={() => goTo(2)}
               className={btnSecondary}
               disabled={busy}
             >
@@ -980,12 +1523,28 @@ export default function OrderWizard({
               disabled={busy}
               className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-magenta text-[15px] font-semibold text-white transition-all hover:bg-magenta-dark active:scale-[0.99] disabled:opacity-60"
             >
-              {busy ? "Sending to pharmacy…" : "Submit order"}
+              {busy ? (
+                <>
+                  <svg
+                    className="h-4 w-4 animate-spin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.25" />
+                    <path d="M22 12a10 10 0 00-10-10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                  </svg>
+                  Sending to pharmacy…
+                </>
+              ) : (
+                "Submit order"
+              )}
             </button>
           </div>
           <p className="mt-3 text-center text-xs text-navy/45">
-            Submitting sends this prescription to Logos Pharmacy for
-            fulfillment.
+            Submitting sends this prescription to Logos Pharmacy for fulfillment.
+            It&rsquo;s safe to retry if your connection drops — we never create
+            duplicates.
           </p>
         </section>
       )}
@@ -1000,64 +1559,4 @@ export default function OrderWizard({
       </p>
     </div>
   );
-}
-
-function WizardNav({
-  onBack,
-  onNext,
-  showBack = true,
-}: {
-  onBack?: () => void;
-  onNext: () => void;
-  showBack?: boolean;
-}) {
-  return (
-    <div className="mt-8 flex items-center gap-3">
-      {showBack && (
-        <button
-          type="button"
-          onClick={onBack}
-          aria-label="Go back"
-          className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border border-beige-dark bg-white text-navy transition-all hover:border-navy/40 active:scale-95"
-        >
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path
-              d="M11 4L6 9l5 5"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-      )}
-      <button
-        type="button"
-        onClick={onNext}
-        className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-plum text-[15px] font-semibold text-white transition-all hover:bg-plum-deep active:scale-[0.99]"
-      >
-        Continue
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path
-            d="M3 8h10M8 3l5 5-5 5"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
-    </div>
-  );
-}
-
-function orderableIds(products: OrderableProduct[]): Set<string> {
-  return new Set(products.filter((p) => p.orderable).map((p) => p.id));
-}
-
-function splitList(value: string): string[] {
-  return value
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
 }
