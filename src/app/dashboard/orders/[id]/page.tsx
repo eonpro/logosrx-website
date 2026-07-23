@@ -15,6 +15,7 @@ import {
   getClinicOrderingContext,
 } from "@/lib/orders/data";
 import { shippingServiceName } from "@/lib/lifefile/constants";
+import { CONTACT } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Order detail",
@@ -78,9 +79,19 @@ export default async function OrderDetailPage({
         }
       />
 
-      <div className="mb-6 flex items-center gap-3">
+      <div className="mb-6 flex flex-wrap items-center gap-3">
         <Badge tone={ui.tone}>{ui.label}</Badge>
         <p className="text-sm text-navy/60">{ui.description}</p>
+        {(order.status === "pharmacy_rejected" || order.status === "failed") && (
+          <a
+            href={`mailto:${CONTACT.email}?subject=${encodeURIComponent(
+              `Order ${order.lfOrderId ? `#${order.lfOrderId}` : order.referenceId} needs attention`,
+            )}`}
+            className="text-sm font-semibold text-magenta hover:underline"
+          >
+            Contact us about this order
+          </a>
+        )}
       </div>
 
       <div className="grid gap-4">
