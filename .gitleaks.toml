@@ -31,9 +31,10 @@ regexes = [
   # Matched as exact literals so real lowercase/uppercase secrets still trip.
   '''abcdefghjkmnpqrstuvwxyz23456789''',
   '''ABCDEFGHJKMNPQRSTUVWXYZ23456789''',
-  # Fake wizard submission key used in src/lib/orders/validation.test.ts
-  # (idempotency-token fixture). Lives in git history; exact literal only.
+  # Fake wizard submission keys used in src/lib/orders/validation.test.ts
+  # (idempotency-token fixture). Both live in git history; exact literals only.
   '''wiz_1a2b3c4d5e6f''',
+  '''test-submission-key-0001''',
 ]
 
 paths = [

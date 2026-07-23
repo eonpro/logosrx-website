@@ -37,7 +37,8 @@ function validSubmission() {
         refills: "0",
       },
     ],
-    submissionKey: "test-submission-key-0001",
+    // Low-entropy on purpose: anything key-like here trips gitleaks' scan.
+    submissionKey: "aaaa-bbbb-cccc-0001",
   };
 }
 
