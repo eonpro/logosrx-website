@@ -35,9 +35,10 @@ export function shippingServiceName(id: number | null | undefined): string {
 }
 
 /**
- * DEA schedule codes LifeFile accepts on `rxs[].scheduleCode`. Schedules 2-5
- * are controlled substances — blocked from in-app ordering (LifeFile requires
- * a signed prescription PDF for those; not part of v1).
+ * DEA schedule codes LifeFile accepts on `rxs[].scheduleCode`. Schedules 2–5
+ * stay blocked from in-app ordering for now (compliance / product gate). Every
+ * order already attaches `order.document.pdfBase64`, which LifeFile requires
+ * for controlled substances when that gate is lifted.
  */
 export const CONTROLLED_SCHEDULE_CODES = ["2", "3", "4", "5"] as const;
 

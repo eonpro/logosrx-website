@@ -3,7 +3,8 @@
  * Postgres and the LifeFile STUB client (no live pharmacy traffic).
  *
  *   DATABASE_URL=postgres://... LIFEFILE_MODE=stub \
- *     NODE_OPTIONS=--conditions=react-server npx tsx scripts/verify-lifefile-stub.ts
+ *     NODE_OPTIONS="--require ./scripts/shim-server-only.cjs" \
+ *     npx tsx scripts/verify-lifefile-stub.ts
  *
  * Seeds a verified clinic (ordering enabled), a patient, and a mapped catalog
  * SKU, then exercises the pipeline: gate rejection, happy path, idempotent
@@ -159,6 +160,14 @@ async function main() {
       .where(eq(orders.id, result.orderId));
     check("raw request persisted", row.rawRequest != null);
     check("raw response persisted", row.rawResponse != null);
+    const rawJson = JSON.stringify(row.rawRequest);
+    check(
+      "prescription pdf attached and redacted in stored request",
+      rawJson.includes('"document"') &&
+        rawJson.includes("<omitted:") &&
+        rawJson.includes("base64 chars"),
+      rawJson.slice(0, 300),
+    );
     check(
       "practice id stamped in payload",
       JSON.stringify(row.rawRequest).includes('"practice":{"id":424242}'),
