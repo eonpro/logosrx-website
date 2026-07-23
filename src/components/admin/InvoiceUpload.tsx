@@ -13,16 +13,24 @@ const labelClass =
  * Uploads a pharmacy invoice PDF for an attributed clinic. The server stores
  * the PDF privately and records the sale as a transaction, so the clinic's
  * partner org / sales rep gets commission credit automatically.
+ *
+ * Two modes:
+ *   - `clinics` list → shows a clinic picker (Partners → Transactions page).
+ *   - `fixedClinic`  → pinned to one clinic (the clinic profile page).
  */
 export default function InvoiceUpload({
-  clinics,
+  clinics = [],
+  fixedClinic,
 }: {
-  clinics: { id: number; label: string }[];
+  clinics?: { id: number; label: string }[];
+  fixedClinic?: { id: number; name: string };
 }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
-  const [clinicId, setClinicId] = useState("");
+  const [clinicId, setClinicId] = useState(
+    fixedClinic ? String(fixedClinic.id) : "",
+  );
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [amount, setAmount] = useState("");
   const [cost, setCost] = useState("");
@@ -97,8 +105,9 @@ export default function InvoiceUpload({
     <div className="rounded-3xl border border-beige/70 bg-white p-6 shadow-soft sm:p-7">
       <h2 className="text-sm font-semibold text-navy">Upload an invoice</h2>
       <p className="mt-1 text-xs text-navy/60">
-        Attach a pharmacy invoice PDF to an attributed clinic — the sale is
-        recorded and the sales rep&apos;s commission is credited automatically.
+        {fixedClinic
+          ? `Attach a pharmacy invoice PDF to ${fixedClinic.name} — the sale is recorded and the sales rep's commission is credited automatically.`
+          : "Attach a pharmacy invoice PDF to an attributed clinic — the sale is recorded and the sales rep's commission is credited automatically."}
       </p>
       <form
         className="mt-4 flex flex-col gap-3"
@@ -118,22 +127,24 @@ export default function InvoiceUpload({
             className="rounded-2xl border border-beige-dark bg-white px-3.5 py-2 text-sm text-navy file:mr-3 file:rounded-full file:border-0 file:bg-cream file:px-4 file:py-1.5 file:text-xs file:font-semibold file:text-navy/70"
           />
         </label>
-        <label className="flex flex-col gap-1">
-          <span className={labelClass}>Clinic (attributed only)</span>
-          <select
-            value={clinicId}
-            onChange={(e) => setClinicId(e.target.value)}
-            className={inputClass}
-            required
-          >
-            <option value="">Select a clinic…</option>
-            {clinics.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        {!fixedClinic && (
+          <label className="flex flex-col gap-1">
+            <span className={labelClass}>Clinic (attributed only)</span>
+            <select
+              value={clinicId}
+              onChange={(e) => setClinicId(e.target.value)}
+              className={inputClass}
+              required
+            >
+              <option value="">Select a clinic…</option>
+              {clinics.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <div className="flex gap-3">
           <label className="flex flex-1 flex-col gap-1">
             <span className={labelClass}>Invoice date</span>
