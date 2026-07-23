@@ -137,6 +137,33 @@ export async function notifyNewPartnerApplication(args: {
   });
 }
 
+/**
+ * Alerts ops that an in-app prescription order failed to reach the pharmacy
+ * (LifeFile rejection or transport failure). The order row holds the raw
+ * request/response for follow-up; this ping is intentionally PHI-free.
+ */
+export async function notifyOrderProblem(args: {
+  clinicName: string;
+  orderId: number;
+  referenceId: string;
+  status: string;
+  reason: string;
+}): Promise<void> {
+  await postToSlack({
+    header: "⚠️ Prescription order needs attention",
+    fields: [
+      { label: "Clinic", value: args.clinicName || "—" },
+      { label: "Order", value: `#${args.orderId} (${args.referenceId})` },
+      { label: "Status", value: args.status },
+      { label: "Reason", value: args.reason || "—" },
+    ],
+    contextLink: {
+      text: "Review in admin →",
+      url: `${SITE_URL}/admin/orders`,
+    },
+  });
+}
+
 /** Notifies admins that a clinic finished onboarding and needs verification. */
 export async function notifyNewClinic(
   n: NewClinicNotification,

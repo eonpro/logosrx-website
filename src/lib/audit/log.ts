@@ -19,7 +19,7 @@ import type { PartnerContext } from "@/lib/auth/partner";
  * INSERT/SELECT on `audit_events` so rows can never be updated or deleted.
  */
 
-export type AuditActorType = "admin" | "partner" | "system";
+export type AuditActorType = "admin" | "partner" | "clinic" | "system";
 
 export interface AuditInput {
   actorType: AuditActorType;

@@ -9,6 +9,7 @@ import { displayFont } from "@/lib/fonts";
 
 const TABS = [
   { href: "/dashboard", label: "Storefront" },
+  { href: "/dashboard/orders", label: "Orders" },
   { href: "/dashboard/account", label: "Account" },
 ] as const;
 

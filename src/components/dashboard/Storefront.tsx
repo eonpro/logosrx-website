@@ -25,6 +25,12 @@ interface StorefrontProps {
   promotions: StorefrontPromotion[];
   featuredIds: FeaturedRef[];
   lifefileUrl: string;
+  /**
+   * SKU ids the clinic can prescribe in-app. Their "Prescribe" CTA routes to
+   * the order wizard; everything else keeps the external LifeFile hand-off.
+   * Empty when in-app ordering isn't enabled for this clinic.
+   */
+  orderableIds?: string[];
 }
 
 export default function Storefront({
@@ -34,9 +40,12 @@ export default function Storefront({
   promotions,
   featuredIds,
   lifefileUrl,
+  orderableIds = [],
 }: StorefrontProps) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
+
+  const orderableSet = useMemo(() => new Set(orderableIds), [orderableIds]);
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -156,6 +165,7 @@ export default function Storefront({
                 key={`featured-${product.id}`}
                 p={product}
                 lifefileUrl={lifefileUrl}
+                orderable={orderableSet.has(product.id)}
                 featuredLabel={label}
                 highlight
               />
@@ -209,7 +219,12 @@ export default function Storefront({
         ) : (
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map((p) => (
-              <ProductCard key={p.id} p={p} lifefileUrl={lifefileUrl} />
+              <ProductCard
+                key={p.id}
+                p={p}
+                lifefileUrl={lifefileUrl}
+                orderable={orderableSet.has(p.id)}
+              />
             ))}
           </div>
         )}
@@ -426,11 +441,14 @@ function PromotionCard({
 function ProductCard({
   p,
   lifefileUrl,
+  orderable,
   featuredLabel,
   highlight,
 }: {
   p: StorefrontProduct;
   lifefileUrl: string;
+  /** True when this SKU can be prescribed through the in-app order wizard. */
+  orderable?: boolean;
   featuredLabel?: string | null;
   highlight?: boolean;
 }) {
@@ -496,14 +514,23 @@ function ProductCard({
         )}
 
         <div className="mt-4 flex items-center gap-2">
-          <a
-            href={lifefileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 rounded-full bg-plum px-4 py-2 text-center text-sm font-semibold text-white transition-all hover:bg-plum-deep active:scale-[0.98]"
-          >
-            Prescribe
-          </a>
+          {orderable ? (
+            <Link
+              href={`/dashboard/orders/new?product=${encodeURIComponent(p.id)}`}
+              className="flex-1 rounded-full bg-plum px-4 py-2 text-center text-sm font-semibold text-white transition-all hover:bg-plum-deep active:scale-[0.98]"
+            >
+              Prescribe
+            </Link>
+          ) : (
+            <a
+              href={lifefileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 rounded-full bg-plum px-4 py-2 text-center text-sm font-semibold text-white transition-all hover:bg-plum-deep active:scale-[0.98]"
+            >
+              Prescribe
+            </a>
+          )}
           {p.detailSlug && (
             <Link
               href={`/products/${p.detailSlug}`}

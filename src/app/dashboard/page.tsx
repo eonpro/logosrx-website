@@ -12,6 +12,7 @@ import {
 } from "@/lib/portal/merchandising";
 import { getPrimaryEmail, roleForEmail } from "@/lib/auth/admin";
 import { getPartnerContext } from "@/lib/auth/partner";
+import { getOrderableProductIds } from "@/lib/orders/products";
 import { btnSecondary } from "@/components/ui/portal";
 import { SITE } from "@/lib/constants";
 
@@ -69,9 +70,13 @@ export default async function DashboardPage() {
   });
   // Merchandising is supplementary — never let it take down the clinic's main
   // page (e.g. before the merchandising tables are migrated). Degrade to empty.
-  const [promotions, featuredIds] = await Promise.all([
+  const [promotions, featuredIds, orderableIds] = await Promise.all([
     getActivePromotions(storefront.pricingTier).catch(() => []),
     getFeaturedProductIds().catch(() => []),
+    // In-app ordering is additive — degrade to the LifeFile hand-off.
+    gate.orderingEnabled
+      ? getOrderableProductIds().catch(() => new Set<string>())
+      : Promise.resolve(new Set<string>()),
   ]);
 
   return (
@@ -82,6 +87,7 @@ export default async function DashboardPage() {
       promotions={promotions}
       featuredIds={featuredIds}
       lifefileUrl={SITE.lifefilePortal}
+      orderableIds={[...orderableIds]}
     />
   );
 }
