@@ -6,6 +6,7 @@ import { desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   cardAccessLog,
+  clinicApiKeys,
   clinicNotes,
   clinicPayments,
   clinicPricing,
@@ -125,7 +126,7 @@ export default async function ClinicDetailPage({
         .limit(1)
     : [];
 
-  const [notes, priceItems, accessLog] = await Promise.all([
+  const [notes, priceItems, accessLog, apiKeys] = await Promise.all([
     db
       .select()
       .from(clinicNotes)
@@ -142,6 +143,11 @@ export default async function ClinicDetailPage({
       .where(eq(cardAccessLog.clinicId, id))
       .orderBy(desc(cardAccessLog.createdAt))
       .limit(10),
+    db
+      .select()
+      .from(clinicApiKeys)
+      .where(eq(clinicApiKeys.clinicId, id))
+      .orderBy(desc(clinicApiKeys.createdAt)),
   ]);
 
   // Split clinic pricing rows into catalog overrides (keyed by SKU) and ad-hoc
@@ -369,6 +375,14 @@ export default async function ClinicDetailPage({
             practiceId: clinic.lifefilePracticeId,
             defaultServiceId: clinic.lifefileDefaultServiceId,
           }}
+          apiKeys={apiKeys.map((k) => ({
+            id: k.id,
+            name: k.name,
+            keyPrefix: k.keyPrefix,
+            lastUsedAt: k.lastUsedAt?.toISOString() ?? null,
+            revokedAt: k.revokedAt?.toISOString() ?? null,
+            createdAt: k.createdAt.toISOString(),
+          }))}
           catalog={catalog}
           customItems={customItems}
           notes={notes.map((n) => ({

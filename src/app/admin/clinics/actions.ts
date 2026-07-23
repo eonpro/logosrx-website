@@ -6,11 +6,13 @@ import { db } from "@/lib/db";
 import {
   cardAccessLog,
   cardUpdateLinks,
+  clinicApiKeys,
   clinicNotes,
   clinicPayments,
   clinicPricing,
   clinics,
 } from "@/lib/db/schema";
+import { mintClinicApiKey } from "@/lib/orders/api-auth";
 import { ADMIN_ROLE, requireAdmin } from "@/lib/auth/admin";
 import { recordAdminAudit } from "@/lib/audit/log";
 import { verifyAdminPassword } from "@/lib/auth/step-up";
@@ -194,6 +196,84 @@ export async function setClinicLifeFile(
 
   revalidatePath(`/admin/clinics/${id}`);
   revalidatePath("/dashboard");
+  return { ok: true };
+}
+
+export interface MintClinicKeyResult {
+  ok: boolean;
+  /** Full plaintext key — displayed once, never retrievable again. */
+  plaintext?: string;
+  error?: string;
+}
+
+/**
+ * Mints an API key for the clinic ordering API (`/api/clinic/v1/*`). Keys
+ * are admin-issued (a clinic asks us to provision one for their platform or
+ * EMR). The plaintext is returned once; only the SHA-256 hash is stored.
+ */
+export async function mintClinicOrderingKey(
+  clinicId: number,
+  name: string,
+): Promise<MintClinicKeyResult> {
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(clinicId, "clinic id");
+  const label = name.trim().slice(0, 120);
+  if (!label) return { ok: false, error: "Give the key a name." };
+
+  const [clinic] = await db
+    .select({ id: clinics.id })
+    .from(clinics)
+    .where(eq(clinics.id, clinicId))
+    .limit(1);
+  if (!clinic) return { ok: false, error: "Clinic not found." };
+
+  const minted = mintClinicApiKey();
+  await db.insert(clinicApiKeys).values({
+    clinicId,
+    name: label,
+    keyPrefix: minted.keyPrefix,
+    keyHash: minted.keyHash,
+    createdBy: ctx.userId,
+  });
+
+  await recordAdminAudit(
+    ctx,
+    "clinic.api_key_mint",
+    { type: "clinic", id: clinicId },
+    { name: label, keyPrefix: minted.keyPrefix },
+  );
+
+  revalidatePath(`/admin/clinics/${clinicId}`);
+  return { ok: true, plaintext: minted.plaintext };
+}
+
+/** Revokes a clinic ordering-API key. Idempotent; audited. */
+export async function revokeClinicOrderingKey(
+  clinicId: number,
+  keyId: number,
+): Promise<{ ok: boolean; error?: string }> {
+  const ctx = await requireAdmin({ minRole: ADMIN_ROLE });
+  assertId(clinicId, "clinic id");
+  assertId(keyId, "key id");
+
+  const res = await db
+    .update(clinicApiKeys)
+    .set({ revokedAt: new Date() })
+    // Both conditions so a key can't be revoked through another clinic's page.
+    .where(
+      and(eq(clinicApiKeys.id, keyId), eq(clinicApiKeys.clinicId, clinicId)),
+    )
+    .returning({ id: clinicApiKeys.id, keyPrefix: clinicApiKeys.keyPrefix });
+  if (!res.length) return { ok: false, error: "Key not found." };
+
+  await recordAdminAudit(
+    ctx,
+    "clinic.api_key_revoke",
+    { type: "clinic", id: clinicId },
+    { keyId, keyPrefix: res[0].keyPrefix },
+  );
+
+  revalidatePath(`/admin/clinics/${clinicId}`);
   return { ok: true };
 }
 
