@@ -12,7 +12,7 @@ import {
 import { requireAdmin } from "@/lib/auth/admin";
 import { formatCents } from "@/lib/partners/commission";
 import TransactionEntry from "./TransactionEntry";
-import InvoiceUpload from "./InvoiceUpload";
+import InvoiceUpload from "@/components/admin/InvoiceUpload";
 import RefundButton from "./RefundButton";
 import {
   EmptyState,

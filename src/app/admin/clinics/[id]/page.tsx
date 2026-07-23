@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   cardAccessLog,
@@ -10,8 +10,10 @@ import {
   clinicPayments,
   clinicPricing,
   clinics,
+  commissionEntries,
   partnerOrgs,
   partnerReps,
+  partnerTransactions,
 } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/auth/admin";
 import {
@@ -31,7 +33,17 @@ import {
 } from "@/lib/payment-links/data";
 import { SITE_URL } from "@/lib/constants";
 import ClinicManager from "./ClinicManager";
-import { Card, PageHeader, btnGhost } from "@/components/ui/portal";
+import InvoiceUpload from "@/components/admin/InvoiceUpload";
+import { formatCents } from "@/lib/partners/commission";
+import {
+  Card,
+  EmptyState,
+  PageHeader,
+  btnGhost,
+  rowClass,
+  tableWrapClass,
+  theadClass,
+} from "@/components/ui/portal";
 
 /**
  * Filled, semantically-colored status pill for the page header. Verification
@@ -125,7 +137,7 @@ export default async function ClinicDetailPage({
         .limit(1)
     : [];
 
-  const [notes, priceItems, accessLog] = await Promise.all([
+  const [notes, priceItems, accessLog, invoiceTransactions] = await Promise.all([
     db
       .select()
       .from(clinicNotes)
@@ -142,6 +154,32 @@ export default async function ClinicDetailPage({
       .where(eq(cardAccessLog.clinicId, id))
       .orderBy(desc(cardAccessLog.createdAt))
       .limit(10),
+    // This clinic's recorded sales (any source) with their commission totals,
+    // so an uploaded invoice shows its rep credit right on the profile.
+    db
+      .select({
+        id: partnerTransactions.id,
+        transactionDate: partnerTransactions.transactionDate,
+        description: partnerTransactions.description,
+        reference: partnerTransactions.reference,
+        revenueCents: partnerTransactions.revenueCents,
+        refundedCents: partnerTransactions.refundedCents,
+        source: partnerTransactions.source,
+        invoicePathname: partnerTransactions.invoicePathname,
+        commissionCents:
+          sql<number>`coalesce(sum(${commissionEntries.amountCents}), 0)`.mapWith(
+            Number,
+          ),
+      })
+      .from(partnerTransactions)
+      .leftJoin(
+        commissionEntries,
+        eq(commissionEntries.transactionId, partnerTransactions.id),
+      )
+      .where(eq(partnerTransactions.clinicId, id))
+      .groupBy(partnerTransactions.id)
+      .orderBy(desc(partnerTransactions.transactionDate))
+      .limit(50),
   ]);
 
   // Split clinic pricing rows into catalog overrides (keyed by SKU) and ad-hoc
@@ -378,6 +416,104 @@ export default async function ClinicDetailPage({
             createdAt: n.createdAt.toISOString(),
           }))}
         />
+      </div>
+
+      {/* Invoices & commission: upload a pharmacy invoice for this clinic and
+          see every recorded sale (with the rep credit it generated). */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_1fr]">
+        {clinic.partnerOrgId ? (
+          <InvoiceUpload fixedClinic={{ id: clinic.id, name }} />
+        ) : (
+          <Card>
+            <h2 className="text-sm font-semibold text-navy">
+              Upload an invoice
+            </h2>
+            <p className="mt-2 text-sm text-navy/60">
+              This clinic isn&apos;t attributed to a partner org, so there&apos;s
+              no sales rep to credit. Set the attribution first (via the
+              partner&apos;s referral link or a data fix), then upload invoices
+              here.
+            </p>
+          </Card>
+        )}
+
+        <div className={`${tableWrapClass} overflow-x-auto`}>
+          <div className="border-b border-beige px-5 py-4">
+            <h2 className="text-sm font-semibold text-navy">
+              Recorded sales ({invoiceTransactions.length})
+            </h2>
+          </div>
+          {invoiceTransactions.length === 0 ? (
+            <EmptyState
+              title="No sales recorded yet"
+              body="Upload an invoice to record this clinic's first sale."
+            />
+          ) : (
+            <table className="w-full min-w-[520px] text-left text-sm">
+              <thead className={theadClass}>
+                <tr>
+                  <th className="px-5 py-3.5 font-semibold">Date</th>
+                  <th className="px-5 py-3.5 font-semibold">Reference</th>
+                  <th className="px-5 py-3.5 font-semibold text-right">
+                    Revenue
+                  </th>
+                  <th className="px-5 py-3.5 font-semibold text-right">
+                    Commission
+                  </th>
+                  <th className="px-5 py-3.5 font-semibold text-right">
+                    Invoice
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="text-navy">
+                {invoiceTransactions.map((tx) => (
+                  <tr key={tx.id} className={rowClass}>
+                    <td className="px-5 py-3 whitespace-nowrap">
+                      {tx.transactionDate.toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                      {tx.description && (
+                        <span className="block text-xs text-navy/55">
+                          {tx.description}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3 font-mono text-xs">
+                      {tx.reference ?? "—"}
+                    </td>
+                    <td className="px-5 py-3 text-right tabular-nums">
+                      {formatCents(tx.revenueCents)}
+                      {tx.refundedCents > 0 && (
+                        <span className="block text-xs font-medium text-red-600">
+                          −{formatCents(tx.refundedCents)} refunded
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3 text-right tabular-nums font-semibold">
+                      {formatCents(tx.commissionCents)}
+                    </td>
+                    <td className="px-5 py-3 text-right">
+                      {tx.invoicePathname ? (
+                        <a
+                          href={`/api/admin/invoices/${tx.id}`}
+                          className="text-xs font-semibold text-plum underline underline-offset-2 hover:text-plum-deep"
+                        >
+                          PDF
+                        </a>
+                      ) : (
+                        <span className="text-xs text-navy/40 uppercase">
+                          {tx.source}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
     </div>
   );
