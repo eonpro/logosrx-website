@@ -2,6 +2,9 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
+const READY_SELECTOR =
+  ".cl-formButtonPrimary, .cl-socialButtonsBlockButton, .cl-card input";
+
 /**
  * Shows a dark-theme form skeleton until Clerk's SignIn/SignUp card paints.
  * Without this, AuthShell renders logo + footer with an empty gap while
@@ -15,26 +18,34 @@ export default function ClerkAuthSlot({ children }: { children: ReactNode }) {
     const root = rootRef.current;
     if (!root) return;
 
-    const isReady = () =>
-      Boolean(
-        root.querySelector(
-          ".cl-formButtonPrimary, .cl-socialButtonsBlockButton, .cl-card input",
-        ),
-      );
+    let cancelled = false;
 
-    if (isReady()) {
-      setReady(true);
-      return;
-    }
+    const markReady = () => {
+      if (!cancelled) setReady(true);
+    };
 
     const observer = new MutationObserver(() => {
-      if (isReady()) {
-        setReady(true);
+      if (root.querySelector(READY_SELECTOR)) {
         observer.disconnect();
+        markReady();
       }
     });
     observer.observe(root, { childList: true, subtree: true });
-    return () => observer.disconnect();
+
+    // Defer the initial check so we never call setState synchronously inside
+    // the effect body (react-hooks/set-state-in-effect).
+    const raf = requestAnimationFrame(() => {
+      if (root.querySelector(READY_SELECTOR)) {
+        observer.disconnect();
+        markReady();
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+      observer.disconnect();
+    };
   }, []);
 
   return (
