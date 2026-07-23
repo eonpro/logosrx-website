@@ -8,10 +8,12 @@ import {
   addPriceItem,
   createCardUpdateLink,
   deletePriceItem,
+  mintClinicOrderingKey,
   resendClinicActivation,
   resetProductPrice,
   revealCard,
   revokeCardUpdateLink,
+  revokeClinicOrderingKey,
   setClinicLifeFile,
   setClinicPassword,
   setClinicPricing,
@@ -69,6 +71,15 @@ interface LifeFileView {
   defaultServiceId: number | null;
 }
 
+interface ApiKeyView {
+  id: number;
+  name: string;
+  keyPrefix: string;
+  lastUsedAt: string | null;
+  revokedAt: string | null;
+  createdAt: string;
+}
+
 const STATUS_OPTIONS: Status[] = ["verified", "rejected", "pending"];
 const TIER_OPTIONS: { value: Tier; label: string }[] = [
   { value: "standard", label: "Standard" },
@@ -116,6 +127,7 @@ export default function ClinicManager({
   cardLink,
   pricing,
   lifefile,
+  apiKeys,
   catalog,
   customItems,
   notes,
@@ -129,6 +141,7 @@ export default function ClinicManager({
   cardLink: CardLinkView | null;
   pricing: { tier: Tier; discountPct: number; notes: string };
   lifefile: LifeFileView;
+  apiKeys: ApiKeyView[];
   catalog: CatalogRow[];
   customItems: PriceItemView[];
   notes: NoteView[];
@@ -153,6 +166,7 @@ export default function ClinicManager({
         cardLink={cardLink}
       />
       <LifeFileCard clinicId={clinicId} lifefile={lifefile} />
+      <ApiKeysCard clinicId={clinicId} apiKeys={apiKeys} />
       <PricingCard
         clinicId={clinicId}
         pricing={pricing}
@@ -772,6 +786,151 @@ function LifeFileCard({
           className="rounded-full bg-plum px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-plum-deep disabled:opacity-50"
         >
           {pending ? "Saving…" : saved ? "Saved" : "Save ordering settings"}
+        </button>
+      </div>
+    </Section>
+  );
+}
+
+/**
+ * Ordering-API keys for this clinic (`/api/clinic/v1/*`). Admin-issued; the
+ * plaintext appears exactly once after minting — copy it to the clinic's
+ * integrator over a secure channel.
+ */
+function ApiKeysCard({
+  clinicId,
+  apiKeys,
+}: {
+  clinicId: number;
+  apiKeys: ApiKeyView[];
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [name, setName] = useState("");
+  const [minted, setMinted] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function mint() {
+    setError(null);
+    startTransition(async () => {
+      const result = await mintClinicOrderingKey(clinicId, name || "Default");
+      if (!result.ok || !result.plaintext) {
+        setError(result.error ?? "Could not create the key.");
+        return;
+      }
+      setMinted(result.plaintext);
+      setCopied(false);
+      setName("");
+      router.refresh();
+    });
+  }
+
+  function revoke(keyId: number) {
+    setError(null);
+    startTransition(async () => {
+      const result = await revokeClinicOrderingKey(clinicId, keyId);
+      if (!result.ok) setError(result.error ?? "Could not revoke the key.");
+      router.refresh();
+    });
+  }
+
+  async function copyMinted() {
+    if (!minted) return;
+    try {
+      await navigator.clipboard.writeText(minted);
+      setCopied(true);
+    } catch {
+      // Clipboard can be unavailable (permissions); the key stays visible.
+    }
+  }
+
+  return (
+    <Section title="Ordering API keys">
+      <p className="mb-4 text-[13px] leading-relaxed text-navy/55">
+        For clinics that integrate their own software (EMR, telehealth
+        platform) with the ordering API. Keys are shown once and can be
+        revoked any time.
+      </p>
+
+      {minted && (
+        <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+          <p className="mb-2 text-[13px] font-semibold text-emerald-800">
+            Key created — copy it now, it won&rsquo;t be shown again:
+          </p>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 overflow-x-auto rounded-lg bg-white px-3 py-2 font-mono text-xs text-navy">
+              {minted}
+            </code>
+            <button
+              type="button"
+              onClick={copyMinted}
+              className="rounded-full border border-emerald-300 bg-white px-4 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
+            >
+              {copied ? "Copied" : "Copy"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {apiKeys.length > 0 && (
+        <ul className="mb-4 flex flex-col gap-2">
+          {apiKeys.map((k) => (
+            <li
+              key={k.id}
+              className="flex items-center justify-between gap-3 rounded-2xl border border-beige bg-cream/40 px-4 py-3"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-navy">
+                  {k.name}{" "}
+                  <span className="font-mono text-xs font-normal text-navy/50">
+                    {k.keyPrefix}…
+                  </span>
+                </p>
+                <p className="text-xs text-navy/50">
+                  {k.revokedAt
+                    ? `Revoked ${fmtDate(k.revokedAt)}`
+                    : k.lastUsedAt
+                      ? `Last used ${fmtDate(k.lastUsedAt)}`
+                      : `Created ${fmtDate(k.createdAt)} · never used`}
+                </p>
+              </div>
+              {!k.revokedAt && (
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => revoke(k.id)}
+                  className="shrink-0 rounded-full border border-red-200 bg-white px-4 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50"
+                >
+                  Revoke
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {error && (
+        <p className="mb-3 rounded-xl bg-red-50 px-4 py-2.5 text-[13px] text-red-700 ring-1 ring-inset ring-red-600/15">
+          {error}
+        </p>
+      )}
+
+      <div className="flex items-center gap-2">
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Key name (e.g. 'Athena EMR')"
+          aria-label="API key name"
+          className={`${inputClass} flex-1`}
+        />
+        <button
+          type="button"
+          disabled={pending}
+          onClick={mint}
+          className="shrink-0 rounded-full bg-plum px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-plum-deep disabled:opacity-50"
+        >
+          {pending ? "Creating…" : "Create key"}
         </button>
       </div>
     </Section>

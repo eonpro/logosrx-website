@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import {
@@ -40,16 +40,36 @@ import {
  * order row is stamped with the clinic id that every later read filters on.
  */
 
+/**
+ * Stable machine codes for submission failures. The dashboard renders only
+ * the human `error` string; the clinic API maps these to HTTP statuses and
+ * its error envelope.
+ */
+export type SubmitOrderFailureCode =
+  | "CLINIC_NOT_FOUND"
+  | "CLINIC_NOT_VERIFIED"
+  | "ORDERING_NOT_ENABLED"
+  | "VALIDATION_FAILED"
+  | "PATIENT_NOT_FOUND"
+  | "PRESCRIBER_NOT_FOUND"
+  | "PRODUCT_NOT_AVAILABLE"
+  | "PRODUCT_NOT_ORDERABLE"
+  | "CONTROLLED_SUBSTANCE"
+  | "PHARMACY_REJECTED"
+  | "PHARMACY_UNREACHABLE"
+  | "INTERNAL_ERROR";
+
 export type SubmitOrderResult =
   | {
       ok: true;
       orderId: number;
       lfOrderId: string | null;
+      referenceId: string;
       status: Order["status"];
       /** True when this call returned a previously stored submission. */
       deduped: boolean;
     }
-  | { ok: false; error: string };
+  | { ok: false; error: string; code: SubmitOrderFailureCode };
 
 interface HydratedRx extends BuildRxInput {
   catalogProductId: string;
@@ -58,12 +78,18 @@ interface HydratedRx extends BuildRxInput {
 function hydrateRxs(
   submission: OrderSubmission,
   products: Map<string, typeof catalogProducts.$inferSelect>,
-): { ok: true; rxs: HydratedRx[] } | { ok: false; error: string } {
+):
+  | { ok: true; rxs: HydratedRx[] }
+  | { ok: false; error: string; code: SubmitOrderFailureCode } {
   const rxs: HydratedRx[] = [];
   for (const [i, rx] of submission.rxs.entries()) {
     const product = products.get(rx.productId);
     if (!product || !product.active) {
-      return { ok: false, error: `Medication ${i + 1} is not available.` };
+      return {
+        ok: false,
+        error: `Medication ${i + 1} (${rx.productId}) is not available.`,
+        code: "PRODUCT_NOT_AVAILABLE",
+      };
     }
     if (product.lfProductId == null) {
       return {
@@ -71,6 +97,7 @@ function hydrateRxs(
         error:
           `${product.name} is not enabled for online ordering yet — ` +
           "contact us to order it.",
+        code: "PRODUCT_NOT_ORDERABLE",
       };
     }
     if (isControlledSchedule(product.scheduleCode)) {
@@ -79,6 +106,7 @@ function hydrateRxs(
         error:
           `${product.name} is a controlled substance and cannot be ` +
           "ordered online. Please use the LifeFile portal.",
+        code: "CONTROLLED_SUBSTANCE",
       };
     }
     rxs.push({
@@ -119,20 +147,118 @@ function isUniqueViolation(err: unknown, depth = 0): boolean {
   return isUniqueViolation(candidate.cause, depth + 1);
 }
 
+/**
+ * Resolves the submission's patient within the clinic. `patientId` must
+ * belong to the clinic; an inline `patient` is matched to an existing record
+ * (same clinic, case-insensitive name, same DOB — contact fields refreshed)
+ * or created. Used by the API path where callers don't hold our patient ids.
+ */
+async function resolvePatient(
+  clinicId: number,
+  submission: OrderSubmission,
+): Promise<
+  | { ok: true; patient: typeof patients.$inferSelect }
+  | { ok: false; error: string; code: SubmitOrderFailureCode }
+> {
+  if (submission.patientId != null) {
+    const [patient] = await db
+      .select()
+      .from(patients)
+      .where(
+        and(
+          eq(patients.id, submission.patientId),
+          eq(patients.clinicId, clinicId),
+        ),
+      )
+      .limit(1);
+    if (!patient) {
+      return { ok: false, error: "Patient not found.", code: "PATIENT_NOT_FOUND" };
+    }
+    return { ok: true, patient };
+  }
+
+  const inline = submission.patient!;
+  const [existing] = await db
+    .select()
+    .from(patients)
+    .where(
+      and(
+        eq(patients.clinicId, clinicId),
+        sql`lower(${patients.firstName}) = lower(${inline.firstName})`,
+        sql`lower(${patients.lastName}) = lower(${inline.lastName})`,
+        eq(patients.dateOfBirth, inline.dateOfBirth),
+      ),
+    )
+    .limit(1);
+
+  if (existing) {
+    const [updated] = await db
+      .update(patients)
+      .set({
+        gender: inline.gender,
+        address1: inline.address1 ?? existing.address1,
+        address2: inline.address2 ?? existing.address2,
+        city: inline.city ?? existing.city,
+        state: inline.state ?? existing.state,
+        zip: inline.zip ?? existing.zip,
+        phoneMobile: inline.phoneMobile ?? existing.phoneMobile,
+        phoneHome: inline.phoneHome ?? existing.phoneHome,
+        phoneWork: inline.phoneWork ?? existing.phoneWork,
+        email: inline.email ?? existing.email,
+        allergies: inline.allergies.length ? inline.allergies : existing.allergies,
+        conditions: inline.conditions.length
+          ? inline.conditions
+          : existing.conditions,
+        updatedAt: new Date(),
+      })
+      .where(eq(patients.id, existing.id))
+      .returning();
+    return { ok: true, patient: updated };
+  }
+
+  const [created] = await db
+    .insert(patients)
+    .values({ ...inline, clinicId })
+    .returning();
+  return { ok: true, patient: created };
+}
+
+/** Resolves the clinic from a Clerk session, then submits. Dashboard path. */
 export async function submitClinicOrder(
   clerkUserId: string,
   rawInput: unknown,
 ): Promise<SubmitOrderResult> {
-  // --- Resolve + gate the clinic (isolation starts here) ---
   const [clinic] = await db
     .select()
     .from(clinics)
     .where(eq(clinics.clerkUserId, clerkUserId))
     .limit(1);
+  if (!clinic) {
+    return {
+      ok: false,
+      error: "Clinic profile not found.",
+      code: "CLINIC_NOT_FOUND",
+    };
+  }
+  return submitOrderForClinic(clinic, rawInput, clerkUserId);
+}
 
-  if (!clinic) return { ok: false, error: "Clinic profile not found." };
+/**
+ * The single order pipeline. `clinic` must be a trusted row resolved
+ * server-side (from the Clerk session or an authenticated API key) — never
+ * from caller input.
+ */
+export async function submitOrderForClinic(
+  clinic: Clinic,
+  rawInput: unknown,
+  submittedBy: string,
+): Promise<SubmitOrderResult> {
   if (clinic.verificationStatus !== "verified") {
-    return { ok: false, error: "Your account is not verified yet." };
+    return {
+      ok: false,
+      error: "Your account is not verified yet.",
+      code: "CLINIC_NOT_VERIFIED",
+    };
   }
   if (!clinic.lifefileOrderingEnabled) {
     return {
@@ -140,28 +266,25 @@ export async function submitClinicOrder(
       error:
         "Online ordering is not enabled for your account yet. " +
         "Contact us to get set up.",
+      code: "ORDERING_NOT_ENABLED",
     };
   }
 
   // --- Validate the submission ---
   const parsed = orderSubmissionSchema.safeParse(rawInput);
   if (!parsed.success) {
-    return { ok: false, error: firstZodIssue(parsed.error) };
+    return {
+      ok: false,
+      error: firstZodIssue(parsed.error),
+      code: "VALIDATION_FAILED",
+    };
   }
   const submission = parsed.data;
 
-  // --- Patient must belong to this clinic ---
-  const [patient] = await db
-    .select()
-    .from(patients)
-    .where(
-      and(
-        eq(patients.id, submission.patientId),
-        eq(patients.clinicId, clinic.id),
-      ),
-    )
-    .limit(1);
-  if (!patient) return { ok: false, error: "Patient not found." };
+  // --- Patient must belong to this clinic (or be created inline) ---
+  const patientResult = await resolvePatient(clinic.id, submission);
+  if (!patientResult.ok) return patientResult;
+  const patient = patientResult.patient;
 
   // --- Prescriber must be a provider on this clinic's profile ---
   const prescriber = findPrescriber(clinic, submission.prescriberNpi);
@@ -169,6 +292,7 @@ export async function submitClinicOrder(
     return {
       ok: false,
       error: "Prescriber not found on your clinic profile.",
+      code: "PRESCRIBER_NOT_FOUND",
     };
   }
 
@@ -228,7 +352,7 @@ export async function submitClinicOrder(
             null,
           payorType: submission.payorType,
           memo: submission.memo ?? null,
-          submittedBy: clerkUserId,
+          submittedBy,
         })
         .returning();
 
@@ -272,13 +396,18 @@ export async function submitClinicOrder(
           ok: true,
           orderId: existing.id,
           lfOrderId: existing.lfOrderId,
+          referenceId: existing.referenceId,
           status: existing.status,
           deduped: true,
         };
       }
     }
     log.error("order insert failed", { clinicId: clinic.id, error: err });
-    return { ok: false, error: "Could not save the order. Try again." };
+    return {
+      ok: false,
+      error: "Could not save the order. Try again.",
+      code: "INTERNAL_ERROR",
+    };
   }
 
   // --- Build the LifeFile payload and forward ---
@@ -350,7 +479,7 @@ export async function submitClinicOrder(
   runAfterResponse(
     recordAudit({
       actorType: "clinic",
-      actorId: clerkUserId,
+      actorId: submittedBy,
       action: result.ok ? "order.accepted" : "order.failed",
       targetType: "order",
       targetId: orderRow.id,
@@ -384,6 +513,8 @@ export async function submitClinicOrder(
           ? `The pharmacy could not accept this order: ${result.message}`
           : "The order was saved but could not reach the pharmacy. " +
             "Our team has been notified and will follow up.",
+      code:
+        result.kind === "rejected" ? "PHARMACY_REJECTED" : "PHARMACY_UNREACHABLE",
     };
   }
 
@@ -391,6 +522,7 @@ export async function submitClinicOrder(
     ok: true,
     orderId: orderRow.id,
     lfOrderId: result.lfOrderId || null,
+    referenceId,
     status,
     deduped: false,
   };

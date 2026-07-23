@@ -233,6 +233,67 @@ async function main() {
   const listB = await listClinicOrders(clinicB.id);
   check("clinic B's list is empty", listB.length === 0, listB);
 
+  console.log("\n7. API path: inline patient (submitOrderForClinic)…");
+  const { submitOrderForClinic } = await import("../src/lib/orders/service");
+  const [clinicARow] = await db
+    .select()
+    .from(clinics)
+    .where(eq(clinics.id, clinicA.id));
+  const inlineSubmission = {
+    ...submission,
+    patientId: undefined,
+    patient: {
+      firstName: "Inline",
+      lastName: "ApiPatient",
+      gender: "m",
+      dateOfBirth: "1985-05-05",
+      phoneMobile: "(305) 555-0111",
+    },
+    submissionKey: `verify${runId}0005`,
+  };
+  const inlineResult = await submitOrderForClinic(
+    clinicARow,
+    inlineSubmission,
+    "apikey:test",
+  );
+  check("inline-patient order accepted", inlineResult.ok, inlineResult);
+
+  // Same patient again (different order): must reuse, not duplicate.
+  const inlineResult2 = await submitOrderForClinic(
+    clinicARow,
+    { ...inlineSubmission, submissionKey: `verify${runId}0006` },
+    "apikey:test",
+  );
+  check("second inline order accepted", inlineResult2.ok, inlineResult2);
+  const { patients: patientsTable } = await import("../src/lib/db/schema");
+  const { and: andOp, sql: sqlOp } = await import("drizzle-orm");
+  const inlineRows = await db
+    .select()
+    .from(patientsTable)
+    .where(
+      andOp(
+        eq(patientsTable.clinicId, clinicA.id),
+        sqlOp`lower(${patientsTable.lastName}) = 'apipatient'`,
+      ),
+    );
+  check(
+    "inline patient created once and reused",
+    inlineRows.length === 1,
+    inlineRows.length,
+  );
+
+  // Failure codes surface for the API layer.
+  const gatedCode = await submitOrderForClinic(
+    { ...clinicARow, lifefileOrderingEnabled: false },
+    { ...inlineSubmission, submissionKey: `verify${runId}0007` },
+    "apikey:test",
+  );
+  check(
+    "failure carries ORDERING_NOT_ENABLED code",
+    !gatedCode.ok && gatedCode.code === "ORDERING_NOT_ENABLED",
+    gatedCode,
+  );
+
   console.log(
     failures === 0
       ? "\nAll verification checks passed."
