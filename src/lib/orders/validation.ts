@@ -108,27 +108,41 @@ export const shippingInputSchema = z.object({
 
 export type ShippingInput = z.infer<typeof shippingInputSchema>;
 
-/** The full order submission from the dashboard wizard. */
-export const orderSubmissionSchema = z.object({
-  patientId: z.coerce.number().int().positive(),
-  /** NPI of the prescriber — must match a provider on the clinic profile. */
-  prescriberNpi: z.string().trim().regex(/^\d{10}$/, "must be a 10-digit NPI"),
-  shipping: shippingInputSchema,
-  payorType: z.enum(["doc", "pat"]).default("doc"),
-  memo: optionalTrimmed(120),
-  rxs: z
-    .array(rxInputSchema)
-    .min(1, "add at least one medication")
-    .max(20, "too many medications in one order"),
-  /**
-   * Client-generated idempotency token (stable across retries of the same
-   * wizard submission). Combined with the clinic id to derive `referenceId`.
-   */
-  submissionKey: z
-    .string()
-    .trim()
-    .regex(/^[A-Za-z0-9_-]{8,64}$/, "invalid submission key"),
-});
+/**
+ * The full order submission. The dashboard wizard sends `patientId` (a saved
+ * patient); API integrators may instead send `patient` inline, which the
+ * service matches to an existing record (same clinic + name + DOB) or creates.
+ */
+export const orderSubmissionSchema = z
+  .object({
+    patientId: z.coerce.number().int().positive().optional(),
+    patient: patientInputSchema.optional(),
+    /** NPI of the prescriber — must match a provider on the clinic profile. */
+    prescriberNpi: z
+      .string()
+      .trim()
+      .regex(/^\d{10}$/, "must be a 10-digit NPI"),
+    shipping: shippingInputSchema,
+    payorType: z.enum(["doc", "pat"]).default("doc"),
+    memo: optionalTrimmed(120),
+    rxs: z
+      .array(rxInputSchema)
+      .min(1, "add at least one medication")
+      .max(20, "too many medications in one order"),
+    /**
+     * Caller-generated idempotency token, stable across retries of the same
+     * submission (the API calls this `referenceId`). Combined with the clinic
+     * id to derive the stored, unique reference.
+     */
+    submissionKey: z
+      .string()
+      .trim()
+      .regex(/^[A-Za-z0-9_-]{8,64}$/, "invalid submission key"),
+  })
+  .refine((v) => v.patientId != null || v.patient != null, {
+    message: "provide either patientId or patient",
+    path: ["patientId"],
+  });
 
 export type OrderSubmission = z.infer<typeof orderSubmissionSchema>;
 

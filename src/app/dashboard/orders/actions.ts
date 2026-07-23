@@ -47,11 +47,17 @@ export async function submitOrderAction(
   input: unknown,
 ): Promise<SubmitOrderResult> {
   const { userId } = await auth();
-  if (!userId) return { ok: false, error: "Not authenticated." };
+  if (!userId) {
+    return { ok: false, error: "Not authenticated.", code: "CLINIC_NOT_FOUND" };
+  }
 
   const limit = await rateLimitKey("form", `order-submit:${userId}`);
   if (!limit.success) {
-    return { ok: false, error: "Too many requests — try again in a minute." };
+    return {
+      ok: false,
+      error: "Too many requests — try again in a minute.",
+      code: "INTERNAL_ERROR",
+    };
   }
 
   return submitClinicOrder(userId, input);

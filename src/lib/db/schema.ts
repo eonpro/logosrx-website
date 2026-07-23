@@ -1457,6 +1457,32 @@ export const orderRxs = pgTable(
   (t) => [index("order_rxs_order_id_idx").on(t.orderId)],
 );
 
+/**
+ * API keys for the clinic ordering API (`/api/clinic/v1/*`). Admin-issued
+ * (ObsidianRx model: keys are provisioned for a clinic, not self-serve),
+ * scoped to exactly one clinic, SHA-256 hashed at rest — the plaintext
+ * (`lxck_...`) is shown once at mint time. Multiple active keys per clinic
+ * support rotation and separate integrations. Mirrors `partner_api_keys`.
+ */
+export const clinicApiKeys = pgTable(
+  "clinic_api_keys",
+  {
+    id: serial("id").primaryKey(),
+    clinicId: integer("clinic_id")
+      .notNull()
+      .references(() => clinics.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 120 }).notNull(),
+    keyPrefix: varchar("key_prefix", { length: 24 }).notNull(),
+    keyHash: varchar("key_hash", { length: 64 }).notNull().unique(),
+    lastUsedAt: timestamp("last_used_at"),
+    revokedAt: timestamp("revoked_at"),
+    // Clerk user id of the admin who minted the key.
+    createdBy: varchar("created_by", { length: 64 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [index("clinic_api_keys_clinic_idx").on(t.clinicId)],
+);
+
 export interface ProviderLicense {
   license: string;
   state: string;
@@ -1532,6 +1558,8 @@ export type PartnerWebhookDelivery =
 export type NewPartnerWebhookDelivery =
   typeof partnerWebhookDeliveries.$inferInsert;
 export type PartnerAgreement = typeof partnerAgreements.$inferSelect;
+export type ClinicApiKey = typeof clinicApiKeys.$inferSelect;
+export type NewClinicApiKey = typeof clinicApiKeys.$inferInsert;
 export type Patient = typeof patients.$inferSelect;
 export type NewPatient = typeof patients.$inferInsert;
 export type Order = typeof orders.$inferSelect;
