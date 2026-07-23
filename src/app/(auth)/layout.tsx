@@ -1,5 +1,6 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import { headers } from "next/headers";
+import ClerkPreconnect from "@/components/auth/ClerkPreconnect";
 
 /**
  * Wraps the public sign-in / sign-up routes with `ClerkProvider`. Hoisted out
@@ -13,5 +14,10 @@ export default async function AuthLayout({
   children: React.ReactNode;
 }) {
   const nonce = (await headers()).get("x-nonce") ?? undefined;
-  return <ClerkProvider nonce={nonce}>{children}</ClerkProvider>;
+  return (
+    <ClerkProvider nonce={nonce}>
+      <ClerkPreconnect />
+      {children}
+    </ClerkProvider>
+  );
 }

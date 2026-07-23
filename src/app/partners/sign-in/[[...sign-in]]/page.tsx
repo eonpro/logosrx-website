@@ -2,6 +2,7 @@
 
 import { SignIn } from "@clerk/nextjs";
 import AuthShellDark from "@/components/auth/AuthShellDark";
+import ClerkAuthSlot from "@/components/auth/ClerkAuthSlot";
 import { clerkDarkAppearance } from "@/components/auth/clerk-dark-appearance";
 
 export default function PartnerSignInPage() {
@@ -19,13 +20,15 @@ export default function PartnerSignInPage() {
         href: "/sign-in",
       }}
     >
-      <SignIn
-        routing="path"
-        path="/partners/sign-in"
-        signUpUrl="/partners/apply"
-        fallbackRedirectUrl="/partners"
-        appearance={clerkDarkAppearance}
-      />
+      <ClerkAuthSlot>
+        <SignIn
+          routing="path"
+          path="/partners/sign-in"
+          signUpUrl="/partners/apply"
+          fallbackRedirectUrl="/partners"
+          appearance={clerkDarkAppearance}
+        />
+      </ClerkAuthSlot>
     </AuthShellDark>
   );
 }

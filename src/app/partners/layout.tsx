@@ -1,5 +1,6 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import { headers } from "next/headers";
+import ClerkPreconnect from "@/components/auth/ClerkPreconnect";
 import { getPartnerContext } from "@/lib/auth/partner";
 import { partnerHasQuotes } from "@/lib/quotes/data";
 import PartnerMsaGate from "./PartnerMsaGate";
@@ -43,6 +44,7 @@ export default async function PartnersLayout({
 
   return (
     <ClerkProvider afterSignOutUrl="/" nonce={nonce}>
+      <ClerkPreconnect />
       {needsMsa && ctx ? (
         <PartnerMsaGate
           signerKind={ctx.kind}

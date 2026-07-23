@@ -21,9 +21,10 @@ const TYPEKIT = ["https://use.typekit.net", "https://p.typekit.net"];
 /**
  * Production Clerk instances serve their Frontend API from a custom domain
  * encoded (base64) inside the publishable key. Decode it here so the CSP
- * allow-lists the real origin. `atob` keeps this edge-compatible.
+ * allow-lists the real origin (and auth layouts can preconnect). `atob` keeps
+ * this edge-compatible.
  */
-function clerkFrontendApiOrigin(): string | null {
+export function clerkFrontendApiOrigin(): string | null {
   const pk = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
   if (!pk) return null;
   const encoded = pk.replace(/^pk_(test|live)_/, "");

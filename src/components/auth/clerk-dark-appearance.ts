@@ -24,19 +24,21 @@ export const clerkDarkAppearance = {
     rootBox: "w-full clerk-dark-form",
     cardBox: "!shadow-none w-full !border-0 !bg-transparent !rounded-none",
     card: "!shadow-none w-full !p-0 !bg-transparent !border-0 !rounded-none gap-5",
-    header: "hidden",
-    headerTitle: "hidden",
-    headerSubtitle: "hidden",
-    logoBox: "hidden",
-    logoImage: "hidden",
+    // Clerk's internal styles beat plain Tailwind `hidden` (display:flex wins),
+    // so force-hide with `!hidden` — otherwise a second app logo leaks above the form.
+    header: "!hidden",
+    headerTitle: "!hidden",
+    headerSubtitle: "!hidden",
+    logoBox: "!hidden",
+    logoImage: "!hidden",
     socialButtonsBlockButton:
       "!border !border-white/10 !bg-white/5 hover:!bg-white/10 transition-all duration-200 !text-white/90 font-medium !rounded-xl !h-12",
     socialButtonsBlockButtonText: "!text-white/90 font-medium !text-[14px]",
     socialButtonsBlockButtonArrow: "!text-white/40",
     dividerLine: "!bg-white/8",
-    dividerText: "!text-white/20 !text-xs uppercase tracking-[0.15em]",
+    dividerText: "!text-white/40 !text-xs uppercase tracking-[0.15em]",
     formFieldLabel:
-      "!text-white/40 font-medium !text-xs uppercase tracking-wider",
+      "!text-white/55 font-medium !text-xs uppercase tracking-wider",
     formFieldInput:
       "!border-white/10 !bg-white/5 focus:!border-magenta focus:!ring-1 focus:!ring-magenta/30 !rounded-xl !h-12 !text-white placeholder:!text-white/20",
     formFieldInputShowPasswordButton: "!text-white/30 hover:!text-white/60",

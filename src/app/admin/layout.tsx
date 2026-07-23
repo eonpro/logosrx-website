@@ -1,5 +1,6 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import { headers } from "next/headers";
+import ClerkPreconnect from "@/components/auth/ClerkPreconnect";
 import AdminShell from "./AdminShell";
 
 /**
@@ -17,6 +18,7 @@ export default async function AdminLayout({
   const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <ClerkProvider nonce={nonce}>
+      <ClerkPreconnect />
       <AdminShell>{children}</AdminShell>
     </ClerkProvider>
   );
