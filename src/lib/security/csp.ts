@@ -83,12 +83,24 @@ export function buildCsp(options: CspOptions = {}): string {
     "https://storage.googleapis.com/msgsndr/",
   ];
 
+  // Google Maps / Places (onboarding + dashboard practice address autocomplete).
+  // Script load itself is covered by nonce + 'strict-dynamic' on sensitive routes.
+  const GOOGLE_MAPS_CONNECT = [
+    "https://maps.googleapis.com",
+    "https://places.googleapis.com",
+  ];
+  const GOOGLE_MAPS_IMG = [
+    "https://maps.gstatic.com",
+    "https://*.googleapis.com",
+  ];
+
   const connectSrc = [
     "'self'",
     ...CLERK,
     "https://*.clerk-telemetry.com",
     ...AMPLITUDE,
     ...LEADCONNECTOR_CONNECT,
+    ...GOOGLE_MAPS_CONNECT,
   ];
 
   // With a nonce we use 'strict-dynamic': supporting browsers ignore the host
@@ -120,6 +132,7 @@ export function buildCsp(options: CspOptions = {}): string {
     "https://img.clerk.com",
     ...VERCEL,
     ...LEADCONNECTOR_ASSETS,
+    ...GOOGLE_MAPS_IMG,
   ];
   const frameSrc = ["'self'", ...CLERK, ...LEADCONNECTOR_SCRIPT];
   const workerSrc = ["'self'", "blob:"];

@@ -343,6 +343,9 @@ export const clinics = pgTable("clinics", {
   // --- Practice location ---
   addressLine1: varchar("address_line1", { length: 255 }),
   addressSuite: varchar("address_suite", { length: 50 }),
+  addressCity: varchar("address_city", { length: 100 }),
+  addressState: varchar("address_state", { length: 2 }),
+  addressZip: varchar("address_zip", { length: 10 }),
   practicePhone: varchar("practice_phone", { length: 30 }),
   website: varchar("website", { length: 255 }),
 

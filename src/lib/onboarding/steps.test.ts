@@ -18,6 +18,9 @@ function validState(): OnboardingFormState {
     practiceLegalName: "Test Clinic LLC",
     practiceType: "med_spa",
     addressLine1: "123 Main St",
+    addressCity: "Tampa",
+    addressState: "FL",
+    addressZip: "33615",
     practicePhone: "8135551234",
     contactName: "Jane Doe",
     contactPhone: "8135551234",
@@ -64,6 +67,18 @@ describe("validateStep", () => {
   it("requires at least one product of interest", () => {
     const s = { ...validState(), productsOfInterest: [] };
     expect(validateStep("products", s)).toMatch(/at least one product/i);
+  });
+
+  it("requires city, state, and ZIP on the practice step", () => {
+    expect(
+      validateStep("practice", { ...validState(), addressCity: "" }),
+    ).toMatch(/city is required/i);
+    expect(
+      validateStep("practice", { ...validState(), addressState: "" }),
+    ).toMatch(/state is required/i);
+    expect(
+      validateStep("practice", { ...validState(), addressZip: "" }),
+    ).toMatch(/zip code is required/i);
   });
 
   it("requires a full first and last contact name only when asked (signup)", () => {

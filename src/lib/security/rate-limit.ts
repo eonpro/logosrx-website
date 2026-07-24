@@ -84,6 +84,7 @@ const limiters = {
   resume: makeLimiter("resume", 2, 60 * 5), // 2 resume uploads / 5 minutes / key
   download: makeLimiter("download", 10, 60), // 10 token attempts / minute / key
   report: makeLimiter("report", 30, 60), // 30 CSP reports / minute / key
+  npi: makeLimiter("npi", 20, 60), // 20 NPI registry lookups / minute / key
 } as const;
 
 const memoryConfig = {
@@ -92,6 +93,7 @@ const memoryConfig = {
   resume: { limit: 2, windowMs: 5 * 60_000 },
   download: { limit: 10, windowMs: 60_000 },
   report: { limit: 30, windowMs: 60_000 },
+  npi: { limit: 20, windowMs: 60_000 },
 } as const;
 
 export type LimiterKey = keyof typeof limiters;

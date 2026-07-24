@@ -2,11 +2,17 @@
 
 import { useState } from "react";
 import VerificationBanner from "@/components/dashboard/VerificationBanner";
+import AddressAutocomplete from "@/components/onboarding/AddressAutocomplete";
+import NpiAutofillNotice from "@/components/onboarding/NpiAutofillNotice";
+import NpiField from "@/components/onboarding/NpiField";
 import {
   OptionList,
   SelectField,
   TextField,
 } from "@/components/onboarding/primitives";
+import { normalizeNpi } from "@/lib/npi/checksum";
+import type { NpiLookupResult } from "@/lib/npi/parse-nppes";
+import { npiResultToProviderPatch } from "@/lib/npi/to-provider-patch";
 import {
   ORDER_VOLUME_OPTIONS,
   PRACTICE_TYPE_OPTIONS,
@@ -55,6 +61,10 @@ export default function DashboardEditor({
     "idle",
   );
   const [message, setMessage] = useState("");
+  const [npiAutofill, setNpiAutofill] = useState<
+    Record<number, NpiLookupResult | null>
+  >({});
+  const [npiFlash, setNpiFlash] = useState<Record<number, number>>({});
 
   function set<K extends keyof OnboardingFormState>(
     key: K,
@@ -163,11 +173,24 @@ export default function DashboardEditor({
               value={state.practiceType}
               onChange={(e) => set("practiceType", e.target.value)}
             />
-            <TextField
+            <AddressAutocomplete
               label="Practice address"
               placeholder="Practice address"
               value={state.addressLine1}
-              onChange={(e) => set("addressLine1", e.target.value)}
+              onChange={(v) => set("addressLine1", v)}
+              onPlaceSelect={(parsed) => {
+                setState((prev) => ({
+                  ...prev,
+                  addressLine1: parsed.addressLine1,
+                  addressCity: parsed.addressCity,
+                  addressState: parsed.addressState,
+                  addressZip: parsed.addressZip,
+                  addressSuite:
+                    parsed.addressSuite && !prev.addressSuite.trim()
+                      ? parsed.addressSuite
+                      : prev.addressSuite,
+                }));
+              }}
             />
             <div className="grid grid-cols-2 gap-3">
               <TextField
@@ -181,6 +204,28 @@ export default function DashboardEditor({
                 placeholder="Phone"
                 value={state.practicePhone}
                 onChange={(e) => set("practicePhone", e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_5.5rem_7rem]">
+              <TextField
+                label="City"
+                placeholder="City"
+                value={state.addressCity}
+                onChange={(e) => set("addressCity", e.target.value)}
+              />
+              <SelectField
+                label="State"
+                placeholder="ST"
+                options={STATE_OPTIONS}
+                value={state.addressState}
+                onChange={(e) => set("addressState", e.target.value)}
+              />
+              <TextField
+                label="ZIP code"
+                placeholder="ZIP"
+                inputMode="numeric"
+                value={state.addressZip}
+                onChange={(e) => set("addressZip", e.target.value)}
               />
             </div>
             <TextField
@@ -241,64 +286,85 @@ export default function DashboardEditor({
                   )}
                 </div>
                 <div className="flex flex-col gap-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <TextField
-                      label="First name"
-                      placeholder="First Name"
-                      value={p.firstName}
-                      onChange={(e) =>
-                        patchProvider(i, { firstName: e.target.value })
+                  <NpiField
+                    value={p.npi}
+                    onChange={(npi) => {
+                      patchProvider(i, { npi });
+                      if (normalizeNpi(npi).length < 10) {
+                        setNpiAutofill((prev) => ({ ...prev, [i]: null }));
                       }
-                    />
-                    <TextField
-                      label="Last name"
-                      placeholder="Last Name"
-                      value={p.lastName}
-                      onChange={(e) =>
-                        patchProvider(i, { lastName: e.target.value })
-                      }
-                    />
-                  </div>
-                  <SelectField
-                    label="Specialty"
-                    placeholder="Medical Specialty"
-                    options={SPECIALTY_OPTIONS}
-                    value={p.specialty}
-                    onChange={(e) =>
-                      patchProvider(i, { specialty: e.target.value })
-                    }
+                    }}
+                    onLookup={(result) => {
+                      patchProvider(i, npiResultToProviderPatch(result));
+                      setNpiAutofill((prev) => ({ ...prev, [i]: result }));
+                      setNpiFlash((prev) => ({
+                        ...prev,
+                        [i]: (prev[i] ?? 0) + 1,
+                      }));
+                    }}
                   />
-                  <div className="grid grid-cols-2 gap-3">
-                    <TextField
-                      label="NPI"
-                      placeholder="NPI #"
-                      value={p.npi}
-                      onChange={(e) => patchProvider(i, { npi: e.target.value })}
-                    />
-                    <TextField
-                      label="Medical license"
-                      placeholder="Medical License #"
-                      value={p.medicalLicense}
-                      onChange={(e) =>
-                        patchProvider(i, { medicalLicense: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  {npiAutofill[i] && (
+                    <NpiAutofillNotice provider={npiAutofill[i]!} />
+                  )}
+                  <div
+                    key={npiFlash[i] ?? 0}
+                    className={`flex flex-col gap-3 ${
+                      npiAutofill[i] ? "npi-autofill-flash rounded-2xl" : ""
+                    }`}
+                  >
+                    <div className="grid grid-cols-2 gap-3">
+                      <TextField
+                        label="First name"
+                        placeholder="First Name"
+                        value={p.firstName}
+                        onChange={(e) =>
+                          patchProvider(i, { firstName: e.target.value })
+                        }
+                      />
+                      <TextField
+                        label="Last name"
+                        placeholder="Last Name"
+                        value={p.lastName}
+                        onChange={(e) =>
+                          patchProvider(i, { lastName: e.target.value })
+                        }
+                      />
+                    </div>
                     <SelectField
-                      label="License state"
-                      placeholder="License State"
-                      options={STATE_OPTIONS}
-                      value={p.licenseState}
+                      label="Specialty"
+                      placeholder="Medical Specialty"
+                      options={SPECIALTY_OPTIONS}
+                      value={p.specialty}
                       onChange={(e) =>
-                        patchProvider(i, { licenseState: e.target.value })
+                        patchProvider(i, { specialty: e.target.value })
                       }
                     />
+                    <div className="grid grid-cols-2 gap-3">
+                      <TextField
+                        label="Medical license"
+                        placeholder="Medical License #"
+                        value={p.medicalLicense}
+                        onChange={(e) =>
+                          patchProvider(i, { medicalLicense: e.target.value })
+                        }
+                      />
+                      <SelectField
+                        label="License state"
+                        placeholder="License State"
+                        options={STATE_OPTIONS}
+                        value={p.licenseState}
+                        onChange={(e) =>
+                          patchProvider(i, { licenseState: e.target.value })
+                        }
+                      />
+                    </div>
                     <TextField
                       label="DEA"
                       placeholder="DEA #"
                       value={p.dea}
-                      onChange={(e) => patchProvider(i, { dea: e.target.value })}
+                      onChange={(e) =>
+                        patchProvider(i, { dea: e.target.value })
+                      }
                     />
                   </div>
                 </div>

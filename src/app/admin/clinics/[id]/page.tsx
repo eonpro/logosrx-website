@@ -32,6 +32,7 @@ import {
   isCardLinkExpired,
 } from "@/lib/payment-links/data";
 import { SITE_URL } from "@/lib/constants";
+import { formatPracticeAddress } from "@/lib/maps/format-practice-address";
 import ClinicManager from "./ClinicManager";
 import InvoiceUpload from "@/components/admin/InvoiceUpload";
 import { formatCents } from "@/lib/partners/commission";
@@ -303,9 +304,7 @@ export default async function ClinicDetailPage({
             />
             <Field
               label="Address"
-              value={[clinic.addressLine1, clinic.addressSuite]
-                .filter(Boolean)
-                .join(", ")}
+              value={formatPracticeAddress(clinic) || null}
             />
             <Field label="Practice phone" value={clinic.practicePhone} />
             <Field

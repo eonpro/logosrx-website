@@ -25,6 +25,8 @@ import {
   validateStep,
   type OnboardingFormState,
 } from "@/lib/onboarding/steps";
+import { lookupNpiFromRegistry } from "@/lib/npi/lookup";
+import type { NpiLookupResult } from "@/lib/npi/parse-nppes";
 
 type OrderVolume = "0_5000" | "5000_15000" | "15000_50000" | "50000_plus";
 type ShippingMethod = "direct_to_patient" | "ship_to_practice";
@@ -91,6 +93,9 @@ function toClinicColumns(s: OnboardingFormState) {
     practiceType: s.practiceType || null,
     addressLine1: s.addressLine1.trim() || null,
     addressSuite: s.addressSuite.trim() || null,
+    addressCity: s.addressCity.trim() || null,
+    addressState: s.addressState.trim().toUpperCase() || null,
+    addressZip: s.addressZip.trim() || null,
     practicePhone: s.practicePhone.trim() || null,
     website: s.website.trim() || null,
     contactName: s.contactName.trim() || null,
@@ -480,5 +485,40 @@ export async function updateClinicProfile(
   } catch (err) {
     log.error("onboarding updateClinicProfile failed", { error: err });
     return { ok: false, error: "Could not save your changes." };
+  }
+}
+
+export type LookupNpiActionResult =
+  | { ok: true; provider: NpiLookupResult }
+  | { ok: false; error: string };
+
+/**
+ * Looks up an individual provider in the CMS NPPES NPI Registry and returns
+ * fields we can prefill on the credentials step. Rate-limited per caller IP.
+ */
+export async function lookupNpi(npi: string): Promise<LookupNpiActionResult> {
+  const requestHeaders = await headers();
+  try {
+    const limit = await rateLimitKey(
+      "npi",
+      `npi-lookup:${clientKeyFromHeaders(requestHeaders)}`,
+    );
+    if (!limit.success) {
+      return {
+        ok: false,
+        error: "Too many NPI lookups. Please wait a minute and try again.",
+      };
+    }
+  } catch (err) {
+    log.warn("npi lookup rate-limit check failed; allowing request", {
+      error: err instanceof Error ? err.message : "unknown",
+    });
+  }
+
+  try {
+    return await lookupNpiFromRegistry(npi);
+  } catch (err) {
+    log.error("npi lookup failed", { error: err });
+    return { ok: false, error: "Could not look up that NPI. Try again." };
   }
 }

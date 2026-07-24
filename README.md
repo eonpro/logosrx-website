@@ -84,6 +84,20 @@ This project is configured for Vercel. Connect the Git repository and deploy wit
 npm run build    # Verify production build locally
 ```
 
+### Google Places (practice address)
+
+Onboarding and the clinic dashboard use Google Places Autocomplete to collect a
+full practice address (street, city, state, ZIP). Set:
+
+| Var | Purpose |
+|-----|---------|
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Browser Maps JS + Places key (HTTP referrer–restricted). |
+
+In Google Cloud, enable **Maps JavaScript API** and **Places API**, then restrict
+the key to `https://www.logosrx.com/*`, `https://*.vercel.app/*`, and
+`http://localhost:*`. Without the key, the address field still works as plain
+text and city/state/ZIP can be entered manually.
+
 ## Adding New Products
 
 Edit `src/data/products.ts` to add new compounds. Each product needs:

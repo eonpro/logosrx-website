@@ -7,6 +7,9 @@ import { useSignIn } from "@clerk/nextjs/legacy";
 import { AnimatePresence, motion } from "framer-motion";
 import OnboardingShell from "./OnboardingShell";
 import SignaturePad from "./SignaturePad";
+import AddressAutocomplete from "./AddressAutocomplete";
+import NpiAutofillNotice from "./NpiAutofillNotice";
+import NpiField from "./NpiField";
 import {
   ConsentCheckbox,
   DisclosureBox,
@@ -16,6 +19,9 @@ import {
   StepHeading,
   TextField,
 } from "./primitives";
+import type { NpiLookupResult } from "@/lib/npi/parse-nppes";
+import { npiResultToProviderPatch } from "@/lib/npi/to-provider-patch";
+import { normalizeNpi } from "@/lib/npi/checksum";
 import {
   ORDER_VOLUME_OPTIONS,
   PRACTICE_TYPE_OPTIONS,
@@ -418,12 +424,24 @@ export default function OnboardingWizard({
               Practice Location
             </h2>
             <div className="flex flex-col gap-3">
-              <TextField
+              <AddressAutocomplete
                 label="Practice address"
                 placeholder="Type your practice's address"
                 value={state.addressLine1}
-                autoComplete="street-address"
-                onChange={(e) => set("addressLine1", e.target.value)}
+                onChange={(v) => set("addressLine1", v)}
+                onPlaceSelect={(parsed) => {
+                  setState((prev) => ({
+                    ...prev,
+                    addressLine1: parsed.addressLine1,
+                    addressCity: parsed.addressCity,
+                    addressState: parsed.addressState,
+                    addressZip: parsed.addressZip,
+                    addressSuite:
+                      parsed.addressSuite && !prev.addressSuite.trim()
+                        ? parsed.addressSuite
+                        : prev.addressSuite,
+                  }));
+                }}
               />
               <TextField
                 label="Suite or unit"
@@ -431,6 +449,30 @@ export default function OnboardingWizard({
                 value={state.addressSuite}
                 onChange={(e) => set("addressSuite", e.target.value)}
               />
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_5.5rem_7rem]">
+                <TextField
+                  label="City"
+                  placeholder="City"
+                  value={state.addressCity}
+                  autoComplete="address-level2"
+                  onChange={(e) => set("addressCity", e.target.value)}
+                />
+                <SelectField
+                  label="State"
+                  placeholder="ST"
+                  options={STATE_OPTIONS}
+                  value={state.addressState}
+                  onChange={(e) => set("addressState", e.target.value)}
+                />
+                <TextField
+                  label="ZIP code"
+                  placeholder="ZIP"
+                  inputMode="numeric"
+                  autoComplete="postal-code"
+                  value={state.addressZip}
+                  onChange={(e) => set("addressZip", e.target.value)}
+                />
+              </div>
               <TextField
                 label="Practice phone"
                 type="tel"
@@ -887,6 +929,8 @@ function ProviderCard({
   const [hasAdditional, setHasAdditional] = useState(
     provider.additionalLicenses.length > 0,
   );
+  const [autofill, setAutofill] = useState<NpiLookupResult | null>(null);
+  const [flashKey, setFlashKey] = useState(0);
 
   return (
     <div className="rounded-2xl border border-beige bg-white p-5 shadow-soft">
@@ -903,53 +947,68 @@ function ProviderCard({
         )}
       </div>
       <div className="flex flex-col gap-3">
-        <div className="grid grid-cols-2 gap-3">
-          <TextField
-            label="First name"
-            placeholder="First Name"
-            value={provider.firstName}
-            onChange={(e) => onChange({ firstName: e.target.value })}
+        <NpiField
+          value={provider.npi}
+          onChange={(npi) => {
+            onChange({ npi });
+            if (normalizeNpi(npi).length < 10) setAutofill(null);
+          }}
+          onLookup={(result) => {
+            const patch = npiResultToProviderPatch(result);
+            onChange(patch);
+            setAutofill(result);
+            setFlashKey((k) => k + 1);
+            if ((patch.additionalLicenses?.length ?? 0) > 0) {
+              setHasAdditional(true);
+            }
+          }}
+        />
+        {autofill && <NpiAutofillNotice provider={autofill} />}
+        <div
+          key={flashKey}
+          className={`flex flex-col gap-3 ${autofill ? "npi-autofill-flash rounded-2xl" : ""}`}
+        >
+          <div className="grid grid-cols-2 gap-3">
+            <TextField
+              label="First name"
+              placeholder="First Name"
+              value={provider.firstName}
+              onChange={(e) => onChange({ firstName: e.target.value })}
+            />
+            <TextField
+              label="Last name"
+              placeholder="Last Name"
+              value={provider.lastName}
+              onChange={(e) => onChange({ lastName: e.target.value })}
+            />
+          </div>
+          <SelectField
+            label="Medical specialty"
+            placeholder="Medical Specialty"
+            options={SPECIALTY_OPTIONS}
+            value={provider.specialty}
+            onChange={(e) => onChange({ specialty: e.target.value })}
           />
           <TextField
-            label="Last name"
-            placeholder="Last Name"
-            value={provider.lastName}
-            onChange={(e) => onChange({ lastName: e.target.value })}
+            label="Medical license number"
+            placeholder="Medical License #"
+            value={provider.medicalLicense}
+            onChange={(e) => onChange({ medicalLicense: e.target.value })}
+          />
+          <SelectField
+            label="License state"
+            placeholder="License State"
+            options={STATE_OPTIONS}
+            value={provider.licenseState}
+            onChange={(e) => onChange({ licenseState: e.target.value })}
+          />
+          <TextField
+            label="DEA number"
+            placeholder="DEA # (only if writing controlled substances)"
+            value={provider.dea}
+            onChange={(e) => onChange({ dea: e.target.value })}
           />
         </div>
-        <SelectField
-          label="Medical specialty"
-          placeholder="Medical Specialty"
-          options={SPECIALTY_OPTIONS}
-          value={provider.specialty}
-          onChange={(e) => onChange({ specialty: e.target.value })}
-        />
-        <TextField
-          label="NPI number"
-          placeholder="NPI #"
-          inputMode="numeric"
-          value={provider.npi}
-          onChange={(e) => onChange({ npi: e.target.value })}
-        />
-        <TextField
-          label="Medical license number"
-          placeholder="Medical License #"
-          value={provider.medicalLicense}
-          onChange={(e) => onChange({ medicalLicense: e.target.value })}
-        />
-        <SelectField
-          label="License state"
-          placeholder="License State"
-          options={STATE_OPTIONS}
-          value={provider.licenseState}
-          onChange={(e) => onChange({ licenseState: e.target.value })}
-        />
-        <TextField
-          label="DEA number"
-          placeholder="DEA # (only if writing controlled substances)"
-          value={provider.dea}
-          onChange={(e) => onChange({ dea: e.target.value })}
-        />
 
         <div>
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">

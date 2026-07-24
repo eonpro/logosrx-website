@@ -30,6 +30,9 @@ export interface OnboardingFormState {
   // Practice location
   addressLine1: string;
   addressSuite: string;
+  addressCity: string;
+  addressState: string;
+  addressZip: string;
   practicePhone: string;
   website: string;
   // Primary contact
@@ -77,6 +80,9 @@ export function initialFormState(): OnboardingFormState {
     practiceType: "",
     addressLine1: "",
     addressSuite: "",
+    addressCity: "",
+    addressState: "",
+    addressZip: "",
     practicePhone: "",
     website: "",
     contactName: "",
@@ -238,6 +244,9 @@ export function validateStep(
       if (!s.practiceLegalName.trim()) return "Practice legal name is required.";
       if (!s.practiceType) return "Select a practice type.";
       if (!s.addressLine1.trim()) return "Practice address is required.";
+      if (!s.addressCity.trim()) return "City is required.";
+      if (!s.addressState.trim()) return "State is required.";
+      if (!s.addressZip.trim()) return "ZIP code is required.";
       if (!s.practicePhone.trim()) return "Practice phone is required.";
       return null;
     case "contact":

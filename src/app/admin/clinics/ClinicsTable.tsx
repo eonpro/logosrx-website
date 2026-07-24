@@ -23,6 +23,7 @@ import {
   theadClass,
   type BadgeTone,
 } from "@/components/ui/portal";
+import { formatPracticeAddress } from "@/lib/maps/format-practice-address";
 
 /**
  * The projected clinic shape the list renders. Matches the column selection in
@@ -41,6 +42,9 @@ export type ClinicRow = {
   contactPhone: string | null;
   addressLine1: string | null;
   addressSuite: string | null;
+  addressCity: string | null;
+  addressState: string | null;
+  addressZip: string | null;
   practicePhone: string | null;
   website: string | null;
   productsOfInterest: string[];
@@ -226,9 +230,7 @@ export function ClinicsTable({ clinics }: { clinics: ClinicRow[] }) {
                         />
                         <Field
                           label="Address"
-                          value={[c.addressLine1, c.addressSuite]
-                            .filter(Boolean)
-                            .join(", ")}
+                          value={formatPracticeAddress(c) || null}
                         />
                         <Field label="Practice Phone" value={c.practicePhone} />
                         <Field
