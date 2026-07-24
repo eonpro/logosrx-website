@@ -80,7 +80,11 @@ export interface BuildOrderInput {
   /** Our foreign-system order id (LGS-...), echoed on LifeFile's side. */
   referenceId: string;
   memo?: string | null;
-  /** LifeFile practice id — stamped only when the clinic has one assigned. */
+  /**
+   * LifeFile practice id. The order service currently always passes null —
+   * portal practice IDs often fail LifeFile's API-network check. Kept on the
+   * builder for tests and a future opt-in once IDs are confirmed on network 1949.
+   */
   practiceId?: number | null;
   payorType: "doc" | "pat";
   prescriber: BuildPrescriberInput;

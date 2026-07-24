@@ -29,6 +29,7 @@ import { log } from "@/lib/observability/logger";
 import { recordAudit } from "@/lib/audit/log";
 import { notifyOrderProblem } from "@/lib/notifications/slack";
 import { runAfterResponse } from "@/lib/runtime/after";
+import { humanizePharmacyRejection } from "./pharmacy-errors";
 import {
   firstZodIssue,
   orderSubmissionSchema,
@@ -287,11 +288,23 @@ export async function submitClinicOrder(
   }
 
   // --- Build the LifeFile payload and forward ---
+  // Do NOT stamp `order.practice.id` from `clinic.lifefilePracticeId`.
+  // LifeFile rejects practices that aren't on the same API network as our
+  // pharmacy credentials (network 1949) — portal practice IDs often aren't,
+  // which surfaces as "API Network ID … different" and blocks prescribing.
+  // Clinic isolation stays in our DB; LifeFile attribution uses referenceId
+  // + memo (clinic name). Admin may still store a practice id for later use
+  // once LifeFile confirms it belongs to this API account.
+  const clinicLabel =
+    clinic.clinicName?.trim() || clinic.practiceLegalName?.trim() || null;
+  const memoParts = [clinicLabel, submission.memo?.trim() || null].filter(
+    (p): p is string => Boolean(p),
+  );
   const buildInput: BuildOrderInput = {
     messageId: orderRow.id,
     referenceId,
-    memo: submission.memo,
-    practiceId: clinic.lifefilePracticeId,
+    memo: memoParts.length ? memoParts.join(" — ") : null,
+    practiceId: null,
     payorType: submission.payorType,
     prescriber: {
       npi: submission.prescriberNpi,
@@ -476,7 +489,7 @@ export async function submitClinicOrder(
       ok: false,
       error:
         result.kind === "rejected"
-          ? `The pharmacy could not accept this order: ${result.message}`
+          ? humanizePharmacyRejection(result.message)
           : "The order was saved but could not reach the pharmacy. " +
             "Our team has been notified and will follow up.",
     };
