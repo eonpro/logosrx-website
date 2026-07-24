@@ -736,10 +736,9 @@ function LifeFileCard({
             className={inputClass}
           />
           <span className="mt-1.5 block text-[12px] leading-snug text-navy/45">
-            Stamped on every order as <code>order.practice.id</code> so LifeFile
-            bills this clinic. Must be a practice under Logos Pharmacy&apos;s
-            API network (1949) — not a practice ID from another LifeFile portal
-            or network.
+            Sent on every order so LifeFile bills this clinic. Must be a
+            practice under Logos Pharmacy&apos;s API network (1949) — not an ID
+            copied from another LifeFile portal or network.
           </span>
         </label>
         <label className="block">
