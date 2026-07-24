@@ -164,6 +164,40 @@ export async function notifyOrderProblem(args: {
   });
 }
 
+/** Alerts admins that a verified clinic requested volume/custom pricing. */
+export async function notifyPricingRequest(args: {
+  requestId: number;
+  clinicId: number;
+  clinicName: string;
+  contactEmail: string;
+  volumeBand: string;
+  productNames: string[];
+  message: string;
+}): Promise<void> {
+  await postToSlack({
+    header: "💰 Custom pricing request",
+    fields: [
+      { label: "Clinic", value: args.clinicName || "—" },
+      { label: "Contact", value: args.contactEmail || "—" },
+      {
+        label: "Expected volume",
+        value: VOLUME_LABELS[args.volumeBand] ?? args.volumeBand ?? "—",
+      },
+      {
+        label: "Products",
+        value: args.productNames.length
+          ? args.productNames.slice(0, 12).join(", ")
+          : "Catalog-wide",
+      },
+      { label: "Notes", value: args.message || "—" },
+    ],
+    contextLink: {
+      text: "Review pricing request →",
+      url: `${SITE_URL}/admin/pricing-requests`,
+    },
+  });
+}
+
 /** Notifies admins that a clinic finished onboarding and needs verification. */
 export async function notifyNewClinic(
   n: NewClinicNotification,

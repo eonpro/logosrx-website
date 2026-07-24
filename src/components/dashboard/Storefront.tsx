@@ -24,13 +24,6 @@ interface StorefrontProps {
   pricingTier: "standard" | "preferred" | "vip";
   promotions: StorefrontPromotion[];
   featuredIds: FeaturedRef[];
-  lifefileUrl: string;
-  /**
-   * SKU ids the clinic can prescribe in-app. Their "Prescribe" CTA routes to
-   * the order wizard; everything else keeps the external LifeFile hand-off.
-   * Empty when in-app ordering isn't enabled for this clinic.
-   */
-  orderableIds?: string[];
 }
 
 export default function Storefront({
@@ -39,13 +32,9 @@ export default function Storefront({
   pricingTier,
   promotions,
   featuredIds,
-  lifefileUrl,
-  orderableIds = [],
 }: StorefrontProps) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
-
-  const orderableSet = useMemo(() => new Set(orderableIds), [orderableIds]);
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -121,22 +110,28 @@ export default function Storefront({
       )}
 
       {/* Page heading + pricing summary */}
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-navy sm:text-4xl">
-            Storefront
+            Catalog
           </h1>
           <p className="mt-1 text-[15px] leading-relaxed text-navy/55">
-            Your live catalog and pricing. Prescribe through LifeFile to order.
+            Your live product catalog and clinic pricing.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Badge tone="neutral">
             {TIER_LABELS[pricingTier] ?? "Standard"} pricing
           </Badge>
           {discountPct > 0 && (
             <Badge tone="success">{discountPct}% off standard</Badge>
           )}
+          <Link
+            href="/dashboard/pricing-request"
+            className="rounded-full bg-plum px-5 py-2 text-sm font-semibold text-white transition-all hover:bg-plum-deep active:scale-[0.98]"
+          >
+            Request custom pricing
+          </Link>
         </div>
       </div>
 
@@ -164,8 +159,6 @@ export default function Storefront({
               <ProductCard
                 key={`featured-${product.id}`}
                 p={product}
-                lifefileUrl={lifefileUrl}
-                orderable={orderableSet.has(product.id)}
                 featuredLabel={label}
                 highlight
               />
@@ -219,12 +212,7 @@ export default function Storefront({
         ) : (
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map((p) => (
-              <ProductCard
-                key={p.id}
-                p={p}
-                lifefileUrl={lifefileUrl}
-                orderable={orderableSet.has(p.id)}
-              />
+              <ProductCard key={p.id} p={p} />
             ))}
           </div>
         )}
@@ -440,15 +428,10 @@ function PromotionCard({
 
 function ProductCard({
   p,
-  lifefileUrl,
-  orderable,
   featuredLabel,
   highlight,
 }: {
   p: StorefrontProduct;
-  lifefileUrl: string;
-  /** True when this SKU can be prescribed through the in-app order wizard. */
-  orderable?: boolean;
   featuredLabel?: string | null;
   highlight?: boolean;
 }) {
@@ -461,9 +444,11 @@ function ProductCard({
     .filter(Boolean)
     .join("  ·  ");
   const badgeText = featuredLabel ?? p.badge;
+  const href = `/dashboard/products/${encodeURIComponent(p.id)}`;
 
   return (
-    <div
+    <Link
+      href={href}
       className={`flex flex-col rounded-3xl border bg-white p-6 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-soft-lg ${
         highlight ? "border-magenta/30" : "border-beige/70"
       }`}
@@ -513,34 +498,12 @@ function ProductCard({
           </div>
         )}
 
-        <div className="mt-4 flex items-center gap-2">
-          {orderable ? (
-            <Link
-              href={`/dashboard/orders/new?product=${encodeURIComponent(p.id)}`}
-              className="flex-1 rounded-full bg-plum px-4 py-2 text-center text-sm font-semibold text-white transition-all hover:bg-plum-deep active:scale-[0.98]"
-            >
-              Prescribe
-            </Link>
-          ) : (
-            <a
-              href={lifefileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 rounded-full bg-plum px-4 py-2 text-center text-sm font-semibold text-white transition-all hover:bg-plum-deep active:scale-[0.98]"
-            >
-              Prescribe
-            </a>
-          )}
-          {p.detailSlug && (
-            <Link
-              href={`/products/${p.detailSlug}`}
-              className="rounded-full border border-beige-dark bg-white px-4 py-2 text-center text-sm font-semibold text-navy transition-all hover:border-navy/40 active:scale-[0.98]"
-            >
-              Details
-            </Link>
-          )}
+        <div className="mt-4">
+          <span className="inline-flex rounded-full border border-beige-dark bg-white px-4 py-2 text-sm font-semibold text-navy">
+            View details
+          </span>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

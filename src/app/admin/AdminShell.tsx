@@ -84,6 +84,18 @@ const navItems: SidebarNavItem[] = [
     ),
   },
   {
+    label: "Pricing Requests",
+    section: "Commerce",
+    href: "/admin/pricing-requests",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M4 5h12M4 10h8M4 15h10" strokeLinecap="round" />
+        <circle cx="15.5" cy="14.5" r="2.5" />
+        <path d="M15.5 13.25v2.5M14.25 14.5h2.5" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
     label: "Card Updates",
     section: "Commerce",
     href: "/admin/card-updates",

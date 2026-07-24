@@ -39,6 +39,7 @@ type OverviewStatsRow = {
   featured_active: number;
   quotes_total: number;
   quotes_active: number;
+  pricing_requests_pending: number;
 };
 
 function asCount(value: unknown): number {
@@ -73,7 +74,9 @@ async function getStats() {
       (SELECT count(*)::int FILTER (
          WHERE status = 'active'
            AND (expires_at IS NULL OR expires_at > now()))
-         FROM pricing_quotes) AS quotes_active
+         FROM pricing_quotes) AS quotes_active,
+      (SELECT count(*)::int FILTER (WHERE status = 'pending')
+         FROM pricing_requests) AS pricing_requests_pending
   `);
 
   const row = (result.rows[0] ?? {}) as Partial<OverviewStatsRow>;
@@ -99,6 +102,9 @@ async function getStats() {
     quotes: {
       total: asCount(row.quotes_total),
       active: asCount(row.quotes_active),
+    },
+    pricingRequests: {
+      pending: asCount(row.pricing_requests_pending),
     },
   };
 }
@@ -192,6 +198,11 @@ export default async function AdminOverview() {
       label: "Active pricing quotes",
       count: stats.quotes.active,
       href: "/admin/quotes",
+    },
+    {
+      label: "Pending pricing requests",
+      count: stats.pricingRequests.pending,
+      href: "/admin/pricing-requests",
     },
   ].filter((a) => a.count > 0);
 

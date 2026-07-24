@@ -78,6 +78,18 @@ export const quoteStatusEnum = pgEnum("quote_status", [
   "revoked",
 ]);
 
+/**
+ * Lifecycle of a clinic-initiated volume/custom pricing request:
+ *   - `pending`  — awaiting admin review.
+ *   - `reviewed` — admin acknowledged; may still be negotiating pricing.
+ *   - `closed`   — done (pricing applied, quote sent, or declined).
+ */
+export const pricingRequestStatusEnum = pgEnum("pricing_request_status", [
+  "pending",
+  "reviewed",
+  "closed",
+]);
+
 /** Lifecycle of a partner org or rep account (affiliate program). */
 export const partnerStatusEnum = pgEnum("partner_status", [
   "pending",
@@ -758,6 +770,38 @@ export const pricingQuoteItems = pgTable("pricing_quote_items", {
 }, (t) => [
   index("pricing_quote_items_quote_id_idx").on(t.quoteId),
 ]);
+
+/**
+ * Inbound volume/custom pricing request from a verified clinic. Admins review
+ * these in `/admin/pricing-requests`, then fulfill via clinic custom pricing
+ * and/or an outbound quote link.
+ */
+export const pricingRequests = pgTable(
+  "pricing_requests",
+  {
+    id: serial("id").primaryKey(),
+    clinicId: integer("clinic_id")
+      .notNull()
+      .references(() => clinics.id, { onDelete: "cascade" }),
+    status: pricingRequestStatusEnum("status").default("pending").notNull(),
+    // Expected monthly volume band (same enum as clinic intake).
+    volumeBand: orderVolumeEnum("volume_band").notNull(),
+    // Optional catalog SKU ids the clinic is focused on (json string[]).
+    productIds: jsonb("product_ids").$type<string[]>().default([]).notNull(),
+    message: text("message"),
+    adminNote: text("admin_note"),
+    reviewedAt: timestamp("reviewed_at"),
+    reviewedBy: varchar("reviewed_by", { length: 64 }),
+    reviewedByEmail: varchar("reviewed_by_email", { length: 255 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("pricing_requests_status_idx").on(t.status),
+    index("pricing_requests_clinic_idx").on(t.clinicId, t.createdAt),
+    index("pricing_requests_created_at_idx").on(t.createdAt),
+  ],
+);
 
 /**
  * Lifecycle of a shareable card-update link:
@@ -1505,6 +1549,8 @@ export type PricingQuote = typeof pricingQuotes.$inferSelect;
 export type NewPricingQuote = typeof pricingQuotes.$inferInsert;
 export type PricingQuoteItem = typeof pricingQuoteItems.$inferSelect;
 export type NewPricingQuoteItem = typeof pricingQuoteItems.$inferInsert;
+export type PricingRequest = typeof pricingRequests.$inferSelect;
+export type NewPricingRequest = typeof pricingRequests.$inferInsert;
 export type PartnerOrg = typeof partnerOrgs.$inferSelect;
 export type NewPartnerOrg = typeof partnerOrgs.$inferInsert;
 export type PartnerRep = typeof partnerReps.$inferSelect;

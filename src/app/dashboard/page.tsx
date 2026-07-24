@@ -12,12 +12,10 @@ import {
 } from "@/lib/portal/merchandising";
 import { getPrimaryEmail, roleForEmail } from "@/lib/auth/admin";
 import { getPartnerContext } from "@/lib/auth/partner";
-import { getOrderableProductIds } from "@/lib/orders/products";
 import { btnSecondary } from "@/components/ui/portal";
-import { SITE } from "@/lib/constants";
 
 export const metadata: Metadata = {
-  title: "Storefront",
+  title: "Catalog",
   robots: { index: false, follow: false },
 };
 
@@ -44,7 +42,7 @@ export default async function DashboardPage() {
     return (
       <main className="mx-auto max-w-3xl px-6 py-10">
         <h1 className="mb-1 text-3xl font-bold tracking-tight text-navy sm:text-4xl">
-          Storefront
+          Catalog
         </h1>
         <p className="mb-6 text-[15px] leading-relaxed text-navy/55">
           Your catalog and pricing unlock once your account is approved.
@@ -53,7 +51,7 @@ export default async function DashboardPage() {
         <div className="rounded-3xl border border-dashed border-beige-dark bg-white px-6 py-16 text-center">
           <p className="mx-auto max-w-md text-sm text-navy/60">
             We&rsquo;re reviewing your account. You&rsquo;ll get full access to
-            product pricing and prescribing as soon as you&rsquo;re verified.
+            product pricing as soon as you&rsquo;re verified.
           </p>
           <Link href="/dashboard/account" className={`mt-5 ${btnSecondary}`}>
             Review your account details
@@ -70,13 +68,9 @@ export default async function DashboardPage() {
   });
   // Merchandising is supplementary — never let it take down the clinic's main
   // page (e.g. before the merchandising tables are migrated). Degrade to empty.
-  const [promotions, featuredIds, orderableIds] = await Promise.all([
+  const [promotions, featuredIds] = await Promise.all([
     getActivePromotions(storefront.pricingTier).catch(() => []),
     getFeaturedProductIds().catch(() => []),
-    // In-app ordering is additive — degrade to the LifeFile hand-off.
-    gate.orderingEnabled
-      ? getOrderableProductIds().catch(() => new Set<string>())
-      : Promise.resolve(new Set<string>()),
   ]);
 
   return (
@@ -86,8 +80,6 @@ export default async function DashboardPage() {
       pricingTier={storefront.pricingTier}
       promotions={promotions}
       featuredIds={featuredIds}
-      lifefileUrl={SITE.lifefilePortal}
-      orderableIds={[...orderableIds]}
     />
   );
 }

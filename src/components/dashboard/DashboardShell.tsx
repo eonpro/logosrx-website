@@ -4,26 +4,29 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
-import { SITE } from "@/lib/constants";
 import { displayFont } from "@/lib/fonts";
 
 const TABS = [
-  { href: "/dashboard", label: "Storefront" },
-  { href: "/dashboard/orders", label: "Orders" },
+  { href: "/dashboard", label: "Catalog" },
   { href: "/dashboard/account", label: "Account" },
 ] as const;
 
 function isActive(pathname: string, href: string): boolean {
-  // "/dashboard" must match exactly so it doesn't light up on sub-routes.
-  return href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
+  if (href === "/dashboard") {
+    // Catalog owns the home route plus product detail / pricing-request.
+    return (
+      pathname === "/dashboard" ||
+      pathname.startsWith("/dashboard/products") ||
+      pathname.startsWith("/dashboard/pricing-request")
+    );
+  }
+  return pathname.startsWith(href);
 }
 
 /**
  * Chrome for the authenticated clinic portal: brand, primary tab nav
- * (Storefront / Account), a persistent "Prescribe" hand-off to LifeFile, and
- * the Clerk user button. Hims-style: warm workspace, segmented pill nav in a
- * soft white container, single magenta hero action. Rendered once in the
- * dashboard layout so every portal page shares it.
+ * (Catalog / Account), and the Clerk user button. Prescribe is intentionally
+ * hidden until in-portal ordering works end-to-end.
  */
 export default function DashboardShell({
   children,
@@ -68,17 +71,6 @@ export default function DashboardShell({
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <a
-              href={SITE.lifefilePortal}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden items-center gap-1.5 rounded-full bg-magenta px-5 py-2 text-xs font-semibold text-white transition-all hover:bg-magenta-dark active:scale-[0.98] sm:inline-flex"
-            >
-              Prescribe in LifeFile
-              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                <path d="M3 1.5L9 6L3 10.5V1.5Z" fill="currentColor" />
-              </svg>
-            </a>
             <UserButton />
           </div>
         </div>
