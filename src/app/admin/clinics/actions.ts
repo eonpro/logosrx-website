@@ -134,7 +134,7 @@ export async function setClinicVerification(
 
 export interface LifeFileSettingsInput {
   enabled: boolean;
-  /** Optional LifeFile practice id (admin reference; not sent on orders). */
+  /** LifeFile practice id stamped on orders for billing (required when enabled). */
   practiceId: number | null;
   /** Default LifeFile shipping-service code for the order wizard. */
   defaultServiceId: number | null;
@@ -147,8 +147,8 @@ export interface LifeFileSettingsResult {
 
 /**
  * Configures a clinic's in-app LifeFile ordering: the enable gate, the
- * LifeFile practice id stamped on forwarded orders, and the default shipping
- * service preselected in the wizard. Full admins only; audited.
+ * LifeFile practice id stamped on forwarded orders (billing attribution),
+ * and the default shipping service. Full admins only; audited.
  */
 export async function setClinicLifeFile(
   id: number,
@@ -163,6 +163,14 @@ export async function setClinicLifeFile(
       : Math.trunc(input.practiceId);
   if (practiceId !== null && practiceId <= 0) {
     return { ok: false, error: "Practice ID must be a positive number." };
+  }
+  if (input.enabled && practiceId == null) {
+    return {
+      ok: false,
+      error:
+        "A LifeFile practice ID is required to enable ordering — " +
+        "LifeFile uses it to bill the correct clinic.",
+    };
   }
   const defaultServiceId =
     input.defaultServiceId == null || Number.isNaN(input.defaultServiceId)

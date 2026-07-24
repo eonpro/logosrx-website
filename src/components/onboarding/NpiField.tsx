@@ -31,15 +31,19 @@ export default function NpiField({
   const [message, setMessage] = useState("");
   const lastSuccess = useRef("");
   const onLookupRef = useRef(onLookup);
-  onLookupRef.current = onLookup;
 
   useEffect(() => {
-    const npi = normalizeNpi(value);
-    if (npi.length !== 10) {
-      setStatus("idle");
-      setMessage("");
-      return;
-    }
+    onLookupRef.current = onLookup;
+  }, [onLookup]);
+
+  const npi = normalizeNpi(value);
+  const ready = npi.length === 10;
+  // Don't surface stale lookup copy while the user is still typing.
+  const displayStatus = ready ? status : "idle";
+  const displayMessage = ready ? message : "";
+
+  useEffect(() => {
+    if (!ready) return;
     if (npi === lastSuccess.current) return;
 
     let cancelled = false;
@@ -56,7 +60,9 @@ export default function NpiField({
         }
         lastSuccess.current = npi;
         setStatus("ok");
-        setMessage("Provider info auto-filled below — review and edit if needed.");
+        setMessage(
+          "Provider info auto-filled below — review and edit if needed.",
+        );
         onLookupRef.current(res.provider);
       });
     }, 350);
@@ -65,7 +71,7 @@ export default function NpiField({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [value]);
+  }, [npi, ready]);
 
   return (
     <label className="block">
@@ -79,24 +85,24 @@ export default function NpiField({
         value={value}
         onChange={(e) => onChange(normalizeNpi(e.target.value))}
       />
-      {message && (
+      {displayMessage && (
         <p
           className={`mt-1.5 text-xs ${
-            status === "error"
+            displayStatus === "error"
               ? "text-red-600"
-              : status === "ok"
+              : displayStatus === "ok"
                 ? "text-navy/55"
                 : "text-navy/45"
           }`}
           role="status"
         >
-          {status === "loading" ? (
+          {displayStatus === "loading" ? (
             <span className="inline-flex items-center gap-1.5">
               <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-plum" />
-              {message}
+              {displayMessage}
             </span>
           ) : (
-            message
+            displayMessage
           )}
         </p>
       )}

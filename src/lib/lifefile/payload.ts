@@ -81,9 +81,8 @@ export interface BuildOrderInput {
   referenceId: string;
   memo?: string | null;
   /**
-   * LifeFile practice id. The order service currently always passes null —
-   * portal practice IDs often fail LifeFile's API-network check. Kept on the
-   * builder for tests and a future opt-in once IDs are confirmed on network 1949.
+   * LifeFile practice id stamped as `order.practice.id` for clinic billing
+   * attribution. Must belong to the pharmacy API network (1949).
    */
   practiceId?: number | null;
   payorType: "doc" | "pat";

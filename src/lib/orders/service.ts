@@ -148,6 +148,16 @@ export async function submitClinicOrder(
         "Contact us to get set up.",
     };
   }
+  // Practice ID is required for LifeFile billing attribution. Without it the
+  // pharmacy cannot bill the correct clinic account.
+  if (clinic.lifefilePracticeId == null) {
+    return {
+      ok: false,
+      error:
+        "Your clinic is not linked to a LifeFile practice yet, so orders " +
+        "cannot be billed correctly. Contact LogosRx support to finish setup.",
+    };
+  }
 
   // --- Validate the submission ---
   const parsed = orderSubmissionSchema.safeParse(rawInput);
@@ -288,13 +298,10 @@ export async function submitClinicOrder(
   }
 
   // --- Build the LifeFile payload and forward ---
-  // Do NOT stamp `order.practice.id` from `clinic.lifefilePracticeId`.
-  // LifeFile rejects practices that aren't on the same API network as our
-  // pharmacy credentials (network 1949) — portal practice IDs often aren't,
-  // which surfaces as "API Network ID … different" and blocks prescribing.
-  // Clinic isolation stays in our DB; LifeFile attribution uses referenceId
-  // + memo (clinic name). Admin may still store a practice id for later use
-  // once LifeFile confirms it belongs to this API account.
+  // Stamp `order.practice.id` so LifeFile bills the correct clinic account.
+  // The ID must belong to Logos Pharmacy's API network (1949); a portal ID
+  // from another network is rejected by LifeFile. Clinic name stays in memo
+  // for pharmacy ops readability alongside the structured practice id.
   const clinicLabel =
     clinic.clinicName?.trim() || clinic.practiceLegalName?.trim() || null;
   const memoParts = [clinicLabel, submission.memo?.trim() || null].filter(
@@ -304,7 +311,7 @@ export async function submitClinicOrder(
     messageId: orderRow.id,
     referenceId,
     memo: memoParts.length ? memoParts.join(" — ") : null,
-    practiceId: null,
+    practiceId: clinic.lifefilePracticeId,
     payorType: submission.payorType,
     prescriber: {
       npi: submission.prescriberNpi,

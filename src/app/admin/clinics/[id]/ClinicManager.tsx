@@ -658,8 +658,8 @@ function Detail({
 }
 
 /**
- * In-app LifeFile ordering config: enable gate, optional LifeFile practice
- * id (admin reference only — not sent on orders), and default shipping.
+ * In-app LifeFile ordering config: enable gate, LifeFile practice id
+ * (required for billing when enabled), and default shipping.
  */
 function LifeFileCard({
   clinicId,
@@ -707,7 +707,7 @@ function LifeFileCard({
           </span>
           <span className="mt-0.5 block text-[13px] text-navy/55">
             Lets this clinic place prescription orders from their dashboard —
-            we forward them to LifeFile.
+            we forward them to LifeFile with this practice for billing.
           </span>
         </span>
         <input
@@ -721,20 +721,24 @@ function LifeFileCard({
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="block">
           <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
-            LifeFile practice ID
+            LifeFile practice ID{" "}
+            <span className="normal-case tracking-normal text-plum">
+              (required for billing)
+            </span>
           </span>
           <input
             type="number"
             min={1}
+            required={enabled}
             value={practiceId}
             onChange={(e) => setPracticeId(e.target.value)}
-            placeholder="Leave blank (recommended)"
+            placeholder="e.g. practice on network 1949"
             className={inputClass}
           />
           <span className="mt-1.5 block text-[12px] leading-snug text-navy/45">
-            Stored for reference only — orders do not send this field. Portal
-            practice IDs often sit on a different LifeFile API network than our
-            pharmacy credentials and cause prescribe failures.
+            Sent on every order so LifeFile bills this clinic. Must be a
+            practice under Logos Pharmacy&apos;s API network (1949) — not an ID
+            copied from another LifeFile portal or network.
           </span>
         </label>
         <label className="block">
@@ -756,11 +760,16 @@ function LifeFileCard({
         </label>
       </div>
 
-      {enabled && (
+      {enabled && !practiceId.trim() && (
+        <p className="mt-3 rounded-xl bg-amber-50 px-4 py-2.5 text-[13px] text-amber-800 ring-1 ring-inset ring-amber-600/20">
+          Add the LifeFile practice ID before enabling — without it LifeFile
+          cannot bill the correct clinic.
+        </p>
+      )}
+      {enabled && practiceId.trim() && (
         <p className="mt-3 rounded-xl bg-cream px-4 py-2.5 text-[13px] text-navy/65 ring-1 ring-inset ring-beige">
-          Orders forward under Logos Pharmacy&apos;s LifeFile API account.
-          Clinic attribution uses the order reference and clinic name in the
-          memo — not a practice ID.
+          Orders will send practice ID {practiceId.trim()} for billing, plus
+          the clinic name in the memo for pharmacy ops.
         </p>
       )}
       {error && (

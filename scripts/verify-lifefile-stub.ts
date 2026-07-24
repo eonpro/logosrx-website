@@ -169,12 +169,12 @@ async function main() {
       rawJson.slice(0, 300),
     );
     check(
-      "practice id omitted from payload (API network mismatch risk)",
-      !rawJson.includes('"practice"'),
+      "practice id stamped for billing attribution",
+      rawJson.includes('"practice":{"id":424242}'),
       row.rawRequest,
     );
     check(
-      "clinic name attributed via memo",
+      "clinic name included in memo",
       rawJson.includes("Verify Clinic A"),
       row.rawRequest,
     );
