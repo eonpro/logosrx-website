@@ -134,7 +134,7 @@ export async function setClinicVerification(
 
 export interface LifeFileSettingsInput {
   enabled: boolean;
-  /** LifeFile practice id for order attribution; null until assigned. */
+  /** Optional LifeFile practice id (admin reference; not sent on orders). */
   practiceId: number | null;
   /** Default LifeFile shipping-service code for the order wizard. */
   defaultServiceId: number | null;

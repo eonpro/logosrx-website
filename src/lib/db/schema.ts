@@ -404,8 +404,8 @@ export const clinics = pgTable("clinics", {
   lifefileOrderingEnabled: boolean("lifefile_ordering_enabled")
     .default(false)
     .notNull(),
-  // LifeFile practice id for order attribution (`order.practice.id`).
-  // Optional — orders forward without it until LifeFile assigns one.
+  // Optional LifeFile practice id (admin reference). Not stamped on
+  // `order.practice.id` — mismatched API networks cause LifeFile rejects.
   lifefilePracticeId: integer("lifefile_practice_id"),
   // Default LifeFile shipping-service code preselected in the order wizard.
   lifefileDefaultServiceId: integer("lifefile_default_service_id"),

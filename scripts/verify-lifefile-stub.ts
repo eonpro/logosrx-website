@@ -169,8 +169,13 @@ async function main() {
       rawJson.slice(0, 300),
     );
     check(
-      "practice id stamped in payload",
-      JSON.stringify(row.rawRequest).includes('"practice":{"id":424242}'),
+      "practice id omitted from payload (API network mismatch risk)",
+      !rawJson.includes('"practice"'),
+      row.rawRequest,
+    );
+    check(
+      "clinic name attributed via memo",
+      rawJson.includes("Verify Clinic A"),
       row.rawRequest,
     );
     check("message id = order id", row.messageId === result.orderId);

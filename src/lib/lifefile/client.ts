@@ -2,9 +2,10 @@
  * LifeFile API client (`POST /order`).
  *
  * One set of pharmacy-level credentials (Basic auth + vendor/location/network
- * headers) serves every clinic — clinic identity travels inside the payload
- * (`order.practice.id`), never in the credentials. Clinic isolation is
- * enforced upstream in the order service; this layer is transport only.
+ * headers) serves every clinic. We do not attach `order.practice.id` today —
+ * portal practice IDs frequently sit on a different LifeFile API network and
+ * cause hard rejects. Clinic isolation is enforced upstream in the order
+ * service; this layer is transport only.
  *
  * LifeFile returns HTTP 200 with `{ type: "success" | "error" }` — we branch
  * on the body's `type`, never on the status code alone. The full raw response

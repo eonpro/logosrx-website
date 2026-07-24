@@ -658,10 +658,8 @@ function Detail({
 }
 
 /**
- * In-app LifeFile ordering config: enable gate, LifeFile practice id
- * (attribution on forwarded orders), and the wizard's default shipping
- * service. Saved together; the enable toggle is safe to flip before the
- * practice id exists (orders forward without attribution until it's set).
+ * In-app LifeFile ordering config: enable gate, optional LifeFile practice
+ * id (admin reference only — not sent on orders), and default shipping.
  */
 function LifeFileCard({
   clinicId,
@@ -730,9 +728,14 @@ function LifeFileCard({
             min={1}
             value={practiceId}
             onChange={(e) => setPracticeId(e.target.value)}
-            placeholder="Not assigned yet"
+            placeholder="Leave blank (recommended)"
             className={inputClass}
           />
+          <span className="mt-1.5 block text-[12px] leading-snug text-navy/45">
+            Stored for reference only — orders do not send this field. Portal
+            practice IDs often sit on a different LifeFile API network than our
+            pharmacy credentials and cause prescribe failures.
+          </span>
         </label>
         <label className="block">
           <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
@@ -753,10 +756,11 @@ function LifeFileCard({
         </label>
       </div>
 
-      {!practiceId.trim() && enabled && (
-        <p className="mt-3 rounded-xl bg-amber-50 px-4 py-2.5 text-[13px] text-amber-800 ring-1 ring-inset ring-amber-600/20">
-          No practice ID yet — orders will forward without practice
-          attribution until LifeFile assigns one.
+      {enabled && (
+        <p className="mt-3 rounded-xl bg-cream px-4 py-2.5 text-[13px] text-navy/65 ring-1 ring-inset ring-beige">
+          Orders forward under Logos Pharmacy&apos;s LifeFile API account.
+          Clinic attribution uses the order reference and clinic name in the
+          memo — not a practice ID.
         </p>
       )}
       {error && (
