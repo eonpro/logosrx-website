@@ -1,17 +1,8 @@
 export const dynamic = "force-dynamic";
 
 import { db } from "@/lib/db";
-import {
-  employmentApplications,
-  clinicSignups,
-  clinics,
-  emailSignups,
-  promotions,
-  featuredProducts,
-  pricingQuotes,
-} from "@/lib/db/schema";
 import Link from "next/link";
-import { count, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { requireAdmin } from "@/lib/auth/admin";
 import { StatCard, Badge, type BadgeTone } from "@/components/ui/portal";
 
@@ -36,75 +27,79 @@ function greeting(): { hello: string; date: string } {
   return { hello, date };
 }
 
+type OverviewStatsRow = {
+  apps_total: number;
+  apps_new: number;
+  clinic_leads_total: number;
+  clinic_leads_new: number;
+  accounts_total: number;
+  accounts_pending: number;
+  emails_total: number;
+  promo_active: number;
+  featured_active: number;
+  quotes_total: number;
+  quotes_active: number;
+};
+
+function asCount(value: unknown): number {
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
 /**
- * One aggregate query per table (5 total), all issued in parallel. This
- * replaces 9 sequential round-trips: each table now returns its total and any
- * filtered sub-count in a single pass using conditional aggregation.
+ * Single round-trip for every overview tile. Previously this was 7 parallel
+ * SELECTs, each competing for a pooled Aurora connection — under serverless
+ * that burst was a frequent source of connect-timeout 500s on /admin.
  */
 async function getStats() {
-  const [apps, clinicLeads, accounts, emails, merch, featured, quotes] =
-    await Promise.all([
-    db
-      .select({
-        total: count(),
-        new: sql<number>`count(*) filter (where ${employmentApplications.status} = 'new')`.mapWith(
-          Number,
-        ),
-      })
-      .from(employmentApplications),
-    db
-      .select({
-        total: count(),
-        new: sql<number>`count(*) filter (where ${clinicSignups.status} = 'new')`.mapWith(
-          Number,
-        ),
-      })
-      .from(clinicSignups),
-    db
-      .select({
-        total: sql<number>`count(*) filter (where ${clinics.onboardingCompleted})`.mapWith(
-          Number,
-        ),
-        pending: sql<number>`count(*) filter (where ${clinics.onboardingCompleted} and ${clinics.verificationStatus} = 'pending')`.mapWith(
-          Number,
-        ),
-      })
-      .from(clinics),
-    db.select({ total: count() }).from(emailSignups),
-    db
-      .select({
-        promoActive: sql<number>`count(*) filter (where ${promotions.active})`.mapWith(
-          Number,
-        ),
-      })
-      .from(promotions),
-    db
-      .select({
-        featuredActive: sql<number>`count(*) filter (where ${featuredProducts.active})`.mapWith(
-          Number,
-        ),
-      })
-      .from(featuredProducts),
-    db
-      .select({
-        total: count(),
-        active: sql<number>`count(*) filter (where ${pricingQuotes.status} = 'active' and (${pricingQuotes.expiresAt} is null or ${pricingQuotes.expiresAt} > now()))`.mapWith(
-          Number,
-        ),
-      })
-      .from(pricingQuotes),
-  ]);
+  const result = await db.execute(sql`
+    SELECT
+      (SELECT count(*)::int FROM employment_applications) AS apps_total,
+      (SELECT count(*)::int FILTER (WHERE status = 'new')
+         FROM employment_applications) AS apps_new,
+      (SELECT count(*)::int FROM clinic_signups) AS clinic_leads_total,
+      (SELECT count(*)::int FILTER (WHERE status = 'new')
+         FROM clinic_signups) AS clinic_leads_new,
+      (SELECT count(*)::int FILTER (WHERE onboarding_completed)
+         FROM clinics) AS accounts_total,
+      (SELECT count(*)::int FILTER (
+         WHERE onboarding_completed AND verification_status = 'pending')
+         FROM clinics) AS accounts_pending,
+      (SELECT count(*)::int FROM email_signups) AS emails_total,
+      (SELECT count(*)::int FILTER (WHERE active) FROM promotions) AS promo_active,
+      (SELECT count(*)::int FILTER (WHERE active)
+         FROM featured_products) AS featured_active,
+      (SELECT count(*)::int FROM pricing_quotes) AS quotes_total,
+      (SELECT count(*)::int FILTER (
+         WHERE status = 'active'
+           AND (expires_at IS NULL OR expires_at > now()))
+         FROM pricing_quotes) AS quotes_active
+  `);
+
+  const row = (result.rows[0] ?? {}) as Partial<OverviewStatsRow>;
 
   return {
-    applications: { total: apps[0].total, new: apps[0].new },
-    accounts: { total: accounts[0].total, pending: accounts[0].pending },
-    clinics: { total: clinicLeads[0].total, new: clinicLeads[0].new },
-    emails: { total: emails[0].total },
-    merchandising: {
-      total: merch[0].promoActive,
-      featured: featured[0].featuredActive,
+    applications: {
+      total: asCount(row.apps_total),
+      new: asCount(row.apps_new),
     },
-    quotes: { total: quotes[0].total, active: quotes[0].active },
+    accounts: {
+      total: asCount(row.accounts_total),
+      pending: asCount(row.accounts_pending),
+    },
+    clinics: {
+      total: asCount(row.clinic_leads_total),
+      new: asCount(row.clinic_leads_new),
+    },
+    emails: { total: asCount(row.emails_total) },
+    merchandising: {
+      total: asCount(row.promo_active),
+      featured: asCount(row.featured_active),
+    },
+    quotes: {
+      total: asCount(row.quotes_total),
+      active: asCount(row.quotes_active),
+    },
   };
 }
 

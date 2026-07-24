@@ -6,6 +6,9 @@ import { drizzle, NodePgDatabase } from "drizzle-orm/node-postgres";
 import * as Sentry from "@sentry/nextjs";
 import { log } from "@/lib/observability/logger";
 import * as schema from "./schema";
+import { withDbRetry } from "./retry";
+
+export { isTransientConnectionError, withDbRetry } from "./retry";
 
 let _pool: Pool | null = null;
 let _db: NodePgDatabase<typeof schema> | null = null;
@@ -82,14 +85,16 @@ async function getCachedAuthToken(): Promise<string> {
 // Tuning shared by both connection strategies. Pool size is PER serverless
 // instance: under Vercel fluid compute many instances run concurrently, so a
 // large per-instance pool multiplies into Aurora's global connection limit
-// (max_connections). Keep it small; a handful of connections comfortably serves
-// the in-instance concurrency. Idle connections are recycled so a long-lived
-// instance doesn't hold connections open indefinitely, and we fail fast instead
-// of hanging when the DB is unreachable.
+// (max_connections). Keep it tiny — Fluid instances already provide horizontal
+// concurrency. Idle clients are evicted quickly so Aurora/NAT can't silently
+// kill sockets that the pool still thinks are healthy (the root of frequent
+// "Couldn't load this view" 500s). connectionTimeoutMillis is intentionally
+// below a typical request budget so a wedged connect fails into `withDbRetry`
+// instead of hanging the page.
 const POOL_TUNING = {
-  max: 10,
-  idleTimeoutMillis: 30_000,
-  connectionTimeoutMillis: 10_000,
+  max: 3,
+  idleTimeoutMillis: 5_000,
+  connectionTimeoutMillis: 8_000,
   keepAlive: true,
 } as const;
 
@@ -202,94 +207,6 @@ function isRetryableReadStatement(first: unknown): boolean {
     return false;
   }
   return true;
-}
-
-/** Postgres error codes that indicate a transient/recoverable connection loss. */
-const TRANSIENT_PG_CODES = new Set([
-  "57P01", // admin_shutdown — terminating connection due to administrator command
-  "57P02", // crash_shutdown
-  "57P03", // cannot_connect_now — the database system is starting up
-  "08000", // connection_exception
-  "08003", // connection_does_not_exist
-  "08006", // connection_failure
-  "ECONNRESET",
-  "EPIPE",
-  "ETIMEDOUT",
-  "ECONNREFUSED",
-]);
-
-const TRANSIENT_MESSAGE_FRAGMENTS = [
-  "connection terminated",
-  "connection terminated unexpectedly",
-  "connection ended unexpectedly",
-  "client has encountered a connection error",
-  "server closed the connection unexpectedly",
-  "timeout exceeded when trying to connect",
-  "socket hang up",
-  "read econnreset",
-  "the database system is",
-  // RDS IAM token-mint path: a transient STS/OIDC hiccup surfaces here when the
-  // `password` callback throws during connect. `mintAuthToken` already retries
-  // internally; this is a conservative secondary net for the read path.
-  "could not load credentials",
-  "timeout error from oidc",
-];
-
-/**
- * True when an error reflects a severed/stale connection rather than a real
- * application/query fault. These are safe to retry because the offending
- * client has already been evicted from the pool, so the next attempt gets a
- * fresh connection.
- */
-function isTransientConnectionError(err: unknown): boolean {
-  if (!(err instanceof Error)) return false;
-  const code = (err as { code?: string }).code;
-  if (code && TRANSIENT_PG_CODES.has(code)) return true;
-  const msg = err.message.toLowerCase();
-  return TRANSIENT_MESSAGE_FRAGMENTS.some((frag) => msg.includes(frag));
-}
-
-/**
- * Runs a DB operation with a single transparent retry when it fails due to a
- * stale/severed pooled connection. Under serverless + Aurora, the pool can
- * hand out a connection whose socket the server already closed; the first
- * query then rejects immediately. A retry grabs a fresh connection and
- * succeeds, turning a user-facing 500 into an invisible blip.
- *
- * Read statements are already wrapped automatically (see `installReadRetry`),
- * so call this explicitly only when you want retry around a unit of work that
- * the pool-level shim can't safely cover on its own — e.g. an idempotent write
- * (an UPSERT, a `delete … where id = $1`) or a sequence of statements you know
- * is safe to replay. Only connection-level errors are retried; query/constraint
- * errors propagate immediately so we never double-execute on a real failure. Do
- * NOT wrap multi-statement transactions that aren't safe to replay.
- */
-export async function withDbRetry<T>(
-  fn: () => Promise<T>,
-  opts?: { retries?: number; label?: string },
-): Promise<T> {
-  const retries = opts?.retries ?? 1;
-  let lastErr: unknown;
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      return await fn();
-    } catch (err) {
-      lastErr = err;
-      if (attempt < retries && isTransientConnectionError(err)) {
-        log.warn("db.retry", {
-          attempt: attempt + 1,
-          label: opts?.label,
-          error: err,
-        });
-        // Brief backoff so a replacement connection can be established before
-        // we try again (avoids hammering a DB that's mid-failover).
-        await new Promise((resolve) => setTimeout(resolve, 50 * (attempt + 1)));
-        continue;
-      }
-      throw err;
-    }
-  }
-  throw lastErr;
 }
 
 function getDb() {
