@@ -407,8 +407,8 @@ export const clinics = pgTable("clinics", {
   lifefileOrderingEnabled: boolean("lifefile_ordering_enabled")
     .default(false)
     .notNull(),
-  // Optional LifeFile practice id (admin reference). Not stamped on
-  // `order.practice.id` — mismatched API networks cause LifeFile rejects.
+  // LifeFile practice id stamped on orders as `order.practice.id` for billing.
+  // Required when in-app ordering is enabled; must be on API network 1949.
   lifefilePracticeId: integer("lifefile_practice_id"),
   // Default LifeFile shipping-service code preselected in the order wizard.
   lifefileDefaultServiceId: integer("lifefile_default_service_id"),

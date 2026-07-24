@@ -9,7 +9,7 @@ describe("humanizePharmacyRejection", () => {
       "(ID: 1266794) with an API Network ID (1949) different to the one from " +
       "the authenticated user (1949).";
     const msg = humanizePharmacyRejection(raw);
-    expect(msg).toContain("practice ID is not on our pharmacy network");
+    expect(msg).toContain("not on Logos Pharmacy's billing network");
     expect(msg).not.toContain("1266794");
   });
 
