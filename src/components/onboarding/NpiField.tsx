@@ -31,7 +31,10 @@ export default function NpiField({
   const [message, setMessage] = useState("");
   const lastSuccess = useRef("");
   const onLookupRef = useRef(onLookup);
-  onLookupRef.current = onLookup;
+
+  useEffect(() => {
+    onLookupRef.current = onLookup;
+  }, [onLookup]);
 
   useEffect(() => {
     const npi = normalizeNpi(value);

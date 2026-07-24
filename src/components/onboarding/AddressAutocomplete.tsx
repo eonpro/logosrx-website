@@ -32,9 +32,12 @@ export default function AddressAutocomplete({
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const onPlaceSelectRef = useRef(onPlaceSelect);
-  onPlaceSelectRef.current = onPlaceSelect;
   const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
+
+  useEffect(() => {
+    onPlaceSelectRef.current = onPlaceSelect;
+    onChangeRef.current = onChange;
+  }, [onPlaceSelect, onChange]);
 
   useEffect(() => {
     if (!googleMapsApiKey()) return;
