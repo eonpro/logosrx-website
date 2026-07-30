@@ -24,6 +24,7 @@
     "db:seed-partners": "tsx scripts/seed-partners.ts",
     "db:seed-catalog": "tsx scripts/seed-catalog.ts",
     "catalog:upload": "tsx scripts/upload-catalog.ts",
+    "vial:frames": "node scripts/extract-vial-frames.mjs",
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
     "e2e:install": "playwright install chromium"
