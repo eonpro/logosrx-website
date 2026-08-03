@@ -412,6 +412,8 @@ export const clinics = pgTable("clinics", {
   pricingTier: pricingTierEnum("pricing_tier").default("standard").notNull(),
   pricingDiscountPct: integer("pricing_discount_pct").default(0).notNull(),
   pricingNotes: text("pricing_notes"),
+  // Set when the clinic dismisses the "pricing updated" catalog banner.
+  pricingUpdateSeenAt: timestamp("pricing_update_seen_at"),
 
   // --- LifeFile ordering (in-app prescribing) ---
   // Admin-controlled gate: verified clinics can place orders through the
@@ -789,10 +791,15 @@ export const pricingRequests = pgTable(
     // Optional catalog SKU ids the clinic is focused on (json string[]).
     productIds: jsonb("product_ids").$type<string[]>().default([]).notNull(),
     message: text("message"),
+    // Internal-only admin scratchpad (never shown to the clinic).
     adminNote: text("admin_note"),
+    // Optional message shared with the clinic when the request is completed.
+    clinicReply: text("clinic_reply"),
     reviewedAt: timestamp("reviewed_at"),
     reviewedBy: varchar("reviewed_by", { length: 64 }),
     reviewedByEmail: varchar("reviewed_by_email", { length: 255 }),
+    // Set when an admin runs Complete & notify (email + banner trigger).
+    notifiedAt: timestamp("notified_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },

@@ -9,6 +9,8 @@ import {
   faqPageSchema,
   medicalWebPageSchema,
   articleSchema,
+  newsArticleSchema,
+  newsAbsoluteUrl,
   graph,
 } from "./schema";
 import { SITE, SAME_AS } from "@/lib/constants";
@@ -121,6 +123,21 @@ describe("articleSchema", () => {
       datePublished: "2026-01-01",
     });
     expect(a.dateModified).toBe("2026-01-01");
+  });
+});
+
+describe("newsArticleSchema", () => {
+  it("canonicalizes to the news origin", () => {
+    const a = newsArticleSchema({
+      headline: "H",
+      description: "d",
+      path: "/newsroom/x",
+      datePublished: "2026-01-01",
+      authorName: "Editor",
+    });
+    expect(a["@type"]).toBe("NewsArticle");
+    expect(a.url).toBe(newsAbsoluteUrl("/newsroom/x"));
+    expect(a.author).toMatchObject({ "@type": "Person", name: "Editor" });
   });
 });
 

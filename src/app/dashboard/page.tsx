@@ -12,6 +12,7 @@ import {
 } from "@/lib/portal/merchandising";
 import { getPrimaryEmail, roleForEmail } from "@/lib/auth/admin";
 import { getPartnerContext } from "@/lib/auth/partner";
+import { getClinicPricingBannerState } from "@/lib/pricing-requests/data";
 import { btnSecondary } from "@/components/ui/portal";
 
 export const metadata: Metadata = {
@@ -68,9 +69,15 @@ export default async function DashboardPage() {
   });
   // Merchandising is supplementary — never let it take down the clinic's main
   // page (e.g. before the merchandising tables are migrated). Degrade to empty.
-  const [promotions, featuredIds] = await Promise.all([
+  const [promotions, featuredIds, banner] = await Promise.all([
     getActivePromotions(storefront.pricingTier).catch(() => []),
     getFeaturedProductIds().catch(() => []),
+    gate.clinicId
+      ? getClinicPricingBannerState(gate.clinicId).catch(() => ({
+          show: false,
+          latestNotifiedAt: null,
+        }))
+      : Promise.resolve({ show: false, latestNotifiedAt: null }),
   ]);
 
   return (
@@ -80,6 +87,7 @@ export default async function DashboardPage() {
       pricingTier={storefront.pricingTier}
       promotions={promotions}
       featuredIds={featuredIds}
+      showPricingUpdatedBanner={banner.show}
     />
   );
 }

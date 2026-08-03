@@ -13,7 +13,10 @@ import {
   theadClass,
   type BadgeTone,
 } from "@/components/ui/portal";
-import { reviewPricingRequest } from "@/app/admin/pricing-requests/actions";
+import {
+  completeAndNotifyPricingRequest,
+  reviewPricingRequest,
+} from "@/app/admin/pricing-requests/actions";
 import { VOLUME_BAND_LABELS, type VolumeBand } from "@/lib/pricing-requests/validate";
 import type { PricingRequestListItem } from "@/lib/pricing-requests/data";
 
@@ -22,7 +25,7 @@ function statusBadge(
 ): { text: string; tone: BadgeTone } {
   if (status === "pending") return { text: "Pending", tone: "warning" };
   if (status === "reviewed") return { text: "Reviewed", tone: "accent" };
-  return { text: "Closed", tone: "neutral" };
+  return { text: "Completed", tone: "success" };
 }
 
 function fmtDate(d: Date | string | null): string {
@@ -50,10 +53,15 @@ export default function PricingRequestsManager({
   const [filter, setFilter] = useState<"all" | "pending" | "reviewed" | "closed">(
     "pending",
   );
+  const initial =
+    requests.find((r) => r.status === "pending") ?? requests[0] ?? null;
   const [selectedId, setSelectedId] = useState<number | null>(
-    () => requests.find((r) => r.status === "pending")?.id ?? requests[0]?.id ?? null,
+    () => initial?.id ?? null,
   );
-  const [note, setNote] = useState("");
+  const [note, setNote] = useState(() => initial?.adminNote ?? "");
+  const [clinicReply, setClinicReply] = useState(
+    () => initial?.clinicReply ?? "",
+  );
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -63,6 +71,13 @@ export default function PricingRequestsManager({
   }, [requests, filter]);
 
   const selected = requests.find((r) => r.id === selectedId) ?? null;
+
+  function selectRequest(r: PricingRequestListItem) {
+    setSelectedId(r.id);
+    setNote(r.adminNote ?? "");
+    setClinicReply(r.clinicReply ?? "");
+    setError(null);
+  }
 
   function act(status: "reviewed" | "closed") {
     if (!selected) return;
@@ -77,7 +92,21 @@ export default function PricingRequestsManager({
         setError(result.error);
         return;
       }
-      setNote("");
+    });
+  }
+
+  function completeAndNotify() {
+    if (!selected) return;
+    setError(null);
+    startTransition(async () => {
+      const result = await completeAndNotifyPricingRequest({
+        id: selected.id,
+        adminNote: note,
+        clinicReply,
+      });
+      if (!result.ok) {
+        setError(result.error);
+      }
     });
   }
 
@@ -98,7 +127,7 @@ export default function PricingRequestsManager({
             [
               ["pending", "Pending"],
               ["reviewed", "Reviewed"],
-              ["closed", "Closed"],
+              ["closed", "Completed"],
               ["all", "All"],
             ] as const
           ).map(([value, label]) => (
@@ -143,11 +172,7 @@ export default function PricingRequestsManager({
                       className={`${rowClass} cursor-pointer ${
                         active ? "bg-navy/[0.04]" : ""
                       }`}
-                      onClick={() => {
-                        setSelectedId(r.id);
-                        setNote(r.adminNote ?? "");
-                        setError(null);
-                      }}
+                      onClick={() => selectRequest(r)}
                     >
                       <td className="px-5 py-4">
                         <div className="font-medium text-navy">
@@ -244,6 +269,26 @@ export default function PricingRequestsManager({
                 </dt>
                 <dd className="mt-0.5 text-navy">{fmtDate(selected.createdAt)}</dd>
               </div>
+              {selected.notifiedAt && (
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wider text-navy/40">
+                    Clinic notified
+                  </dt>
+                  <dd className="mt-0.5 text-navy">
+                    {fmtDate(selected.notifiedAt)}
+                  </dd>
+                </div>
+              )}
+              {selected.clinicReply && selected.status === "closed" && (
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wider text-navy/40">
+                    Clinic reply sent
+                  </dt>
+                  <dd className="mt-0.5 whitespace-pre-wrap text-navy/80">
+                    {selected.clinicReply}
+                  </dd>
+                </div>
+              )}
             </dl>
 
             <div className="mt-5 flex flex-wrap gap-2">
@@ -258,47 +303,75 @@ export default function PricingRequestsManager({
               </Link>
             </div>
 
-            {canEdit && (
-              <div className="mt-6 border-t border-beige/70 pt-5">
-                <label
-                  htmlFor="admin-note"
-                  className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-navy/40"
-                >
-                  Admin note
-                </label>
-                <textarea
-                  id="admin-note"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  rows={3}
-                  className={`${inputClass} resize-y`}
-                  placeholder="Internal note (optional)…"
-                />
+            {canEdit && selected.status !== "closed" && (
+              <div className="mt-6 border-t border-beige/70 pt-5 space-y-4">
+                <div>
+                  <label
+                    htmlFor="admin-note"
+                    className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-navy/40"
+                  >
+                    Admin note (internal)
+                  </label>
+                  <textarea
+                    id="admin-note"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    rows={2}
+                    className={`${inputClass} resize-y`}
+                    placeholder="Internal note (optional)…"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="clinic-reply"
+                    className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-navy/40"
+                  >
+                    Message to clinic
+                  </label>
+                  <textarea
+                    id="clinic-reply"
+                    value={clinicReply}
+                    onChange={(e) => setClinicReply(e.target.value)}
+                    rows={3}
+                    className={`${inputClass} resize-y`}
+                    placeholder="Shown in email + their portal (optional)…"
+                  />
+                </div>
                 {error && (
-                  <p className="mt-2 text-sm text-red-700">{error}</p>
+                  <p className="text-sm text-red-700">{error}</p>
                 )}
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={completeAndNotify}
+                    className={btnAccent}
+                  >
+                    {pending ? "Sending…" : "Complete & notify clinic"}
+                  </button>
                   {selected.status === "pending" && (
                     <button
                       type="button"
                       disabled={pending}
                       onClick={() => act("reviewed")}
-                      className={btnAccent}
+                      className={btnSecondary}
                     >
                       Mark reviewed
                     </button>
                   )}
-                  {selected.status !== "closed" && (
-                    <button
-                      type="button"
-                      disabled={pending}
-                      onClick={() => act("closed")}
-                      className={btnSecondary}
-                    >
-                      Close
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => act("closed")}
+                    className={btnSecondary}
+                  >
+                    Close quietly
+                  </button>
                 </div>
+                <p className="text-[11px] leading-relaxed text-navy/45">
+                  Set rates on the clinic first, then Complete &amp; notify to
+                  email them and show a catalog banner.
+                </p>
               </div>
             )}
           </div>

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Badge, EmptyState, cardClass, inputClass } from "@/components/ui/portal";
+import PricingUpdatedBanner from "@/components/dashboard/PricingUpdatedBanner";
 import { discountPercent, formatCents } from "@/lib/portal/pricing";
 import type { StorefrontProduct } from "@/lib/portal/storefront";
 import type { StorefrontPromotion } from "@/lib/portal/merchandising";
@@ -24,6 +25,8 @@ interface StorefrontProps {
   pricingTier: "standard" | "preferred" | "vip";
   promotions: StorefrontPromotion[];
   featuredIds: FeaturedRef[];
+  /** After admin Complete & notify — dismissible “pricing updated” banner. */
+  showPricingUpdatedBanner?: boolean;
 }
 
 export default function Storefront({
@@ -32,6 +35,7 @@ export default function Storefront({
   pricingTier,
   promotions,
   featuredIds,
+  showPricingUpdatedBanner = false,
 }: StorefrontProps) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
@@ -83,6 +87,8 @@ export default function Storefront({
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+      {showPricingUpdatedBanner && <PricingUpdatedBanner />}
+
       {/* Hero spotlight banner(s) */}
       {heroes.length > 0 && (
         <div className="flex flex-col gap-4">

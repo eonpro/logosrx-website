@@ -49,6 +49,17 @@ describe("checkSameOrigin", () => {
     ).toEqual({ ok: true });
   });
 
+  it("accepts the newsroom subdomain origin", () => {
+    expect(
+      checkSameOrigin(
+        makeRequest({
+          origin: "https://news.logosrx.com",
+          host: "news.logosrx.com",
+        }),
+      ),
+    ).toEqual({ ok: true });
+  });
+
   it("accepts vercel preview deploys over https", () => {
     expect(
       checkSameOrigin(

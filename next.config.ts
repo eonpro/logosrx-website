@@ -150,6 +150,16 @@ const nextConfig: NextConfig = {
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }],
       },
       {
+        // Internal newsroom mount. Public URLs live only on news.logosrx.com
+        // (rewritten by the proxy). Hitting /news-site* on www must not index.
+        source: "/news-site/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }],
+      },
+      {
+        source: "/news-site",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }],
+      },
+      {
         // Self-hosted marketing media (P1d). 30 days immutable cache —
         // filenames are version-pinned manually, so cache busting is opt-in.
         source: "/videos/:path*",

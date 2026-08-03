@@ -33,6 +33,22 @@ export const SITE = {
  */
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? SITE.url;
 
+/**
+ * Newsroom subdomain (`news.logosrx.com`). Host-aware routing in `src/proxy.ts`
+ * rewrites this host onto the `/news-site` mount. Canonicals and OG URLs always
+ * use this origin — never the internal `/news-site` path on www.
+ */
+export const NEWS_SITE = {
+  name: "Logos RX Newsroom",
+  tagline: "Company news and clinical education from Logos RX.",
+  description:
+    "News, product updates, partnerships, and provider education from Logos RX compounding pharmacy.",
+  url: "https://news.logosrx.com",
+} as const;
+
+export const NEWS_SITE_URL =
+  process.env.NEXT_PUBLIC_NEWS_SITE_URL ?? NEWS_SITE.url;
+
 export const CONTACT = {
   address: {
     street: "7543 W. Waters Ave",
@@ -124,6 +140,7 @@ export const NAV_LINKS = [
   { label: "Locations", href: "/locations" },
   { label: "About Us", href: "/about" },
   { label: "Support", href: "/support" },
+  { label: "Newsroom", href: "https://news.logosrx.com" },
   { label: "Careers", href: "/careers" },
   { label: "Contact", href: "/#contact" },
 ] as const;
