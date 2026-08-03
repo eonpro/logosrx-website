@@ -11,6 +11,14 @@ import {
   View,
   renderToBuffer,
 } from "@react-pdf/renderer";
+import {
+  PDFDocument,
+  PDFFont,
+  PDFPage,
+  StandardFonts,
+  rgb,
+  type RGB,
+} from "pdf-lib";
 import sharp from "sharp";
 import { CONTACT, SITE } from "@/lib/constants";
 import type { InvoiceCsvRow } from "@/lib/invoices/csv";
@@ -19,7 +27,12 @@ import type { InvoiceCsvRow } from "@/lib/invoices/csv";
  * Logos RX–branded invoice PDF built from the admin invoice builder: a cover
  * page (client, date of service, total) followed by "Attachment A" — a
  * landscape table listing every transaction from the uploaded CSV.
- * Rendered server-side with `@react-pdf/renderer` (same pipeline as quotes).
+ *
+ * The cover is rendered with `@react-pdf/renderer` (same pipeline as quotes),
+ * but the attachment sheets are drawn directly with `pdf-lib`: react-pdf's
+ * layout engine is far too slow for shipment-report volumes (a 7.5k-row file
+ * 504'd in production at ~6 ms/row locally), while direct text drawing with
+ * measured columns handles tens of thousands of rows in seconds.
  */
 
 // Brand palette (mirrors --color-* tokens in globals.css).
@@ -29,10 +42,23 @@ const CREAM = "#F5F4F1";
 const BEIGE = "#E8E6E1";
 const INK_SOFT = "#6B6890"; // navy at ~60%
 
+function hexRgb(hex: string): RGB {
+  return rgb(
+    parseInt(hex.slice(1, 3), 16) / 255,
+    parseInt(hex.slice(3, 5), 16) / 255,
+    parseInt(hex.slice(5, 7), 16) / 255,
+  );
+}
+
+const NAVY_RGB = hexRgb(NAVY);
+const CREAM_RGB = hexRgb(CREAM);
+const BEIGE_RGB = hexRgb(BEIGE);
+const INK_SOFT_RGB = hexRgb(INK_SOFT);
+const WHITE_RGB = rgb(1, 1, 1);
+
 const PUBLIC_DIR = path.join(process.cwd(), "public");
 
-// Skip Knuth-Plass hyphenation: with tens of thousands of table cells it
-// dominates layout time, and table cells wrap fine on word boundaries.
+// Skip Knuth-Plass hyphenation on the cover; word-boundary wrapping is fine.
 Font.registerHyphenationCallback((word) => [word]);
 
 let cachedLogo: Buffer | null = null;
@@ -56,6 +82,21 @@ export function formatCentsUsd(cents: number): string {
     currency: "USD",
   });
 }
+
+export interface InvoicePdfInput {
+  invoiceNumber: string;
+  clientName: string;
+  /** Human-readable date of service (e.g. "07/20/2026 – 08/02/2026"). */
+  dateOfService: string;
+  issuedAt: Date;
+  totalCents: number;
+  notes: string | null;
+  transactions: InvoiceCsvRow[];
+}
+
+/* ------------------------------------------------------------------ */
+/* Cover page (react-pdf — one page, layout engine cost is negligible) */
+/* ------------------------------------------------------------------ */
 
 const styles = StyleSheet.create({
   page: {
@@ -135,130 +176,28 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   footerText: { fontSize: 7.5, color: INK_SOFT },
-
-  // Attachment (landscape transaction table)
-  attachPage: {
-    paddingTop: 36,
-    paddingBottom: 48,
-    paddingHorizontal: 36,
-    fontFamily: "Helvetica",
-    fontSize: 8,
-    color: NAVY,
-    backgroundColor: "#FFFFFF",
-  },
-  attachHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    marginBottom: 10,
-  },
-  attachTitle: { fontSize: 13, fontFamily: "Helvetica-Bold" },
-  thead: {
-    flexDirection: "row",
-    backgroundColor: NAVY,
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    borderRadius: 4,
-  },
-  th: {
-    color: "#FFFFFF",
-    fontSize: 7,
-    fontFamily: "Helvetica-Bold",
-    letterSpacing: 0.6,
-    textTransform: "uppercase",
-  },
-  tr: {
-    flexDirection: "row",
-    paddingVertical: 5,
-    paddingHorizontal: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: BEIGE,
-  },
-  trAlt: { backgroundColor: CREAM },
-  colDate: { width: 52 },
-  colShipped: { width: 66 },
-  colState: { width: 30 },
-  colPatient: { width: 92 },
-  colPractice: { flex: 1, paddingRight: 6 },
-  colDrug: { flex: 1.4, paddingRight: 6 },
-  colQty: { width: 26, textAlign: "right" },
-  colStatus: { width: 52, paddingLeft: 10 },
-  colPrice: { width: 52, textAlign: "right" },
-  colOrder: { width: 58, textAlign: "right" },
-  totalRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "center",
-    gap: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-  },
-  totalRowLabel: {
-    fontSize: 8,
-    fontFamily: "Helvetica-Bold",
-    letterSpacing: 1,
-    textTransform: "uppercase",
-    color: INK_SOFT,
-  },
-  totalRowValue: { fontSize: 11, fontFamily: "Helvetica-Bold" },
-  pageNo: { fontSize: 7.5, color: INK_SOFT },
 });
 
-export interface InvoicePdfInput {
-  invoiceNumber: string;
-  clientName: string;
-  /** Human-readable date of service (e.g. "07/20/2026 – 08/02/2026"). */
-  dateOfService: string;
-  issuedAt: Date;
-  totalCents: number;
-  notes: string | null;
-  transactions: InvoiceCsvRow[];
-}
-
-function dash(v: string | null): string {
-  return v?.trim() ? v : "—";
-}
-
-/**
- * Rows per attachment page. Pagination is done manually (fixed-size chunks,
- * one <Page> per chunk) instead of react-pdf's auto-wrap: letting a single
- * Page wrap thousands of rows makes layout superlinear (a 6.5k-row file took
- * >10 min); pre-chunked pages keep it near-linear. 10 rows leaves headroom
- * for three-line drug names plus the itemized-total row on the last page.
- */
-const ROWS_PER_PAGE = 10;
-
-function chunk<T>(items: T[], size: number): T[][] {
-  const out: T[][] = [];
-  for (let i = 0; i < items.length; i += size) {
-    out.push(items.slice(i, i + size));
-  }
-  return out;
-}
-
-function InvoicePdf({
+function InvoiceCover({
   input,
   logo,
+  txTotalCents,
 }: {
   input: InvoicePdfInput;
   logo: Buffer | null;
+  txTotalCents: number;
 }) {
   const issued = input.issuedAt.toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
     year: "numeric",
   });
-  const txTotalCents = input.transactions.reduce(
-    (sum, t) => sum + (t.rxPriceCents ?? 0),
-    0,
-  );
 
   return (
     <Document
       title={`${SITE.name} Invoice ${input.invoiceNumber} — ${input.clientName}`}
       author={SITE.name}
     >
-      {/* Cover page */}
       <Page size="LETTER" style={styles.page}>
         <View style={styles.header}>
           {logo ? (
@@ -323,93 +262,350 @@ function InvoicePdf({
           </Text>
         </View>
       </Page>
-
-      {/* Attachment A — itemized transactions, pre-chunked one Page per slice */}
-      {chunk(input.transactions, ROWS_PER_PAGE).map((rows, pageIdx, pages) => (
-        <Page
-          key={pageIdx}
-          size="LETTER"
-          orientation="landscape"
-          style={styles.attachPage}
-          wrap={false}
-        >
-          <View style={styles.attachHeader}>
-            <View>
-              <Text style={styles.kicker}>
-                Invoice {input.invoiceNumber} · {input.clientName}
-              </Text>
-              <Text style={styles.attachTitle}>
-                Attachment A — Transaction Detail
-              </Text>
-            </View>
-            <Text style={styles.pageNo}>
-              Sheet {pageIdx + 1} of {pages.length} ·{" "}
-              {input.transactions.length} transactions
-            </Text>
-          </View>
-
-          <View style={styles.thead}>
-            <Text style={[styles.th, styles.colDate]}>Written</Text>
-            <Text style={[styles.th, styles.colShipped]}>Shipped</Text>
-            <Text style={[styles.th, styles.colState]}>ST</Text>
-            <Text style={[styles.th, styles.colPatient]}>Patient</Text>
-            <Text style={[styles.th, styles.colPractice]}>Practice</Text>
-            <Text style={[styles.th, styles.colDrug]}>Drug</Text>
-            <Text style={[styles.th, styles.colQty]}>Qty</Text>
-            <Text style={[styles.th, styles.colStatus]}>Status</Text>
-            <Text style={[styles.th, styles.colPrice]}>Price</Text>
-            <Text style={[styles.th, styles.colOrder]}>Order ID</Text>
-          </View>
-
-          {rows.map((t, i) => (
-            <View
-              key={`${t.line}-${i}`}
-              style={i % 2 === 1 ? [styles.tr, styles.trAlt] : styles.tr}
-            >
-              <Text style={styles.colDate}>{dash(t.dateWritten)}</Text>
-              <Text style={styles.colShipped}>{dash(t.dateShipped)}</Text>
-              <Text style={styles.colState}>{dash(t.shipToState)}</Text>
-              <Text style={styles.colPatient}>{dash(t.patientName)}</Text>
-              <Text style={styles.colPractice}>{dash(t.practiceName)}</Text>
-              <Text style={styles.colDrug}>{dash(t.drugName)}</Text>
-              <Text style={styles.colQty}>{t.rxQty ?? "—"}</Text>
-              <Text style={styles.colStatus}>{dash(t.rxStatus)}</Text>
-              <Text style={styles.colPrice}>
-                {t.rxPriceCents != null ? formatCentsUsd(t.rxPriceCents) : "—"}
-              </Text>
-              <Text style={styles.colOrder}>{dash(t.orderId)}</Text>
-            </View>
-          ))}
-
-          {pageIdx === pages.length - 1 && (
-            <View style={styles.totalRow}>
-              <Text style={styles.totalRowLabel}>
-                Itemized total ({input.transactions.length} transactions)
-              </Text>
-              <Text style={styles.totalRowValue}>
-                {formatCentsUsd(txTotalCents)}
-              </Text>
-            </View>
-          )}
-
-          <View style={[styles.footer, { left: 36, right: 36 }]}>
-            <Text style={styles.footerText}>
-              {SITE.legalName} · {CONTACT.address.full}
-            </Text>
-            <Text style={styles.footerText}>
-              {CONTACT.phone} · {CONTACT.email}
-            </Text>
-          </View>
-        </Page>
-      ))}
     </Document>
   );
+}
+
+/* --------------------------------------------------------------- */
+/* Attachment sheets (pdf-lib — direct drawing, no layout engine)   */
+/* --------------------------------------------------------------- */
+
+// Landscape LETTER.
+const PAGE_W = 792;
+const PAGE_H = 612;
+const MARGIN_X = 36;
+const CONTENT_W = PAGE_W - MARGIN_X * 2;
+const TOP_Y = PAGE_H - 36;
+// Rows must end above the footer block.
+const BOTTOM_Y = 66;
+
+const FONT_SIZE = 8;
+const LINE_H = 9.5;
+const CELL_PAD_Y = 5;
+const CELL_GAP = 8;
+const THEAD_H = 18;
+
+interface Col {
+  header: string;
+  width: number;
+  align: "left" | "right";
+  wrap: boolean;
+  value: (t: InvoiceCsvRow) => string;
+}
+
+function dash(v: string | null): string {
+  return v?.trim() ? v : "—";
+}
+
+// Fixed columns total 428pt of the 704pt content width (minus inter-column
+// gaps); the remainder is split between Practice and Drug below.
+const COLS: Col[] = [
+  { header: "Written", width: 46, align: "left", wrap: false, value: (t) => dash(t.dateWritten) },
+  { header: "Shipped", width: 62, align: "left", wrap: false, value: (t) => dash(t.dateShipped) },
+  { header: "ST", width: 22, align: "left", wrap: false, value: (t) => dash(t.shipToState) },
+  { header: "Patient", width: 88, align: "left", wrap: true, value: (t) => dash(t.patientName) },
+  { header: "Practice", width: 0, align: "left", wrap: true, value: (t) => dash(t.practiceName) },
+  { header: "Drug", width: 0, align: "left", wrap: true, value: (t) => dash(t.drugName) },
+  { header: "Qty", width: 22, align: "right", wrap: false, value: (t) => (t.rxQty != null ? String(t.rxQty) : "—") },
+  { header: "Status", width: 48, align: "left", wrap: false, value: (t) => dash(t.rxStatus) },
+  { header: "Price", width: 48, align: "right", wrap: false, value: (t) => (t.rxPriceCents != null ? formatCentsUsd(t.rxPriceCents) : "—") },
+  { header: "Order ID", width: 54, align: "right", wrap: false, value: (t) => dash(t.orderId) },
+];
+
+// Cells are inset 4pt from each edge of the table band so text never paints
+// past the navy header bar or the zebra stripes.
+const CELL_INSET_X = 4;
+
+{
+  const gaps = CELL_GAP * (COLS.length - 1);
+  const fixed = COLS.reduce((s, c) => s + c.width, 0);
+  const flex = CONTENT_W - CELL_INSET_X * 2 - gaps - fixed;
+  COLS[4].width = Math.floor(flex * 0.42); // Practice
+  COLS[5].width = flex - COLS[4].width; // Drug (wider)
+}
+
+/**
+ * pdf-lib's standard fonts use WinAnsi encoding; anything outside it (rare in
+ * these exports) would throw at draw time, so squash unknowns to "?".
+ */
+function winAnsiSafe(s: string): string {
+  return s.replace(/[^\x20-\x7E\u00A0-\u00FF\u2013\u2014\u2018\u2019\u201C\u201D\u2022\u00B7]/g, "?");
+}
+
+/** Word-wraps text to a width; hard-breaks single words that don't fit. */
+function wrapText(
+  font: PDFFont,
+  text: string,
+  size: number,
+  maxWidth: number,
+): string[] {
+  if (font.widthOfTextAtSize(text, size) <= maxWidth) return [text];
+  const words = text.split(/\s+/);
+  const lines: string[] = [];
+  let current = "";
+  const pushWord = (word: string) => {
+    const candidate = current ? `${current} ${word}` : word;
+    if (font.widthOfTextAtSize(candidate, size) <= maxWidth) {
+      current = candidate;
+      return;
+    }
+    if (current) lines.push(current);
+    // Hard-break words wider than the column (long drug strings).
+    while (font.widthOfTextAtSize(word, size) > maxWidth) {
+      let cut = word.length - 1;
+      while (cut > 1 && font.widthOfTextAtSize(word.slice(0, cut), size) > maxWidth) {
+        cut--;
+      }
+      lines.push(word.slice(0, cut));
+      word = word.slice(cut);
+    }
+    current = word;
+  };
+  for (const w of words) pushWord(w);
+  if (current) lines.push(current);
+  return lines;
+}
+
+/** Truncates single-line cells with an ellipsis when they overflow. */
+function truncateText(
+  font: PDFFont,
+  text: string,
+  size: number,
+  maxWidth: number,
+): string {
+  if (font.widthOfTextAtSize(text, size) <= maxWidth) return text;
+  let cut = text.length;
+  while (cut > 1 && font.widthOfTextAtSize(`${text.slice(0, cut)}…`, size) > maxWidth) {
+    cut--;
+  }
+  return `${text.slice(0, cut)}…`;
+}
+
+interface RowLayout {
+  /** Per-column wrapped lines. */
+  cells: string[][];
+  height: number;
+}
+
+function layoutRow(font: PDFFont, t: InvoiceCsvRow): RowLayout {
+  const cells = COLS.map((col) => {
+    const raw = winAnsiSafe(col.value(t));
+    return col.wrap
+      ? wrapText(font, raw, FONT_SIZE, col.width)
+      : [truncateText(font, raw, FONT_SIZE, col.width)];
+  });
+  const lines = Math.max(...cells.map((c) => c.length));
+  return { cells, height: lines * LINE_H + CELL_PAD_Y * 2 };
+}
+
+function drawSheetChrome(
+  page: PDFPage,
+  helv: PDFFont,
+  helvBold: PDFFont,
+  input: InvoicePdfInput,
+  sheetNo: number,
+  sheetCount: number,
+): number {
+  // Header block
+  page.drawText(
+    winAnsiSafe(
+      `INVOICE ${input.invoiceNumber.toUpperCase()} · ${input.clientName.toUpperCase()}`,
+    ),
+    { x: MARGIN_X, y: TOP_Y - 7, size: 7, font: helv, color: INK_SOFT_RGB },
+  );
+  page.drawText("Attachment A — Transaction Detail", {
+    x: MARGIN_X,
+    y: TOP_Y - 21,
+    size: 13,
+    font: helvBold,
+    color: NAVY_RGB,
+  });
+  const sheetLabel = `Sheet ${sheetNo} of ${sheetCount} · ${input.transactions.length} transactions`;
+  page.drawText(sheetLabel, {
+    x: PAGE_W - MARGIN_X - helv.widthOfTextAtSize(sheetLabel, 7.5),
+    y: TOP_Y - 21,
+    size: 7.5,
+    font: helv,
+    color: INK_SOFT_RGB,
+  });
+
+  // Table header bar
+  const theadTop = TOP_Y - 32;
+  page.drawRectangle({
+    x: MARGIN_X,
+    y: theadTop - THEAD_H,
+    width: CONTENT_W,
+    height: THEAD_H,
+    color: NAVY_RGB,
+  });
+  let x = MARGIN_X + CELL_INSET_X;
+  for (const col of COLS) {
+    const label = col.header.toUpperCase();
+    const tx =
+      col.align === "right"
+        ? x + col.width - helvBold.widthOfTextAtSize(label, 7)
+        : x;
+    page.drawText(label, {
+      x: tx,
+      y: theadTop - THEAD_H + 6,
+      size: 7,
+      font: helvBold,
+      color: WHITE_RGB,
+    });
+    x += col.width + CELL_GAP;
+  }
+
+  // Footer
+  page.drawLine({
+    start: { x: MARGIN_X, y: 44 },
+    end: { x: PAGE_W - MARGIN_X, y: 44 },
+    thickness: 1,
+    color: BEIGE_RGB,
+  });
+  page.drawText(winAnsiSafe(`${SITE.legalName} · ${CONTACT.address.full}`), {
+    x: MARGIN_X,
+    y: 34,
+    size: 7.5,
+    font: helv,
+    color: INK_SOFT_RGB,
+  });
+  const contact = winAnsiSafe(`${CONTACT.phone} · ${CONTACT.email}`);
+  page.drawText(contact, {
+    x: PAGE_W - MARGIN_X - helv.widthOfTextAtSize(contact, 7.5),
+    y: 34,
+    size: 7.5,
+    font: helv,
+    color: INK_SOFT_RGB,
+  });
+
+  // First row's top y
+  return theadTop - THEAD_H;
+}
+
+async function appendTransactionSheets(
+  doc: PDFDocument,
+  input: InvoicePdfInput,
+  txTotalCents: number,
+): Promise<void> {
+  const helv = await doc.embedFont(StandardFonts.Helvetica);
+  const helvBold = await doc.embedFont(StandardFonts.HelveticaBold);
+
+  // Pass 1 — measure every row and slice them into sheets, so sheet counts
+  // are known before drawing.
+  const layouts = input.transactions.map((t) => layoutRow(helv, t));
+  const TOTAL_ROW_H = 26;
+  const sheets: RowLayout[][] = [];
+  {
+    let current: RowLayout[] = [];
+    let used = 0;
+    const capacity = TOP_Y - 32 - THEAD_H - BOTTOM_Y;
+    for (const row of layouts) {
+      if (used + row.height > capacity && current.length > 0) {
+        sheets.push(current);
+        current = [];
+        used = 0;
+      }
+      current.push(row);
+      used += row.height;
+    }
+    // Keep space for the itemized-total row on the final sheet.
+    if (used + TOTAL_ROW_H > capacity && current.length > 0) {
+      sheets.push(current);
+      current = [];
+    }
+    sheets.push(current);
+  }
+
+  // Pass 2 — draw. Transactions index advances across sheets for zebra rows.
+  let rowIdx = 0;
+  sheets.forEach((rows, sheetIdx) => {
+    const page = doc.addPage([PAGE_W, PAGE_H]);
+    let y = drawSheetChrome(
+      page,
+      helv,
+      helvBold,
+      input,
+      sheetIdx + 1,
+      sheets.length,
+    );
+
+    for (const row of rows) {
+      if (rowIdx % 2 === 1) {
+        page.drawRectangle({
+          x: MARGIN_X,
+          y: y - row.height,
+          width: CONTENT_W,
+          height: row.height,
+          color: CREAM_RGB,
+        });
+      }
+      let x = MARGIN_X + CELL_INSET_X;
+      COLS.forEach((col, c) => {
+        row.cells[c].forEach((line, li) => {
+          const tx =
+            col.align === "right"
+              ? x + col.width - helv.widthOfTextAtSize(line, FONT_SIZE)
+              : x;
+          page.drawText(line, {
+            x: tx,
+            y: y - CELL_PAD_Y - LINE_H * (li + 1) + 2.5,
+            size: FONT_SIZE,
+            font: helv,
+            color: NAVY_RGB,
+          });
+        });
+        x += col.width + CELL_GAP;
+      });
+      y -= row.height;
+      page.drawLine({
+        start: { x: MARGIN_X, y },
+        end: { x: PAGE_W - MARGIN_X, y },
+        thickness: 0.75,
+        color: BEIGE_RGB,
+      });
+      rowIdx++;
+    }
+
+    if (sheetIdx === sheets.length - 1) {
+      const label = `ITEMIZED TOTAL (${input.transactions.length} TRANSACTIONS)`;
+      const value = formatCentsUsd(txTotalCents);
+      const valueW = helvBold.widthOfTextAtSize(value, 11);
+      page.drawText(label, {
+        x: PAGE_W - MARGIN_X - valueW - 10 - helvBold.widthOfTextAtSize(label, 8),
+        y: y - 18,
+        size: 8,
+        font: helvBold,
+        color: INK_SOFT_RGB,
+      });
+      page.drawText(value, {
+        x: PAGE_W - MARGIN_X - valueW,
+        y: y - 19.5,
+        size: 11,
+        font: helvBold,
+        color: NAVY_RGB,
+      });
+    }
+  });
 }
 
 /** Renders the branded invoice PDF and returns it as a Buffer. */
 export async function renderInvoicePdf(
   input: InvoicePdfInput,
 ): Promise<Buffer> {
+  const txTotalCents = input.transactions.reduce(
+    (sum, t) => sum + (t.rxPriceCents ?? 0),
+    0,
+  );
+
   const logo = await loadLogo();
-  return renderToBuffer(<InvoicePdf input={input} logo={logo} />);
+  const cover = await renderToBuffer(
+    <InvoiceCover input={input} logo={logo} txTotalCents={txTotalCents} />,
+  );
+
+  const doc = await PDFDocument.load(new Uint8Array(cover));
+  doc.setTitle(
+    `${SITE.name} Invoice ${input.invoiceNumber} — ${input.clientName}`,
+  );
+  await appendTransactionSheets(doc, input, txTotalCents);
+  return Buffer.from(await doc.save());
 }
