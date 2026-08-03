@@ -84,6 +84,27 @@ This project is configured for Vercel. Connect the Git repository and deploy wit
 npm run build    # Verify production build locally
 ```
 
+### Newsroom subdomain (`news.logosrx.com`)
+
+The newsroom is served from the same Vercel project via host-aware rewrites in
+`src/proxy.ts` (public paths map to the internal `/news-site` mount).
+
+After deploy:
+
+1. In the Vercel project → **Settings → Domains**, add `news.logosrx.com`.
+2. At your DNS provider, create the record Vercel shows (usually a CNAME to
+   `cname.vercel-dns.com`, or an A record if required).
+3. Wait for TLS + DNS to go live, then confirm `https://news.logosrx.com` and
+   an article URL such as `/newsroom/<slug>`.
+
+Local smoke: open `http://news.localhost:3000` while `npm run dev` is running
+(browsers resolve `*.localhost` to `127.0.0.1`).
+
+To publish a post: add an entry in `src/content/news/articles.ts`, open a PR,
+and deploy. No CMS.
+
+## Adding New Products
+
 ### Google Places (practice address)
 
 Onboarding and the clinic dashboard use Google Places Autocomplete to collect a

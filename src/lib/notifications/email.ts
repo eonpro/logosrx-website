@@ -415,6 +415,48 @@ export async function sendPharmacyMsaSignedNotification(args: {
   });
 }
 
+/**
+ * Sent when an admin completes a clinic volume/custom pricing request and
+ * chooses Complete & notify. Best-effort — callers should not fail the
+ * mutation if email transport is unavailable.
+ */
+export async function sendPricingUpdatedEmail(args: {
+  to: string;
+  contactName: string;
+  clinicName: string;
+  clinicReply?: string | null;
+}): Promise<boolean> {
+  const base = SITE_URL;
+  const greetingName = args.contactName?.trim() || "there";
+  const clinic = args.clinicName?.trim() || "your practice";
+  const ctaUrl = `${base}/dashboard`;
+  const reply = args.clinicReply?.trim();
+
+  const replyHtml = reply
+    ? `<p style="background:#f6f3ec;border-radius:12px;padding:14px 16px;color:#262262"><strong>Note from Logos RX:</strong><br/>${escapeHtml(reply)}</p>`
+    : "";
+  const replyText = reply ? `\nNote from Logos RX:\n${reply}\n` : "";
+
+  const html = `
+  <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:560px;margin:0 auto;color:#262262">
+    <h1 style="font-size:20px;color:#262262">Your pricing was updated</h1>
+    <p>Hi ${escapeHtml(greetingName)},</p>
+    <p>Good news — we reviewed your volume pricing request for <strong>${escapeHtml(clinic)}</strong> and updated your clinic rates in the Logos RX portal.</p>
+    ${replyHtml}
+    <p><a href="${ctaUrl}" style="display:inline-block;background:#E6007E;color:#fff;text-decoration:none;padding:12px 20px;border-radius:9999px;font-weight:600">View your catalog</a></p>
+    <p style="color:#262262;opacity:.7;font-size:13px">— The Logos RX Team</p>
+  </div>`;
+
+  const text = `Your pricing was updated\n\nHi ${greetingName},\n\nWe reviewed your volume pricing request for ${clinic} and updated your clinic rates in the Logos RX portal.${replyText}\nView your catalog: ${ctaUrl}\n\n— The Logos RX Team`;
+
+  return sendEmail({
+    to: args.to,
+    subject: "Your Logos RX pricing was updated",
+    html,
+    text,
+  });
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")

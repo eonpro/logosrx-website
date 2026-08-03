@@ -1,8 +1,10 @@
 import type { MetadataRoute } from "next";
-import { SITE } from "@/lib/constants";
+import { headers } from "next/headers";
+import { NEWS_SITE_URL, SITE } from "@/lib/constants";
 import { CATALOG_CONFIG } from "@/data/catalog";
+import { isNewsHost } from "@/lib/news/host";
 
-export default function robots(): MetadataRoute.Robots {
+function mainRobots(): MetadataRoute.Robots {
   const disallow = [
     // Admin, API, and auth surfaces should never be indexed even if a stray
     // backlink leaks. `X-Robots-Tag: noindex` on those routes (set in
@@ -17,6 +19,9 @@ export default function robots(): MetadataRoute.Robots {
     // keeps crawlers from even fetching it.
     "/licensing",
     "/licensing/",
+    // Internal newsroom mount — public URLs live only on news.logosrx.com.
+    "/news-site",
+    "/news-site/",
   ];
 
   // The catalog is competitive pricing intel; keep it out of search indexes
@@ -64,4 +69,25 @@ export default function robots(): MetadataRoute.Robots {
     sitemap: `${SITE.url}/sitemap.xml`,
     host: SITE.url,
   };
+}
+
+function newsRobots(): MetadataRoute.Robots {
+  return {
+    rules: [
+      {
+        userAgent: "*",
+        allow: "/",
+        disallow: ["/news-site", "/news-site/"],
+      },
+    ],
+    sitemap: `${NEWS_SITE_URL}/sitemap.xml`,
+    host: NEWS_SITE_URL,
+  };
+}
+
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  if (isNewsHost(host)) return newsRobots();
+  return mainRobots();
 }

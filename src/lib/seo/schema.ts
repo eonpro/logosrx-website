@@ -14,6 +14,8 @@
 
 import {
   SITE,
+  NEWS_SITE,
+  NEWS_SITE_URL,
   CONTACT,
   HOURS,
   GEO,
@@ -31,12 +33,18 @@ export const ENTITY_IDS = {
   organization: `${SITE.url}/#organization`,
   website: `${SITE.url}/#website`,
   pharmacy: `${SITE.url}/#pharmacy`,
+  newsWebsite: `${NEWS_SITE.url}/#website`,
 } as const;
 
 /** Compose an absolute URL from a site-relative path. */
-export function absoluteUrl(path = "/"): string {
+export function absoluteUrl(path = "/", base: string = SITE.url): string {
   if (path.startsWith("http")) return path;
-  return new URL(path, SITE.url).toString();
+  return new URL(path, base).toString();
+}
+
+/** Absolute URL on the newsroom subdomain. */
+export function newsAbsoluteUrl(path = "/"): string {
+  return absoluteUrl(path, NEWS_SITE_URL);
 }
 
 function postalAddress(): JsonLdObject {
@@ -354,6 +362,44 @@ export function articleSchema(opts: {
       ? { dateModified: opts.dateModified ?? opts.datePublished }
       : {}),
     ...(opts.image ? { image: absoluteUrl(opts.image) } : {}),
+  };
+}
+
+/** Article schema for news.logosrx.com (canonicals on the news origin). */
+export function newsArticleSchema(opts: {
+  headline: string;
+  description: string;
+  path: string;
+  datePublished?: string;
+  dateModified?: string;
+  image?: string;
+  section?: string;
+  authorName?: string;
+}): JsonLdObject {
+  const url = newsAbsoluteUrl(opts.path);
+  return {
+    "@type": "NewsArticle",
+    headline: opts.headline,
+    description: opts.description,
+    url,
+    mainEntityOfPage: url,
+    inLanguage: "en-US",
+    isPartOf: {
+      "@type": "WebSite",
+      "@id": ENTITY_IDS.newsWebsite,
+      name: NEWS_SITE.name,
+      url: NEWS_SITE_URL,
+    },
+    publisher: { "@id": ENTITY_IDS.organization },
+    author: opts.authorName
+      ? { "@type": "Person", name: opts.authorName }
+      : { "@id": ENTITY_IDS.organization },
+    ...(opts.section ? { articleSection: opts.section } : {}),
+    ...(opts.datePublished ? { datePublished: opts.datePublished } : {}),
+    ...(opts.dateModified ?? opts.datePublished
+      ? { dateModified: opts.dateModified ?? opts.datePublished }
+      : {}),
+    ...(opts.image ? { image: newsAbsoluteUrl(opts.image) } : {}),
   };
 }
 

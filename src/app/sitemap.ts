@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
-import { SITE } from "@/lib/constants";
+import { headers } from "next/headers";
+import { NEWS_SITE_URL, SITE } from "@/lib/constants";
 import { products } from "@/data/products";
 import { articles } from "@/data/articles";
 import { productInserts } from "@/data/product-inserts";
@@ -9,6 +10,8 @@ import { stateLocations, stateSlug } from "@/data/states";
 import { pillars, glossaryTerms, PILLAR_BASE } from "@/data/knowledge";
 import { services } from "@/data/services";
 import { conditions } from "@/data/conditions";
+import { newsArticles } from "@/content/news";
+import { isNewsHost } from "@/lib/news/host";
 
 /**
  * Stable "content last meaningfully changed" date for pages that don't carry
@@ -25,7 +28,7 @@ function modified(date?: string): Date {
   return Number.isNaN(parsed.getTime()) ? CONTENT_UPDATED : parsed;
 }
 
-export default function sitemap(): MetadataRoute.Sitemap {
+function mainSitemap(): MetadataRoute.Sitemap {
   return [
     {
       url: SITE.url,
@@ -165,4 +168,28 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.6,
     })),
   ];
+}
+
+function newsSitemap(): MetadataRoute.Sitemap {
+  return [
+    {
+      url: NEWS_SITE_URL,
+      lastModified: CONTENT_UPDATED,
+      changeFrequency: "weekly",
+      priority: 1,
+    },
+    ...newsArticles.map((article) => ({
+      url: `${NEWS_SITE_URL}/newsroom/${article.slug}`,
+      lastModified: modified(article.date),
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    })),
+  ];
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  if (isNewsHost(host)) return newsSitemap();
+  return mainSitemap();
 }

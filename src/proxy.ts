@@ -1,6 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse, type NextRequest } from "next/server";
 import { buildCsp, generateNonce } from "@/lib/security/csp";
+import { isNewsHost, rewriteNewsPath } from "@/lib/news/host";
 
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 const isAdminSignInRoute = createRouteMatcher(["/admin/sign-in(.*)"]);
@@ -81,6 +82,22 @@ function redirectTo(req: NextRequest, pathname: string, withRedirectParam = true
 }
 
 export default clerkMiddleware(async (auth, req) => {
+  // --- News subdomain: rewrite public paths onto the /news-site mount -------
+  // news.logosrx.com/ → /news-site, /newsroom/* → /news-site/newsroom/*
+  // Canonicals always point at the news host (never /news-site on www).
+  // Note: cannot use /__news — Next.js treats `_`-prefixed folders as private.
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+  if (isNewsHost(host)) {
+    const rewriteTo = rewriteNewsPath(req.nextUrl.pathname);
+    if (rewriteTo) {
+      const url = req.nextUrl.clone();
+      url.pathname = rewriteTo;
+      const res = NextResponse.rewrite(url);
+      res.headers.set("Content-Security-Policy", buildCsp());
+      return res;
+    }
+  }
+
   // --- Auth gating (may short-circuit with a redirect) ---------------------
 
   // Profile dashboard: require a signed-in user; bounce anonymous visitors to

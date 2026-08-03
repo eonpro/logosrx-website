@@ -11,16 +11,19 @@ import type { NextRequest } from "next/server";
  * Allow-list:
  *   - `https://www.logosrx.com` (canonical production)
  *   - `https://logosrx.com` (apex)
+ *   - `https://news.logosrx.com` (newsroom subdomain)
  *   - any `*.vercel.app` preview deploy (gated to https)
- *   - localhost dev (http and https) when NODE_ENV !== "production"
+ *   - localhost / news.localhost when NODE_ENV !== "production"
  */
 const ALLOWED_PRODUCTION_ORIGINS = [
   "https://www.logosrx.com",
   "https://logosrx.com",
+  "https://news.logosrx.com",
 ];
 
 const VERCEL_PREVIEW_HOST = /^[a-z0-9-]+\.vercel\.app$/i;
-const LOCAL_HOSTS = /^(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?$/i;
+const LOCAL_HOSTS =
+  /^(localhost|127\.0\.0\.1|0\.0\.0\.0|news\.localhost)(:\d+)?$/i;
 
 function isAllowedOrigin(originUrl: URL, currentHost: string | null): boolean {
   if (ALLOWED_PRODUCTION_ORIGINS.includes(originUrl.origin)) return true;
