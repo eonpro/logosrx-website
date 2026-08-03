@@ -12,6 +12,12 @@ describe("parseMoneyToCents", () => {
     expect(parseMoneyToCents("80")).toBe(8_000);
   });
 
+  it("treats Excel accounting-format zero as $0.00", () => {
+    expect(parseMoneyToCents("$-")).toBe(0);
+    expect(parseMoneyToCents("$ -")).toBe(0);
+    expect(parseMoneyToCents("-")).toBe(0);
+  });
+
   it("returns NaN on garbage", () => {
     expect(parseMoneyToCents("abc")).toBeNaN();
     expect(parseMoneyToCents("12.345")).toBeNaN();
@@ -58,6 +64,20 @@ describe("parseInvoiceCsv", () => {
     expect(rows[0].dateWritten).toBeNull();
     expect(rows[1].rxPriceCents).toBeNull();
     expect(totalCents).toBe(12_550);
+  });
+
+  it("accepts accounting-format $- rows as zero-price transactions", () => {
+    const { rows, errors, totalCents } = parseInvoiceCsv(
+      [
+        HEADER,
+        ',,,NJ,"Doe, Jane",Practice,Drug A,1,CANCELLED,$-,1001',
+        ',,,NJ,"Roe, Rick",Practice,Drug B,1,SHIPPED,$ 40.00,1002',
+      ].join("\n"),
+    );
+    expect(errors).toEqual([]);
+    expect(rows).toHaveLength(2);
+    expect(rows[0].rxPriceCents).toBe(0);
+    expect(totalCents).toBe(4_000);
   });
 
   it("reports missing required columns", () => {

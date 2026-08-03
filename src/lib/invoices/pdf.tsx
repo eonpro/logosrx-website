@@ -3,6 +3,7 @@ import path from "node:path";
 import { readFile } from "node:fs/promises";
 import {
   Document,
+  Font,
   Image,
   Page,
   StyleSheet,
@@ -29,6 +30,10 @@ const BEIGE = "#E8E6E1";
 const INK_SOFT = "#6B6890"; // navy at ~60%
 
 const PUBLIC_DIR = path.join(process.cwd(), "public");
+
+// Skip Knuth-Plass hyphenation: with tens of thousands of table cells it
+// dominates layout time, and table cells wrap fine on word boundaries.
+Font.registerHyphenationCallback((word) => [word]);
 
 let cachedLogo: Buffer | null = null;
 async function loadLogo(): Promise<Buffer | null> {
@@ -214,6 +219,23 @@ function dash(v: string | null): string {
   return v?.trim() ? v : "—";
 }
 
+/**
+ * Rows per attachment page. Pagination is done manually (fixed-size chunks,
+ * one <Page> per chunk) instead of react-pdf's auto-wrap: letting a single
+ * Page wrap thousands of rows makes layout superlinear (a 6.5k-row file took
+ * >10 min); pre-chunked pages keep it near-linear. 10 rows leaves headroom
+ * for three-line drug names plus the itemized-total row on the last page.
+ */
+const ROWS_PER_PAGE = 10;
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    out.push(items.slice(i, i + size));
+  }
+  return out;
+}
+
 function InvoicePdf({
   input,
   logo,
@@ -302,77 +324,84 @@ function InvoicePdf({
         </View>
       </Page>
 
-      {/* Attachment A — itemized transactions */}
-      <Page size="LETTER" orientation="landscape" style={styles.attachPage}>
-        <View style={styles.attachHeader} fixed>
-          <View>
-            <Text style={styles.kicker}>
-              Invoice {input.invoiceNumber} · {input.clientName}
-            </Text>
-            <Text style={styles.attachTitle}>
-              Attachment A — Transaction Detail
+      {/* Attachment A — itemized transactions, pre-chunked one Page per slice */}
+      {chunk(input.transactions, ROWS_PER_PAGE).map((rows, pageIdx, pages) => (
+        <Page
+          key={pageIdx}
+          size="LETTER"
+          orientation="landscape"
+          style={styles.attachPage}
+          wrap={false}
+        >
+          <View style={styles.attachHeader}>
+            <View>
+              <Text style={styles.kicker}>
+                Invoice {input.invoiceNumber} · {input.clientName}
+              </Text>
+              <Text style={styles.attachTitle}>
+                Attachment A — Transaction Detail
+              </Text>
+            </View>
+            <Text style={styles.pageNo}>
+              Sheet {pageIdx + 1} of {pages.length} ·{" "}
+              {input.transactions.length} transactions
             </Text>
           </View>
-          <Text
-            style={styles.pageNo}
-            render={({ pageNumber, totalPages }) =>
-              `Page ${pageNumber} of ${totalPages}`
-            }
-          />
-        </View>
 
-        <View style={styles.thead} fixed>
-          <Text style={[styles.th, styles.colDate]}>Written</Text>
-          <Text style={[styles.th, styles.colShipped]}>Shipped</Text>
-          <Text style={[styles.th, styles.colState]}>ST</Text>
-          <Text style={[styles.th, styles.colPatient]}>Patient</Text>
-          <Text style={[styles.th, styles.colPractice]}>Practice</Text>
-          <Text style={[styles.th, styles.colDrug]}>Drug</Text>
-          <Text style={[styles.th, styles.colQty]}>Qty</Text>
-          <Text style={[styles.th, styles.colStatus]}>Status</Text>
-          <Text style={[styles.th, styles.colPrice]}>Price</Text>
-          <Text style={[styles.th, styles.colOrder]}>Order ID</Text>
-        </View>
-
-        {input.transactions.map((t, i) => (
-          <View
-            key={`${t.line}-${i}`}
-            style={i % 2 === 1 ? [styles.tr, styles.trAlt] : styles.tr}
-            wrap={false}
-          >
-            <Text style={styles.colDate}>{dash(t.dateWritten)}</Text>
-            <Text style={styles.colShipped}>{dash(t.dateShipped)}</Text>
-            <Text style={styles.colState}>{dash(t.shipToState)}</Text>
-            <Text style={styles.colPatient}>{dash(t.patientName)}</Text>
-            <Text style={styles.colPractice}>{dash(t.practiceName)}</Text>
-            <Text style={styles.colDrug}>{dash(t.drugName)}</Text>
-            <Text style={styles.colQty}>{t.rxQty ?? "—"}</Text>
-            <Text style={styles.colStatus}>{dash(t.rxStatus)}</Text>
-            <Text style={styles.colPrice}>
-              {t.rxPriceCents != null ? formatCentsUsd(t.rxPriceCents) : "—"}
-            </Text>
-            <Text style={styles.colOrder}>{dash(t.orderId)}</Text>
+          <View style={styles.thead}>
+            <Text style={[styles.th, styles.colDate]}>Written</Text>
+            <Text style={[styles.th, styles.colShipped]}>Shipped</Text>
+            <Text style={[styles.th, styles.colState]}>ST</Text>
+            <Text style={[styles.th, styles.colPatient]}>Patient</Text>
+            <Text style={[styles.th, styles.colPractice]}>Practice</Text>
+            <Text style={[styles.th, styles.colDrug]}>Drug</Text>
+            <Text style={[styles.th, styles.colQty]}>Qty</Text>
+            <Text style={[styles.th, styles.colStatus]}>Status</Text>
+            <Text style={[styles.th, styles.colPrice]}>Price</Text>
+            <Text style={[styles.th, styles.colOrder]}>Order ID</Text>
           </View>
-        ))}
 
-        <View style={styles.totalRow} wrap={false}>
-          <Text style={styles.totalRowLabel}>
-            Itemized total ({input.transactions.length} transactions)
-          </Text>
-          <Text style={styles.totalRowValue}>
-            {formatCentsUsd(txTotalCents)}
-          </Text>
-        </View>
+          {rows.map((t, i) => (
+            <View
+              key={`${t.line}-${i}`}
+              style={i % 2 === 1 ? [styles.tr, styles.trAlt] : styles.tr}
+            >
+              <Text style={styles.colDate}>{dash(t.dateWritten)}</Text>
+              <Text style={styles.colShipped}>{dash(t.dateShipped)}</Text>
+              <Text style={styles.colState}>{dash(t.shipToState)}</Text>
+              <Text style={styles.colPatient}>{dash(t.patientName)}</Text>
+              <Text style={styles.colPractice}>{dash(t.practiceName)}</Text>
+              <Text style={styles.colDrug}>{dash(t.drugName)}</Text>
+              <Text style={styles.colQty}>{t.rxQty ?? "—"}</Text>
+              <Text style={styles.colStatus}>{dash(t.rxStatus)}</Text>
+              <Text style={styles.colPrice}>
+                {t.rxPriceCents != null ? formatCentsUsd(t.rxPriceCents) : "—"}
+              </Text>
+              <Text style={styles.colOrder}>{dash(t.orderId)}</Text>
+            </View>
+          ))}
 
-        <View style={[styles.footer, { left: 36, right: 36 }]} fixed>
-          <Text style={styles.footerText}>
-            {SITE.legalName} · {CONTACT.address.full}
-          </Text>
-          <Text style={styles.footerText}>
-            {CONTACT.phone} · {CONTACT.email}
-          </Text>
-        </View>
-      </Page>
+          {pageIdx === pages.length - 1 && (
+            <View style={styles.totalRow}>
+              <Text style={styles.totalRowLabel}>
+                Itemized total ({input.transactions.length} transactions)
+              </Text>
+              <Text style={styles.totalRowValue}>
+                {formatCentsUsd(txTotalCents)}
+              </Text>
+            </View>
+          )}
+
+          <View style={[styles.footer, { left: 36, right: 36 }]}>
+            <Text style={styles.footerText}>
+              {SITE.legalName} · {CONTACT.address.full}
+            </Text>
+            <Text style={styles.footerText}>
+              {CONTACT.phone} · {CONTACT.email}
+            </Text>
+          </View>
+        </Page>
+      ))}
     </Document>
   );
 }

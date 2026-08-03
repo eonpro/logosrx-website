@@ -74,11 +74,13 @@ function normalizeHeader(h: string): string {
 /** Parses "80.00", "$ 80.00", "$1,234.5" → integer cents. NaN on garbage. */
 export function parseMoneyToCents(raw: string): number {
   const cleaned = raw.replace(/[$,\s]/g, "");
+  // Excel's accounting format renders zero as "$ -" (and "-0.00" happens too).
+  if (cleaned === "-") return 0;
   if (!/^-?\d+(\.\d{1,2})?$/.test(cleaned)) return NaN;
   return Math.round(Number(cleaned) * 100);
 }
 
-const MAX_ROWS = 5000;
+const MAX_ROWS = 20_000;
 
 export function parseInvoiceCsv(text: string): InvoiceCsvResult {
   const result: InvoiceCsvResult = {

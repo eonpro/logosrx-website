@@ -8,6 +8,9 @@ import { renderInvoicePdf } from "@/lib/invoices/pdf";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// Large shipment reports render thousands of attachment pages; measured
+// ~6 ms/row, so the 20k-row parser cap needs ~2 min of budget.
+export const maxDuration = 300;
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB of CSV ≈ tens of thousands of rows
 
