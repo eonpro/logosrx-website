@@ -110,6 +110,12 @@ const nextConfig: NextConfig = {
         destination: "/sign-up",
         permanent: true,
       },
+      // Tesamorelin was removed from the public product lineup.
+      {
+        source: "/products/tesamorelin",
+        destination: "/products/sermorelin",
+        permanent: true,
+      },
     ];
   },
   async headers() {

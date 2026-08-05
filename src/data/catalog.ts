@@ -410,17 +410,6 @@ export const catalogProducts: CatalogProduct[] = [
     brand: "Logos RX",
     therapeuticAreas: ["Peptide Therapy"],
   },
-  {
-    id: "tesamorelin-5mg-4ml",
-    name: "Tesamorelin 5mg/4mL",
-    strength: "5 mg/4 mL",
-    form: "Injectable",
-    unit: "Each",
-    pricing: { retail: 140, provider: 120, volume: null },
-    productFamily: ["Peptide Therapy"],
-    brand: "Logos RX",
-    therapeuticAreas: ["Peptide Therapy"],
-  },
   // ── Detox ──
   {
     id: "glutathione-200mg-5ml",
