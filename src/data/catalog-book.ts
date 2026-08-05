@@ -138,7 +138,7 @@ export const CATALOG_BOOK_PAGES: readonly BookPage[] = [
   { kind: "product", id: "testosterone", slug: "testosterone-cypionate", tocLabel: "Testosterone Cypionate", tocGroup: INJECTABLES, skuIds: ["testosterone-cypionate-200mg-5ml"] },
   { kind: "product", id: "glutathione", slug: "glutathione", tocLabel: "Glutathione", tocGroup: INJECTABLES, skuIds: ["glutathione-200mg-5ml"] },
   { kind: "product", id: "pregnyl", slug: "pregnyl-hcg", tocLabel: "Pregnyl HCG", tocGroup: INJECTABLES, skuIds: ["pregnyl-hcg-10000iu"] },
-  { kind: "product", id: "bpc-157", slug: "bpc-157", tocLabel: "BPC-157", tocGroup: INJECTABLES, skuIds: ["bpc-157-2.5mg-4ml"] },
+  { kind: "product", id: "bpc-157", slug: "bpc-157", tocLabel: "BPC-157 (Coming Soon)", tocGroup: INJECTABLES, skuIds: ["bpc-157-2.5mg-4ml"] },
 
   { kind: "product", id: "ondansetron", slug: "ondansetron", tocLabel: "Ondansetron", tocGroup: ORALS, skuIds: ["ondansetron-4mg"] },
   {

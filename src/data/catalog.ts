@@ -409,6 +409,7 @@ export const catalogProducts: CatalogProduct[] = [
     productFamily: ["Peptide Therapy"],
     brand: "Logos RX",
     therapeuticAreas: ["Peptide Therapy"],
+    badge: "Coming Soon",
   },
   // ── Detox ──
   {

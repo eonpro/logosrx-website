@@ -102,9 +102,16 @@ export default function ServicePage({ service }: { service: Service }) {
                   href={`/products/${p.slug}`}
                   className="group rounded-2xl border border-beige/70 bg-white p-5 hover:border-magenta/40 hover:shadow-sm transition-all"
                 >
-                  <h3 className="text-base font-bold text-navy group-hover:text-magenta transition-colors">
-                    {p.name}
-                  </h3>
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="text-base font-bold text-navy group-hover:text-magenta transition-colors">
+                      {p.name}
+                    </h3>
+                    {p.badge ? (
+                      <span className="shrink-0 rounded-full bg-orange-500 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                        {p.badge}
+                      </span>
+                    ) : null}
+                  </div>
                   {p.tagline && (
                     <p className="mt-1.5 text-sm text-navy/60 line-clamp-2">{p.tagline}</p>
                   )}
