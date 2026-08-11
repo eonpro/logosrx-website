@@ -3,13 +3,17 @@
  * imports) so it runs both server-side (PDF generation) and client-side
  * (upload preview) and is unit-testable.
  *
- * Expected input is the LifeFile-style shipment report export with a header
- * row. Column matching is case/spacing-insensitive:
- *   Date Range, Date Written, Date Shipped, Ship to State, Patient Name,
- *   Practice Name, Drug Name, Rx Qty, Rx Status, Rx Price, Order ID
+ * Expected input is a LifeFile-style export with a header row. Column
+ * matching is case/spacing-insensitive and alias-tolerant, so both known
+ * shapes work:
+ *   Shipment report: Date Range, Date Written, Date Shipped, Ship to State,
+ *     Patient Name, Practice Name, Drug Name, Rx Qty, Rx Status, Rx Price,
+ *     Order ID
+ *   Order detail:    Practice Name, Order ID, Patient Name, State Shipped,
+ *     Medication, Qty, Price
  *
- * Only Patient Name, Drug Name and Rx Price are required headers; every other
- * column is optional and rendered as "—" in the PDF when absent.
+ * Only Patient Name, Drug/Medication and Price are required headers; every
+ * other column is optional and rendered as "—" in the PDF when absent.
  */
 
 export interface InvoiceCsvRow {
@@ -111,7 +115,7 @@ export function parseInvoiceCsv(text: string): InvoiceCsvResult {
   const dateRangeCol = col("daterange");
   const dateWrittenCol = col("datewritten", "writtendate");
   const dateShippedCol = col("dateshipped", "shippeddate", "shipdate");
-  const stateCol = col("shiptostate", "state");
+  const stateCol = col("shiptostate", "stateshipped", "shippedstate", "state");
   const patientCol = col("patientname", "patient");
   const practiceCol = col("practicename", "practice", "clinicname");
   const drugCol = col("drugname", "drug", "medication");
