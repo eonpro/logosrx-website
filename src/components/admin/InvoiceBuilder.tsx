@@ -149,8 +149,10 @@ export default function InvoiceBuilder({ canEdit }: { canEdit: boolean }) {
             className="rounded-2xl border border-beige-dark bg-white px-3.5 py-2 text-sm text-navy file:mr-3 file:rounded-full file:border-0 file:bg-cream file:px-4 file:py-1.5 file:text-xs file:font-semibold file:text-navy/70"
           />
           <span className="text-[11px] text-navy/45">
-            Columns: Date Written, Date Shipped, Ship to State, Patient Name,
-            Practice Name, Drug Name, Rx Qty, Rx Status, Rx Price, Order ID.
+            Works with shipment reports (Date Written, Date Shipped, Ship to
+            State, Patient Name, Practice Name, Drug Name, Rx Qty, Rx Status,
+            Rx Price, Order ID) and order-detail exports (Practice Name, Order
+            ID, Patient Name, State Shipped, Medication, Qty, Price).
           </span>
         </label>
 

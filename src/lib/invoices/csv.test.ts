@@ -51,6 +51,32 @@ describe("parseInvoiceCsv", () => {
     expect(dateRange).toBe("07/20/2026- 08/02/2026");
   });
 
+  it("parses the order-detail export format (Medication/State Shipped/Price)", () => {
+    const { rows, errors, totalCents, dateRange } = parseInvoiceCsv(
+      [
+        "Practice Name,Order ID,Patient Name,State Shipped,Medication,Qty,Price",
+        'OPENLOOP HEALTHCARE PARTNERS PC,103696248,"Orr,Tara",CO,SEMAGLUTIDE/GLYCINE 2.5/20MG/ML (1ML VIAL) SOLUTION,1,$65',
+        'OPENLOOP HEALTHCARE PARTNERS PC,103714292,"Johnson,Tania",GA,TIRZEPATIDE/GLYCINE 10/20MG/ML (1ML VIAL) SOLUTION,1,$80',
+      ].join("\n"),
+    );
+    expect(errors).toEqual([]);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toMatchObject({
+      practiceName: "OPENLOOP HEALTHCARE PARTNERS PC",
+      orderId: "103696248",
+      patientName: "Orr,Tara",
+      shipToState: "CO",
+      drugName: "SEMAGLUTIDE/GLYCINE 2.5/20MG/ML (1ML VIAL) SOLUTION",
+      rxQty: 1,
+      rxPriceCents: 6_500,
+      dateWritten: null,
+      dateShipped: null,
+      rxStatus: null,
+    });
+    expect(totalCents).toBe(14_500);
+    expect(dateRange).toBeNull();
+  });
+
   it("is case/spacing-insensitive on headers and tolerates blank optionals", () => {
     const { rows, errors, totalCents } = parseInvoiceCsv(
       [
