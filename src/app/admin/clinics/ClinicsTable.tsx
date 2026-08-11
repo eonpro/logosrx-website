@@ -3,16 +3,15 @@
 import { Fragment, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { ClinicProvider } from "@/lib/db/schema";
 import {
   ORDER_VOLUME_OPTIONS,
   PRACTICE_TYPE_OPTIONS,
   PRODUCT_OPTIONS,
   REFERRAL_OPTIONS,
   SHIPPING_METHOD_OPTIONS,
-  SPECIALTY_OPTIONS,
   type Option,
 } from "@/lib/onboarding/steps";
+import type { AdminClinicListRow } from "@/lib/admin/clinics-list-shape";
 import { setClinicVerification } from "./actions";
 import {
   Badge,
@@ -26,36 +25,11 @@ import {
 import { formatPracticeAddress } from "@/lib/maps/format-practice-address";
 
 /**
- * The projected clinic shape the list renders. Matches the column selection in
- * `page.tsx` — intentionally omits the heavy `*_signature` blobs and any column
- * the table doesn't display.
+ * The projected clinic shape the list renders. Matches `AdminClinicListRow` —
+ * intentionally omits the heavy `providers` JSONB (and signature blobs). Open
+ * the full clinic record for provider licenses.
  */
-export type ClinicRow = {
-  id: number;
-  clinicName: string | null;
-  practiceLegalName: string | null;
-  practiceDba: string | null;
-  ein: string | null;
-  practiceType: string | null;
-  contactName: string | null;
-  contactEmail: string | null;
-  contactPhone: string | null;
-  addressLine1: string | null;
-  addressSuite: string | null;
-  addressCity: string | null;
-  addressState: string | null;
-  addressZip: string | null;
-  practicePhone: string | null;
-  website: string | null;
-  productsOfInterest: string[];
-  orderVolume: "0_5000" | "5000_15000" | "15000_50000" | "50000_plus" | null;
-  referralSource: string | null;
-  shippingMethod: "direct_to_patient" | "ship_to_practice" | null;
-  providers: ClinicProvider[];
-  verificationStatus: "pending" | "verified" | "rejected";
-  createdAt: Date;
-  cardLast4: string | null;
-};
+export type ClinicRow = AdminClinicListRow;
 
 const statusTones: Record<string, BadgeTone> = {
   pending: "warning",
@@ -262,31 +236,17 @@ export function ClinicsTable({ clinics }: { clinics: ClinicRow[] }) {
                         />
                       </div>
 
-                      <div className="mb-5">
-                        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
-                          Providers ({c.providers?.length ?? 0})
-                        </p>
-                        <div className="flex flex-col gap-2">
-                          {(c.providers ?? []).map((p, i) => (
-                            <div
-                              key={i}
-                              className="rounded-2xl border border-beige/70 bg-white px-4 py-2.5 text-sm text-navy/80"
-                            >
-                              <span className="font-medium text-navy">
-                                {p.firstName} {p.lastName}
-                              </span>
-                              {" — "}
-                              {optionLabel(SPECIALTY_OPTIONS, p.specialty)}
-                              <span className="text-navy/55">
-                                {" "}
-                                · NPI {p.npi || "—"} · Lic {p.medicalLicense || "—"}
-                                {p.licenseState ? ` (${p.licenseState})` : ""}
-                                {p.dea ? ` · DEA ${p.dea}` : ""}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                      <p className="mb-5 text-xs text-navy/55">
+                        Provider licenses and full intake history are on the{" "}
+                        <Link
+                          href={`/admin/clinics/${c.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="font-semibold text-navy underline underline-offset-2 hover:text-magenta"
+                        >
+                          full clinic record
+                        </Link>
+                        .
+                      </p>
 
                       <div className="flex items-center gap-2">
                         <span className="mr-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-navy/45">
