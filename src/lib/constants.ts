@@ -60,8 +60,8 @@ export const CONTACT = {
   phone: "855-564-6779",
   phoneHref: "tel:+18555646779",
   fax: "813-886-2822",
-  email: "support@logosrx.com",
-  emailHref: "mailto:support@logosrx.com",
+  email: "admin@logosrx.com",
+  emailHref: "mailto:admin@logosrx.com",
 } as const;
 
 export const HOURS = {
