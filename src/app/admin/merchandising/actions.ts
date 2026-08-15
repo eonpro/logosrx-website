@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { promotions, featuredProducts } from "@/lib/db/schema";
 import { ADMIN_ROLE, requireAdmin } from "@/lib/auth/admin";
 import { MERCHANDISING_TAG } from "@/lib/portal/merchandising";
+import { ADMIN_OVERVIEW_TAG } from "@/lib/admin/cache-tags";
 import { getActiveCatalogIds } from "@/lib/catalog/store";
 
 /**
@@ -18,6 +19,7 @@ function revalidateMerchandising() {
   // up on the next visit, instead of `revalidateTag(tag, "max")` which serves
   // stale-while-revalidate. Valid here because every caller is a Server Action.
   updateTag(MERCHANDISING_TAG);
+  updateTag(ADMIN_OVERVIEW_TAG);
   revalidatePath("/admin/merchandising");
   revalidatePath("/dashboard");
 }

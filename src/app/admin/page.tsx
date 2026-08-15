@@ -1,9 +1,6 @@
-export const dynamic = "force-dynamic";
-
-import { db } from "@/lib/db";
 import Link from "next/link";
-import { sql } from "drizzle-orm";
 import { requireAdmin } from "@/lib/auth/admin";
+import { getAdminOverviewStats } from "@/lib/admin/overview-stats";
 import { StatCard, Badge, type BadgeTone } from "@/components/ui/portal";
 
 /** Server-rendered greeting pinned to pharmacy HQ time (Tampa). */
@@ -27,89 +24,6 @@ function greeting(): { hello: string; date: string } {
   return { hello, date };
 }
 
-type OverviewStatsRow = {
-  apps_total: number;
-  apps_new: number;
-  clinic_leads_total: number;
-  clinic_leads_new: number;
-  accounts_total: number;
-  accounts_pending: number;
-  emails_total: number;
-  promo_active: number;
-  featured_active: number;
-  quotes_total: number;
-  quotes_active: number;
-  pricing_requests_pending: number;
-};
-
-function asCount(value: unknown): number {
-  const n = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(n) ? n : 0;
-}
-
-/**
- * Single round-trip for every overview tile. Previously this was 7 parallel
- * SELECTs, each competing for a pooled Aurora connection — under serverless
- * that burst was a frequent source of connect-timeout 500s on /admin.
- */
-async function getStats() {
-  const result = await db.execute(sql`
-    SELECT
-      (SELECT count(*)::int FROM employment_applications) AS apps_total,
-      (SELECT (count(*) FILTER (WHERE status = 'new'))::int
-         FROM employment_applications) AS apps_new,
-      (SELECT count(*)::int FROM clinic_signups) AS clinic_leads_total,
-      (SELECT (count(*) FILTER (WHERE status = 'new'))::int
-         FROM clinic_signups) AS clinic_leads_new,
-      (SELECT (count(*) FILTER (WHERE onboarding_completed))::int
-         FROM clinics) AS accounts_total,
-      (SELECT (count(*) FILTER (
-         WHERE onboarding_completed AND verification_status = 'pending'))::int
-         FROM clinics) AS accounts_pending,
-      (SELECT count(*)::int FROM email_signups) AS emails_total,
-      (SELECT (count(*) FILTER (WHERE active))::int
-         FROM promotions) AS promo_active,
-      (SELECT (count(*) FILTER (WHERE active))::int
-         FROM featured_products) AS featured_active,
-      (SELECT count(*)::int FROM pricing_quotes) AS quotes_total,
-      (SELECT (count(*) FILTER (
-         WHERE status = 'active'
-           AND (expires_at IS NULL OR expires_at > now())))::int
-         FROM pricing_quotes) AS quotes_active,
-      (SELECT (count(*) FILTER (WHERE status = 'pending'))::int
-         FROM pricing_requests) AS pricing_requests_pending
-  `);
-
-  const row = (result.rows[0] ?? {}) as Partial<OverviewStatsRow>;
-
-  return {
-    applications: {
-      total: asCount(row.apps_total),
-      new: asCount(row.apps_new),
-    },
-    accounts: {
-      total: asCount(row.accounts_total),
-      pending: asCount(row.accounts_pending),
-    },
-    clinics: {
-      total: asCount(row.clinic_leads_total),
-      new: asCount(row.clinic_leads_new),
-    },
-    emails: { total: asCount(row.emails_total) },
-    merchandising: {
-      total: asCount(row.promo_active),
-      featured: asCount(row.featured_active),
-    },
-    quotes: {
-      total: asCount(row.quotes_total),
-      active: asCount(row.quotes_active),
-    },
-    pricingRequests: {
-      pending: asCount(row.pricing_requests_pending),
-    },
-  };
-}
-
 const cards = [
   { label: "Clinics", href: "/admin/clinics" },
   { label: "Employment Applications", href: "/admin/applications" },
@@ -121,7 +35,7 @@ const cards = [
 
 export default async function AdminOverview() {
   await requireAdmin();
-  const stats = await getStats();
+  const stats = await getAdminOverviewStats();
 
   const data: {
     label: string;

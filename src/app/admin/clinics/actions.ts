@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
@@ -23,6 +23,7 @@ import {
 import { decrypt } from "@/lib/onboarding/encryption";
 import { generateCardUpdateToken } from "@/lib/payment-links/data";
 import { SITE_URL } from "@/lib/constants";
+import { ADMIN_CLINICS_LIST_TAG, ADMIN_OVERVIEW_TAG } from "@/lib/admin/cache-tags";
 import { sendClinicApprovedEmail } from "@/lib/notifications/email";
 import { notifyClinicApproved } from "@/lib/notifications/slack";
 import { runAfterResponse } from "@/lib/runtime/after";
@@ -130,6 +131,8 @@ export async function setClinicVerification(
   revalidatePath("/admin/clinics");
   revalidatePath(`/admin/clinics/${id}`);
   revalidatePath("/admin");
+  updateTag(ADMIN_CLINICS_LIST_TAG);
+  updateTag(ADMIN_OVERVIEW_TAG);
 }
 
 export interface LifeFileSettingsInput {

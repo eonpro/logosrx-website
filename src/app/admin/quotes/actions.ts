@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { partnerOrgs, partnerReps, pricingQuotes } from "@/lib/db/schema";
@@ -12,6 +12,7 @@ import {
   type PricingTier,
 } from "@/lib/quotes/create";
 import { generateQuotePassword, hashQuotePassword } from "@/lib/quotes/crypto";
+import { ADMIN_OVERVIEW_TAG } from "@/lib/admin/cache-tags";
 
 export interface QuoteItemInput {
   productId: string | null;
@@ -143,6 +144,7 @@ export async function createQuote(
     });
     revalidatePath("/admin/quotes");
     revalidatePath("/admin");
+    updateTag(ADMIN_OVERVIEW_TAG);
   }
   return result;
 }
@@ -250,6 +252,7 @@ export async function revokeQuote(id: number) {
   revalidatePath("/admin/quotes");
   revalidatePath(`/admin/quotes/${id}`);
   revalidatePath("/admin");
+  updateTag(ADMIN_OVERVIEW_TAG);
 }
 
 /** Re-activates a previously revoked quote (not allowed once claimed). */
@@ -279,4 +282,5 @@ export async function deleteQuote(id: number) {
   await recordAdminAudit(ctx, "quote.delete", { type: "quote", id });
   revalidatePath("/admin/quotes");
   revalidatePath("/admin");
+  updateTag(ADMIN_OVERVIEW_TAG);
 }

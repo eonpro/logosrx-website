@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import { ADMIN_ROLE, requireAdmin } from "@/lib/auth/admin";
 import {
   listCardUpdateLinks,

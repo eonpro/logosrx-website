@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { desc, eq, sql } from "drizzle-orm";
@@ -122,23 +120,33 @@ export default async function ClinicDetailPage({
     .limit(1);
   if (!clinic) notFound();
 
-  const [payment] = await db
-    .select({ cardLast4: clinicPayments.cardLast4 })
-    .from(clinicPayments)
-    .where(eq(clinicPayments.clerkUserId, clinic.clerkUserId))
-    .limit(1);
+  // Start the cached catalog read immediately so it overlaps the clinic
+  // queries. Batches stay at 3 to match the Aurora pool (max 3) — a wider
+  // Promise.all is what used to trip connectionTimeoutMillis.
+  const catalogPromise = getCatalogProducts();
 
-  // Affiliate attribution (who referred this clinic), when present.
-  const [attribution] = clinic.partnerOrgId
-    ? await db
+  const attributionQuery = clinic.partnerOrgId
+    ? db
         .select({ orgName: partnerOrgs.name, repName: partnerReps.name })
         .from(partnerOrgs)
         .leftJoin(partnerReps, eq(partnerReps.id, clinic.partnerRepId ?? -1))
         .where(eq(partnerOrgs.id, clinic.partnerOrgId))
         .limit(1)
-    : [];
+    : Promise.resolve(
+        [] as { orgName: string; repName: string | null }[],
+      );
 
-  const [notes, priceItems, accessLog, invoiceTransactions] = await Promise.all([
+  const [[payment], [attribution], latestCardLink] = await Promise.all([
+    db
+      .select({ cardLast4: clinicPayments.cardLast4 })
+      .from(clinicPayments)
+      .where(eq(clinicPayments.clerkUserId, clinic.clerkUserId))
+      .limit(1),
+    attributionQuery,
+    getLatestCardUpdateLink(id),
+  ]);
+
+  const [notes, priceItems, accessLog] = await Promise.all([
     db
       .select()
       .from(clinicNotes)
@@ -155,8 +163,9 @@ export default async function ClinicDetailPage({
       .where(eq(cardAccessLog.clinicId, id))
       .orderBy(desc(cardAccessLog.createdAt))
       .limit(10),
-    // This clinic's recorded sales (any source) with their commission totals,
-    // so an uploaded invoice shows its rep credit right on the profile.
+  ]);
+
+  const [invoiceTransactions, catalogProducts] = await Promise.all([
     db
       .select({
         id: partnerTransactions.id,
@@ -181,6 +190,7 @@ export default async function ClinicDetailPage({
       .groupBy(partnerTransactions.id)
       .orderBy(desc(partnerTransactions.transactionDate))
       .limit(50),
+    catalogPromise,
   ]);
 
   // Split clinic pricing rows into catalog overrides (keyed by SKU) and ad-hoc
@@ -206,7 +216,6 @@ export default async function ClinicDetailPage({
   }
 
   // Full catalog with standard price + this clinic's override (if any).
-  const catalogProducts = await getCatalogProducts();
   const catalog = catalogProducts.map((p) => {
     const std = standardCatalogPrice(p);
     return {
@@ -220,9 +229,6 @@ export default async function ClinicDetailPage({
     };
   });
 
-  // Latest card-update link (if any), shaped for the client control. The URL
-  // is only surfaced while the link is still openable.
-  const latestCardLink = await getLatestCardUpdateLink(id);
   const cardLink = latestCardLink
     ? {
         status:

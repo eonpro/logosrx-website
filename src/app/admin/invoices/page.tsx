@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import { ADMIN_ROLE, requireAdmin } from "@/lib/auth/admin";
 import InvoiceBuilder from "@/components/admin/InvoiceBuilder";
 import { Card, PageHeader } from "@/components/ui/portal";

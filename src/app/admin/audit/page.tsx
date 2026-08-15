@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import { db } from "@/lib/db";
 import { auditEvents } from "@/lib/db/schema";
 import { count, desc } from "drizzle-orm";

@@ -1,8 +1,6 @@
-export const dynamic = "force-dynamic";
-
 import { db } from "@/lib/db";
 import { employmentApplications } from "@/lib/db/schema";
-import { count, desc } from "drizzle-orm";
+import { desc, getTableColumns, sql } from "drizzle-orm";
 import { ApplicationsTable } from "./ApplicationsTable";
 import { requireAdmin } from "@/lib/auth/admin";
 import { ADMIN_LIST_LIMIT } from "@/lib/constants";
@@ -10,15 +8,16 @@ import { Card, EmptyState, PageHeader } from "@/components/ui/portal";
 
 export default async function ApplicationsPage() {
   await requireAdmin();
-  // Render the most recent N; header shows the true total via a separate COUNT.
-  const [applications, [{ total }]] = await Promise.all([
-    db
-      .select()
-      .from(employmentApplications)
-      .orderBy(desc(employmentApplications.createdAt))
-      .limit(ADMIN_LIST_LIMIT),
-    db.select({ total: count() }).from(employmentApplications),
-  ]);
+  const rows = await db
+    .select({
+      ...getTableColumns(employmentApplications),
+      total: sql<number>`count(*) over()`.mapWith(Number),
+    })
+    .from(employmentApplications)
+    .orderBy(desc(employmentApplications.createdAt))
+    .limit(ADMIN_LIST_LIMIT);
+  const total = rows[0]?.total ?? 0;
+  const applications = rows.map(({ total: _total, ...row }) => row);
   const overflow = total > applications.length;
 
   return (

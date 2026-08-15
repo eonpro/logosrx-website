@@ -1,8 +1,6 @@
-export const dynamic = "force-dynamic";
-
 import { db } from "@/lib/db";
 import { emailSignups } from "@/lib/db/schema";
-import { count, desc } from "drizzle-orm";
+import { desc, getTableColumns, sql } from "drizzle-orm";
 import { requireAdmin } from "@/lib/auth/admin";
 import { ADMIN_LIST_LIMIT } from "@/lib/constants";
 import {
@@ -17,15 +15,16 @@ import {
 
 export default async function EmailSignupsPage() {
   await requireAdmin();
-  // Render the most recent N; header shows the true total via a separate COUNT.
-  const [signups, [{ total }]] = await Promise.all([
-    db
-      .select()
-      .from(emailSignups)
-      .orderBy(desc(emailSignups.createdAt))
-      .limit(ADMIN_LIST_LIMIT),
-    db.select({ total: count() }).from(emailSignups),
-  ]);
+  const rows = await db
+    .select({
+      ...getTableColumns(emailSignups),
+      total: sql<number>`count(*) over()`.mapWith(Number),
+    })
+    .from(emailSignups)
+    .orderBy(desc(emailSignups.createdAt))
+    .limit(ADMIN_LIST_LIMIT);
+  const total = rows[0]?.total ?? 0;
+  const signups = rows.map(({ total: _total, ...row }) => row);
   const overflow = total > signups.length;
 
   return (
