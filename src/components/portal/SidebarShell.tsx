@@ -98,6 +98,9 @@ export default function SidebarShell({
               )}
               <Link
                 href={item.href}
+                // force-dynamic admin/partner pages cannot prefetch real data;
+                // viewport prefetch of 14 duplicated links saturates the Aurora pool.
+                prefetch={false}
                 aria-current={active ? "page" : undefined}
                 onClick={() => setOpen(false)}
                 className={`group flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition-all ${

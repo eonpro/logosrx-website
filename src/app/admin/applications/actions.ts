@@ -1,10 +1,11 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { employmentApplications } from "@/lib/db/schema";
 import { ADMIN_ROLE, requireAdmin } from "@/lib/auth/admin";
+import { ADMIN_OVERVIEW_TAG } from "@/lib/admin/cache-tags";
 
 export async function updateApplicationStatus(
   id: number,
@@ -26,4 +27,5 @@ export async function updateApplicationStatus(
 
   revalidatePath("/admin/applications");
   revalidatePath("/admin");
+  updateTag(ADMIN_OVERVIEW_TAG);
 }

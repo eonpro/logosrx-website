@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, sql, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   pricingQuotes,
@@ -66,25 +66,30 @@ export interface QuoteSummary extends PricingQuote {
   itemCount: number;
 }
 
+async function listQuoteSummaries(where?: SQL): Promise<QuoteSummary[]> {
+  const base = db
+    .select({
+      quote: pricingQuotes,
+      itemCount: sql<number>`count(${pricingQuoteItems.id})::int`.mapWith(
+        Number,
+      ),
+    })
+    .from(pricingQuotes)
+    .leftJoin(
+      pricingQuoteItems,
+      eq(pricingQuoteItems.quoteId, pricingQuotes.id),
+    );
+  const filtered = where ? base.where(where) : base;
+  const rows = await filtered
+    .groupBy(pricingQuotes.id)
+    .orderBy(desc(pricingQuotes.createdAt));
+
+  return rows.map((r) => ({ ...r.quote, itemCount: r.itemCount }));
+}
+
 /** Lists all quotes for the admin index, newest first, with line-item counts. */
 export async function listQuotes(): Promise<QuoteSummary[]> {
-  const quotes = await db
-    .select()
-    .from(pricingQuotes)
-    .orderBy(desc(pricingQuotes.createdAt));
-  if (quotes.length === 0) return [];
-
-  const counts = new Map<number, number>();
-  const ids = quotes.map((q) => q.id);
-  const itemRows = await db
-    .select({ quoteId: pricingQuoteItems.quoteId })
-    .from(pricingQuoteItems)
-    .where(inArray(pricingQuoteItems.quoteId, ids));
-  for (const r of itemRows) {
-    counts.set(r.quoteId, (counts.get(r.quoteId) ?? 0) + 1);
-  }
-
-  return quotes.map((q) => ({ ...q, itemCount: counts.get(q.id) ?? 0 }));
+  return listQuoteSummaries();
 }
 
 export interface PartnerScope {
@@ -105,22 +110,7 @@ export async function listQuotesForPartner(
         )
       : eq(pricingQuotes.partnerOrgId, scope.orgId);
 
-  const quotes = await db
-    .select()
-    .from(pricingQuotes)
-    .where(where)
-    .orderBy(desc(pricingQuotes.createdAt));
-  if (quotes.length === 0) return [];
-
-  const counts = new Map<number, number>();
-  const itemRows = await db
-    .select({ quoteId: pricingQuoteItems.quoteId })
-    .from(pricingQuoteItems)
-    .where(inArray(pricingQuoteItems.quoteId, quotes.map((q) => q.id)));
-  for (const r of itemRows) {
-    counts.set(r.quoteId, (counts.get(r.quoteId) ?? 0) + 1);
-  }
-  return quotes.map((q) => ({ ...q, itemCount: counts.get(q.id) ?? 0 }));
+  return listQuoteSummaries(where);
 }
 
 /**

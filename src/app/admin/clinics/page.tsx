@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import { ClinicsTable } from "./ClinicsTable";
 import { requireAdmin } from "@/lib/auth/admin";
 import { listOnboardedClinicsForAdmin } from "@/lib/admin/clinics-list";

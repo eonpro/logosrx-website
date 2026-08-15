@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import Link from "next/link";
 import { ADMIN_ROLE, requireAdmin } from "@/lib/auth/admin";
 import { listQuotes, isQuoteExpired } from "@/lib/quotes/data";

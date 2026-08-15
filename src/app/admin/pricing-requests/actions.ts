@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { ADMIN_ROLE, requireAdmin } from "@/lib/auth/admin";
 import { recordAdminAudit } from "@/lib/audit/log";
 import { sendPricingUpdatedEmail } from "@/lib/notifications/email";
@@ -8,6 +8,7 @@ import {
   completeAndNotifyPricingRequestRow,
   updatePricingRequestStatus,
 } from "@/lib/pricing-requests/data";
+import { ADMIN_OVERVIEW_TAG } from "@/lib/admin/cache-tags";
 
 export type ReviewPricingRequestResult =
   | { ok: true }
@@ -57,6 +58,7 @@ export async function reviewPricingRequest(input: {
 
   revalidatePath("/admin/pricing-requests");
   revalidatePath("/admin");
+  updateTag(ADMIN_OVERVIEW_TAG);
   return { ok: true };
 }
 
@@ -115,5 +117,6 @@ export async function completeAndNotifyPricingRequest(input: {
   revalidatePath(`/admin/clinics/${clinic.clinicId}`);
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/pricing-request");
+  updateTag(ADMIN_OVERVIEW_TAG);
   return { ok: true };
 }

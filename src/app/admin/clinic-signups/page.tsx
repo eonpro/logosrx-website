@@ -1,8 +1,6 @@
-export const dynamic = "force-dynamic";
-
 import { db } from "@/lib/db";
 import { clinicSignups } from "@/lib/db/schema";
-import { count, desc } from "drizzle-orm";
+import { desc, getTableColumns, sql } from "drizzle-orm";
 import { ClinicSignupsTable } from "./ClinicSignupsTable";
 import { requireAdmin } from "@/lib/auth/admin";
 import { ADMIN_LIST_LIMIT } from "@/lib/constants";
@@ -10,15 +8,16 @@ import { Card, EmptyState, PageHeader } from "@/components/ui/portal";
 
 export default async function ClinicSignupsPage() {
   await requireAdmin();
-  // Render the most recent N; header shows the true total via a separate COUNT.
-  const [signups, [{ total }]] = await Promise.all([
-    db
-      .select()
-      .from(clinicSignups)
-      .orderBy(desc(clinicSignups.createdAt))
-      .limit(ADMIN_LIST_LIMIT),
-    db.select({ total: count() }).from(clinicSignups),
-  ]);
+  const rows = await db
+    .select({
+      ...getTableColumns(clinicSignups),
+      total: sql<number>`count(*) over()`.mapWith(Number),
+    })
+    .from(clinicSignups)
+    .orderBy(desc(clinicSignups.createdAt))
+    .limit(ADMIN_LIST_LIMIT);
+  const total = rows[0]?.total ?? 0;
+  const signups = rows.map(({ total: _total, ...row }) => row);
   const overflow = total > signups.length;
 
   return (

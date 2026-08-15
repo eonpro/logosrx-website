@@ -1,7 +1,5 @@
-export const dynamic = "force-dynamic";
-
 import Link from "next/link";
-import { desc, eq, sql } from "drizzle-orm";
+import { desc, eq, inArray, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { clinics, orders, orderRxs, patients } from "@/lib/db/schema";
@@ -28,38 +26,46 @@ const dateTimeFmt = new Intl.DateTimeFormat("en-US", {
 export default async function AdminOrdersPage() {
   await requireAdmin();
 
-  const [rows, counts] = await Promise.all([
-    db
-      .select({
-        id: orders.id,
-        referenceId: orders.referenceId,
-        lfOrderId: orders.lfOrderId,
-        status: orders.status,
-        createdAt: orders.createdAt,
-        errorMessage: orders.errorMessage,
-        clinicId: clinics.id,
-        clinicName: clinics.clinicName,
-        patientFirstName: patients.firstName,
-        patientLastName: patients.lastName,
-      })
-      .from(orders)
-      .innerJoin(clinics, eq(orders.clinicId, clinics.id))
-      .innerJoin(patients, eq(orders.patientId, patients.id))
-      .orderBy(desc(orders.createdAt))
-      .limit(100),
-    db
-      .select({
-        status: orders.status,
-        n: sql<number>`count(*)::int`,
-      })
-      .from(orders)
-      .groupBy(orders.status),
-  ]);
+  // Sequential on purpose: the Aurora pool is max 3, and a list+count burst
+  // is what used to time out other admin views. Filter RXs to this page of
+  // orders — the previous query scanned the entire order_rxs table.
+  const rows = await db
+    .select({
+      id: orders.id,
+      referenceId: orders.referenceId,
+      lfOrderId: orders.lfOrderId,
+      status: orders.status,
+      createdAt: orders.createdAt,
+      errorMessage: orders.errorMessage,
+      clinicId: clinics.id,
+      clinicName: clinics.clinicName,
+      patientFirstName: patients.firstName,
+      patientLastName: patients.lastName,
+    })
+    .from(orders)
+    .innerJoin(clinics, eq(orders.clinicId, clinics.id))
+    .innerJoin(patients, eq(orders.patientId, patients.id))
+    .orderBy(desc(orders.createdAt))
+    .limit(100);
+
+  const counts = await db
+    .select({
+      status: orders.status,
+      n: sql<number>`count(*)::int`,
+    })
+    .from(orders)
+    .groupBy(orders.status);
 
   const drugRows = rows.length
     ? await db
         .select({ orderId: orderRxs.orderId, drugName: orderRxs.drugName })
         .from(orderRxs)
+        .where(
+          inArray(
+            orderRxs.orderId,
+            rows.map((r) => r.id),
+          ),
+        )
     : [];
   const drugsByOrder = new Map<number, string[]>();
   for (const rx of drugRows) {

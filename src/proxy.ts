@@ -2,6 +2,12 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse, type NextRequest } from "next/server";
 import { buildCsp, generateNonce } from "@/lib/security/csp";
 import { isNewsHost, rewriteNewsPath } from "@/lib/news/host";
+import { resolveAdminGate } from "@/lib/auth/admin-gate";
+import {
+  ADMIN_SESSION_COOKIE,
+  ADMIN_SESSION_HEADER,
+  adminSessionCookieOptions,
+} from "@/lib/auth/admin-session";
 
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 const isAdminSignInRoute = createRouteMatcher(["/admin/sign-in(.*)"]);
@@ -65,6 +71,7 @@ function withCsp(req: NextRequest): NextResponse {
 
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("x-pathname", req.nextUrl.pathname);
   requestHeaders.set("Content-Security-Policy", csp);
 
   const res = NextResponse.next({ request: { headers: requestHeaders } });
@@ -116,11 +123,40 @@ export default clerkMiddleware(async (auth, req) => {
     const { userId } = await auth();
     if (!userId) return redirectTo(req, "/partners/sign-in");
   } else if (isAdminRoute(req) && !isAdminSignInRoute(req)) {
-    // Admin: require a session; the email-allowlist check requires Clerk's
-    // backend client + env vars (Node runtime), so it's enforced server-side
-    // via `requireAdmin()` in the admin layout/pages, not here.
-    const { userId } = await auth();
+    // Admin: session required. Allowlist is enforced here (JWT claim → signed
+    // cookie → one Clerk lookup) so pages don't pay a Backend API round-trip
+    // on every tab click. Identity is forwarded as a signed request header.
+    const { userId, sessionClaims } = await auth();
     if (!userId) return redirectTo(req, "/admin/sign-in");
+
+    const gate = await resolveAdminGate(
+      userId,
+      sessionClaims,
+      req.cookies.get(ADMIN_SESSION_COOKIE)?.value,
+    );
+    if (gate.status === "deny") return redirectTo(req, "/", false);
+
+    const nonce = generateNonce();
+    const csp = buildCsp({ nonce });
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.delete(ADMIN_SESSION_HEADER);
+    requestHeaders.set("x-nonce", nonce);
+    requestHeaders.set("x-pathname", req.nextUrl.pathname);
+    requestHeaders.set("Content-Security-Policy", csp);
+    if (gate.status === "allow") {
+      requestHeaders.set(ADMIN_SESSION_HEADER, gate.sessionToken);
+    }
+
+    const res = NextResponse.next({ request: { headers: requestHeaders } });
+    res.headers.set("Content-Security-Policy", csp);
+    if (gate.status === "allow" && gate.setCookie) {
+      res.cookies.set(
+        ADMIN_SESSION_COOKIE,
+        gate.sessionToken,
+        adminSessionCookieOptions(),
+      );
+    }
+    return res;
   }
 
   // --- Attach the Content-Security-Policy to the response ------------------

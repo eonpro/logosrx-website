@@ -1,15 +1,7 @@
-export const dynamic = "force-dynamic";
-
 import Link from "next/link";
-import { count, desc, inArray, sql } from "drizzle-orm";
+import { desc, getTableColumns, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import {
-  clinics,
-  commissionEntries,
-  partnerOrgPricing,
-  partnerOrgs,
-  partnerReps,
-} from "@/lib/db/schema";
+import { partnerOrgs } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/auth/admin";
 import { formatBps, formatCents } from "@/lib/partners/commission";
 import ApproveOrgButton from "./ApproveOrgButton";
@@ -35,38 +27,25 @@ const STATUS_TONE: Record<string, BadgeTone> = {
 export default async function AdminPartnersPage() {
   await requireAdmin();
 
-  const [orgs, repCounts, clinicCounts, unpaidByOrg, floorCounts] =
-    await Promise.all([
-      db.select().from(partnerOrgs).orderBy(desc(partnerOrgs.createdAt)),
-      db
-        .select({ orgId: partnerReps.orgId, total: count() })
-        .from(partnerReps)
-        .groupBy(partnerReps.orgId),
-      db
-        .select({ orgId: clinics.partnerOrgId, total: count() })
-        .from(clinics)
-        .groupBy(clinics.partnerOrgId),
-      db
-        .select({
-          orgId: commissionEntries.orgId,
-          totalCents:
-            sql<number>`coalesce(sum(${commissionEntries.amountCents}), 0)`.mapWith(
-              Number,
-            ),
-        })
-        .from(commissionEntries)
-        .where(inArray(commissionEntries.status, ["pending", "approved"]))
-        .groupBy(commissionEntries.orgId),
-      db
-        .select({ orgId: partnerOrgPricing.orgId, total: count() })
-        .from(partnerOrgPricing)
-        .groupBy(partnerOrgPricing.orgId),
-    ]);
+  const orgs = await db
+    .select({
+      ...getTableColumns(partnerOrgs),
+      repCount: sql<number>`(select count(*)::int from partner_reps where org_id = ${partnerOrgs.id})`.mapWith(
+        Number,
+      ),
+      clinicCount: sql<number>`(select count(*)::int from clinics where partner_org_id = ${partnerOrgs.id})`.mapWith(
+        Number,
+      ),
+      unpaidCents: sql<number>`(select coalesce(sum(amount_cents), 0)::int from commission_entries where org_id = ${partnerOrgs.id} and status in ('pending', 'approved'))`.mapWith(
+        Number,
+      ),
+      floorCount: sql<number>`(select count(*)::int from partner_org_pricing where org_id = ${partnerOrgs.id})`.mapWith(
+        Number,
+      ),
+    })
+    .from(partnerOrgs)
+    .orderBy(desc(partnerOrgs.createdAt));
 
-  const repsByOrg = new Map(repCounts.map((r) => [r.orgId, r.total]));
-  const clinicsByOrg = new Map(clinicCounts.map((r) => [r.orgId, r.total]));
-  const unpaidMap = new Map(unpaidByOrg.map((r) => [r.orgId, r.totalCents]));
-  const floorsByOrg = new Map(floorCounts.map((r) => [r.orgId, r.total]));
   const pending = orgs.filter((o) => o.status === "pending").length;
 
   return (
@@ -144,10 +123,10 @@ export default async function AdminPartnersPage() {
                         <span className="text-xs font-medium text-navy/70">
                           Margin
                         </span>
-                        {(floorsByOrg.get(org.id) ?? 0) > 0 ? (
+                        {(org.floorCount ?? 0) > 0 ? (
                           <Badge tone="success">
-                            {floorsByOrg.get(org.id)} floor
-                            {floorsByOrg.get(org.id) === 1 ? "" : "s"} · quote-ready
+                            {org.floorCount} floor
+                            {org.floorCount === 1 ? "" : "s"} · quote-ready
                           </Badge>
                         ) : (
                           <Link href={`/admin/partners/${org.id}`}>
@@ -165,13 +144,13 @@ export default async function AdminPartnersPage() {
                     {formatBps(org.commissionRateBps)}
                   </td>
                   <td className="px-5 py-4 text-right tabular-nums">
-                    {repsByOrg.get(org.id) ?? 0}
+                    {org.repCount}
                   </td>
                   <td className="px-5 py-4 text-right tabular-nums">
-                    {clinicsByOrg.get(org.id) ?? 0}
+                    {org.clinicCount}
                   </td>
                   <td className="px-5 py-4 text-right tabular-nums">
-                    {formatCents(unpaidMap.get(org.id) ?? 0)}
+                    {formatCents(org.unpaidCents)}
                   </td>
                   <td className="px-5 py-4 whitespace-nowrap">
                     {org.createdAt.toLocaleDateString("en-US", {

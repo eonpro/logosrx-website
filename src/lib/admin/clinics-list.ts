@@ -1,9 +1,11 @@
 import "server-only";
 
+import { unstable_cache } from "next/cache";
 import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { clinicPayments, clinics } from "@/lib/db/schema";
 import { ADMIN_LIST_LIMIT } from "@/lib/constants";
+import { ADMIN_CLINICS_LIST_TAG } from "@/lib/admin/cache-tags";
 import {
   stripClinicListAggregates,
   type AdminClinicListResult,
@@ -22,7 +24,7 @@ export { stripClinicListAggregates } from "@/lib/admin/clinics-list-shape";
  * (digest e.g. 2013802586). Window aggregates give us total + pending on the
  * same statement that returns the page of rows, so we only need one connect.
  */
-export async function listOnboardedClinicsForAdmin(): Promise<AdminClinicListResult> {
+async function queryOnboardedClinicsForAdmin(): Promise<AdminClinicListResult> {
   const rows = await db
     .select({
       id: clinics.id,
@@ -74,3 +76,9 @@ export async function listOnboardedClinicsForAdmin(): Promise<AdminClinicListRes
 
   return { list, total, pending };
 }
+
+export const listOnboardedClinicsForAdmin = unstable_cache(
+  queryOnboardedClinicsForAdmin,
+  ["admin-clinics-list"],
+  { tags: [ADMIN_CLINICS_LIST_TAG], revalidate: 30 },
+);

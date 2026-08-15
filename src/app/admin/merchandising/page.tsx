@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import { ADMIN_ROLE, requireAdmin } from "@/lib/auth/admin";
 import { listAllPromotions, listAllFeatured } from "@/lib/portal/merchandising";
 import { getCatalogProducts } from "@/lib/catalog/store";
