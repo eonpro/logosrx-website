@@ -3,6 +3,12 @@ import { headers } from "next/headers";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 
 /**
+ * Colocate clinic SSR with Aurora (us-east-1). Same reason as admin/partners:
+ * IAM+TCP from a west-coast function to Virginia stalls every tab.
+ */
+export const preferredRegion = "iad1";
+
+/**
  * Authenticated clinic portal. Hoists `ClerkProvider` here (out of the root
  * layout) so marketing pages don't ship the Clerk client bundle, matching the
  * pattern used by the admin and auth route groups. `DashboardShell` provides

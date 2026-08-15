@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import { getPartnerContext } from "@/lib/auth/partner";
 import { formatCents } from "@/lib/partners/commission";
 import { formatTransactionDate, resolveDateRange } from "@/lib/partners/dates";
