@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import Link from "next/link";
 import { getPartnerContext } from "@/lib/auth/partner";
 import { listQuotesForPartner, isQuoteExpired } from "@/lib/quotes/data";

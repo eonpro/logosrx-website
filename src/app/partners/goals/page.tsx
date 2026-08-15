@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import { getPartnerContext } from "@/lib/auth/partner";
 import { roleAtLeast } from "@/lib/auth/partner-roles";
 import { getAllGoalProgress } from "@/lib/partners/goals";

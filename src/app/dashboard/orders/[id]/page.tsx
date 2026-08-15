@@ -21,8 +21,6 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export const dynamic = "force-dynamic";
-
 const dateTimeFmt = new Intl.DateTimeFormat("en-US", {
   month: "short",
   day: "numeric",

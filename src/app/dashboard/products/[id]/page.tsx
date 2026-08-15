@@ -6,8 +6,6 @@ import { getProductBySlug } from "@/data/products";
 import { getClinicGate } from "@/lib/onboarding/data";
 import { getClinicStorefrontFor } from "@/lib/portal/storefront";
 
-export const dynamic = "force-dynamic";
-
 export async function generateMetadata({
   params,
 }: {

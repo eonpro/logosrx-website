@@ -20,8 +20,6 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export const dynamic = "force-dynamic";
-
 export default async function DashboardPage() {
   const { userId, sessionClaims } = await auth();
   if (!userId) redirect("/sign-in?redirect_url=/dashboard");

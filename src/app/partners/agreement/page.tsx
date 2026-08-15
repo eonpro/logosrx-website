@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import type { Metadata } from "next";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { db } from "@/lib/db";

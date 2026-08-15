@@ -7,6 +7,12 @@ import PartnerMsaGate from "./PartnerMsaGate";
 import PartnersShell from "./PartnersShell";
 
 /**
+ * Colocate partner SSR with Aurora (us-east-1). A west-coast function plus
+ * IAM+TCP to Virginia is a large share of "every tab feels stuck".
+ */
+export const preferredRegion = "iad1";
+
+/**
  * Affiliate partner portal. Hoists `ClerkProvider` here (out of the root
  * layout) so marketing pages don't ship the Clerk client bundle, matching the
  * admin/dashboard route groups. The partner identity (org owner vs rep) is

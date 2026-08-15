@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { clinics, clinicPayments, clinicSignatures } from "@/lib/db/schema";
@@ -137,6 +138,9 @@ export async function getClinicProfile(
  * query stays small on every request. Callers that also render the storefront
  * can hand `clinicId`/`pricingTier`/`discountPct` straight to
  * `getClinicStorefrontFor` to avoid re-querying the same row.
+ *
+ * Wrapped in React `cache()` so layout + page + nested RSC share one lookup
+ * per request.
  */
 export interface ClinicGate {
   /** Row id, or null when the user has no clinic profile yet. */
@@ -149,42 +153,44 @@ export interface ClinicGate {
   orderingEnabled: boolean;
 }
 
-export async function getClinicGate(clerkUserId: string): Promise<ClinicGate> {
-  const [row] = await timed("clinic.gate", () =>
-    db
-      .select({
-        id: clinics.id,
-        onboardingCompleted: clinics.onboardingCompleted,
-        verificationStatus: clinics.verificationStatus,
-        pricingTier: clinics.pricingTier,
-        pricingDiscountPct: clinics.pricingDiscountPct,
-        lifefileOrderingEnabled: clinics.lifefileOrderingEnabled,
-      })
-      .from(clinics)
-      .where(eq(clinics.clerkUserId, clerkUserId))
-      .limit(1),
-  );
+export const getClinicGate = cache(
+  async (clerkUserId: string): Promise<ClinicGate> => {
+    const [row] = await timed("clinic.gate", () =>
+      db
+        .select({
+          id: clinics.id,
+          onboardingCompleted: clinics.onboardingCompleted,
+          verificationStatus: clinics.verificationStatus,
+          pricingTier: clinics.pricingTier,
+          pricingDiscountPct: clinics.pricingDiscountPct,
+          lifefileOrderingEnabled: clinics.lifefileOrderingEnabled,
+        })
+        .from(clinics)
+        .where(eq(clinics.clerkUserId, clerkUserId))
+        .limit(1),
+    );
 
-  if (!row) {
+    if (!row) {
+      return {
+        clinicId: null,
+        onboardingCompleted: false,
+        verificationStatus: "pending",
+        pricingTier: "standard",
+        discountPct: 0,
+        orderingEnabled: false,
+      };
+    }
+
     return {
-      clinicId: null,
-      onboardingCompleted: false,
-      verificationStatus: "pending",
-      pricingTier: "standard",
-      discountPct: 0,
-      orderingEnabled: false,
+      clinicId: row.id,
+      onboardingCompleted: row.onboardingCompleted,
+      verificationStatus: row.verificationStatus,
+      pricingTier: row.pricingTier,
+      discountPct: row.pricingDiscountPct,
+      orderingEnabled: row.lifefileOrderingEnabled,
     };
-  }
-
-  return {
-    clinicId: row.id,
-    onboardingCompleted: row.onboardingCompleted,
-    verificationStatus: row.verificationStatus,
-    pricingTier: row.pricingTier,
-    discountPct: row.pricingDiscountPct,
-    orderingEnabled: row.lifefileOrderingEnabled,
-  };
-}
+  },
+);
 
 /** True when the user has finished the intake. Used to gate `/dashboard`. */
 export async function hasCompletedOnboarding(

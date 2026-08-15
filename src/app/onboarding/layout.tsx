@@ -2,6 +2,12 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { headers } from "next/headers";
 
 /**
+ * Colocate onboarding writes with Aurora (us-east-1). Connect timeouts on
+ * this route were west-coast functions waiting on IAM+TCP to Virginia.
+ */
+export const preferredRegion = "iad1";
+
+/**
  * Public provider intake flow. Wrapped in `ClerkProvider` (kept out of the root
  * layout so marketing pages don't ship the Clerk bundle) because the wizard
  * signs the new clinic in client-side after their account is created on submit.
