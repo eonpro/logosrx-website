@@ -1084,6 +1084,8 @@ export const products: Product[] = [
     modifierStyle: "subtitle",
     category: "Peptide Therapy",
     categoryKey: "Injectable",
+    // `badge` drives ProductCard / MobileMenu chips; `badges` drives the PDP hero.
+    badge: "Coming Soon",
     badges: [{ label: "Coming Soon", variant: "coming-soon" }],
     tagline:
       "A synthetic pentadecapeptide explored for its role in tissue recovery, soft-tissue healing, and gut integrity.",
