@@ -52,6 +52,7 @@ export default async function NewOrderPage({
         }
       />
       <OrderWizard
+        clinicKey={`clinic-${ctx.clinicId}`}
         patients={patients}
         providers={ctx.providers}
         products={products}
